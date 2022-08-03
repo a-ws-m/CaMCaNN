@@ -103,8 +103,11 @@ class HashedMolecule:
 
     def hash_step(self):
         """Compute a single hash update step using bonded hashes."""
-        for idx, interactions in enumerate(self.atom_interactions):
-            self.atom_hashes[idx] = hash_array(np.array([self.atom_hashes[idx] for idx in interactions]))
+        new_hashes = []
+        for interactions in self.atom_interactions:
+            new_hashes.append(hash_array(np.array([self.atom_hashes[idx] for idx in interactions])))
+        
+        self.atom_hashes = new_hashes
         
         # * TODO: Remove duplicate substructure identifiers.
         # Achieve this by checking for duplicate substructures and discarding by setting atom_hash to a negative value.
@@ -192,10 +195,10 @@ class ECFPCountFeaturiser:
 
 if __name__ == "__main__":
     # Quick and dirty test
-    test_smiles = ["CCC",  "CCCCC", "CC(=O)C", "CC(=O)CO"]
+    test_smiles = ["C(C)(C)CC"]
     test_molecules = [MolFromSmiles(test_smile) for test_smile in test_smiles]
 
     featuriser = ECFPCountFeaturiser()
-    fingerprints = featuriser.featurise_molecules(test_molecules, 1)
+    fingerprints = featuriser.featurise_molecules(test_molecules, 2)
 
     print(pd.DataFrame({"SMILES": test_smiles, "Fingerprint": [np.array2string(fp) for fp in fingerprints]}))
