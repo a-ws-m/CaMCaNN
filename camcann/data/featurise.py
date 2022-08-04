@@ -129,15 +129,14 @@ class HashedMolecule:
         largest_step = max(self.atomic_walks.keys())
 
         # Do another step
-        new_walks = self.atomic_walks[largest_step][:]
-        for idx, walk in enumerate(new_walks):
-            unfrozen_walk = set(walk)
+        new_walks = []
+        for walk in self.atomic_walks[largest_step]:
             walk_buffer = set()
             for atom_idx in walk:
                 walk_buffer.update(self.atom_interactions[atom_idx])
 
-            unfrozen_walk.update(walk_buffer)
-            new_walks[idx] = frozenset(unfrozen_walk)
+            new_walk = walk | walk_buffer
+            new_walks.append(new_walk)
 
         self.atomic_walks[largest_step + 1] = new_walks
         self.cum_atomic_walks[largest_step + 2] =  self.cum_atomic_walks[largest_step + 1] | set(new_walks)
