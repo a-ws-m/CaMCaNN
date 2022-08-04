@@ -2,8 +2,9 @@
 from collections import Counter
 from dataclasses import dataclass
 from enum import IntEnum
-from operator import itemgetter, methodcaller, getitem
-from typing import Callable, Dict, List, NamedTuple, Tuple, Union
+from operator import getitem, methodcaller
+from typing import (Callable, Dict, FrozenSet, List, NamedTuple, Optional, Set,
+                    Tuple, Union)
 from zlib import crc32
 
 import numpy as np
@@ -67,11 +68,15 @@ class HashedMolecule:
     bonds: List[SimpleBond]
 
     def __post_init__(self) -> None:
-        """Compute the atom interaction matrix.
+        """Compute the atom interaction matrix and initialize atomic walks.
 
-        This is a list defining which atom indexes to look at, and in what
-        order, when computing a step update. An interaction, in this case, is a
-        hash function computed over a list of bonded atoms' hashes.
+        The atom interaction matrix is a list defining which atom indexes to
+        look at, and in what order, when computing a step update. An
+        interaction, in this case, is a hash function computed over a list of
+        bonded atoms' hashes.
+
+        The atomic walk dictionary indicates the set of atom indexes that are
+        visited during a walk of a given length.
 
         """
         bonded_atoms: List[List[Tuple[int, BondType]]] = [[] for _ in range(len(self.atom_hashes))]
@@ -90,6 +95,11 @@ class HashedMolecule:
         for idx, interactions in enumerate(self.atom_interactions):
             # Add self-interactions
             interactions.insert(0, idx)
+        
+        # Initialize atomic walk dictionary
+        self.atomic_walks: Dict[int, List[FrozenSet[int]]] = {0: [frozenset({idx}) for idx in range(len(self.atom_hashes))]}
+        # Initialize cumulative atomic walks dictionary
+        self.cum_atomic_walks: Dict[int, FrozenSet[FrozenSet[int]]] = {1: frozenset(self.atomic_walks[0])}
 
     @classmethod
     def from_rdk(
@@ -108,10 +118,86 @@ class HashedMolecule:
             new_hashes.append(hash_array(np.array([self.atom_hashes[idx] for idx in interactions])))
         
         self.atom_hashes = new_hashes
+    
+    def _update_atomic_walks(self):
+        """Add another step to the :attr:`atomic_walks`.
         
-        # * TODO: Remove duplicate substructure identifiers.
-        # Achieve this by checking for duplicate substructures and discarding by setting atom_hash to a negative value.
-        # Update the interaction matrix to remove bonds with the discarded identifier centre.
+        This is used when keeping track of duplicate substructures.
+        
+        """
+        # Find largest step that we've already computed
+        largest_step = max(self.atomic_walks.keys())
+
+        # Do another step
+        new_walks = self.atomic_walks[largest_step][:]
+        for idx, walk in enumerate(new_walks):
+            unfrozen_walk = set(walk)
+            walk_buffer = set()
+            for atom_idx in walk:
+                walk_buffer.update(self.atom_interactions[atom_idx])
+
+            unfrozen_walk.update(walk_buffer)
+            new_walks[idx] = frozenset(unfrozen_walk)
+
+        self.atomic_walks[largest_step + 1] = new_walks
+        self.cum_atomic_walks[largest_step + 2] =  self.cum_atomic_walks[largest_step + 1] | set(new_walks)
+
+    def check_duplicates(self, radius: int) -> List[Tuple[int, Optional[int]]]:
+        """Get a list of hash indexes that refer to same substructure at a given radius.
+        
+        Update atomic walks dictionary along the way.
+
+        Returns:
+            A list of `(index_1, index_2)`. Sometimes, substructures may be
+            duplicates of a hash from a previous iteration. In this case, a
+            tuple of `(index, None)` is returned.
+        
+        """
+        # Generate atom index sets for a walk of a given length
+        while radius not in self.atomic_walks:
+            self._update_atomic_walks()
+        current_lvl_walks = self.atomic_walks[radius]
+        cumulative_walks = self.cum_atomic_walks[radius]
+
+        duplicates = []
+        for idx, walk in enumerate(current_lvl_walks):
+            if walk in cumulative_walks:
+                duplicates.append((idx, None))
+                continue
+            try:
+                duplicates.append((idx, current_lvl_walks.index(walk, idx+1)))
+            except ValueError:
+                # Set doesn't appear more than once in this level
+                continue
+
+        return duplicates
+    
+    def get_hash_list(self, num_steps: int) -> List[int]:
+        """Get a list of all hashes generated during a given number of steps."""
+        hashes = self.atom_hashes[:]
+        for steps_done in range(num_steps):
+            self.hash_step()
+            new_hashes = self.atom_hashes[:]
+
+            if steps_done > 0:
+                # Potentially duplicate hashes in list
+                duplicates = self.check_duplicates(steps_done + 1)
+
+                to_delete = []
+                for indexes in duplicates:
+                    if indexes[1] is None:
+                        to_delete.append(indexes[0])
+                    else:
+                        lower_hash_idx = indexes[new_hashes[indexes[1]] < new_hashes[indexes[0]]]
+                        to_delete.append(lower_hash_idx)
+
+                # Delete values
+                for delete_idx in sorted(to_delete, reverse=True):
+                    new_hashes.pop(delete_idx)
+            
+            hashes.extend(new_hashes)
+        
+        return hashes
 
 
 class ECFPCountFeaturiser:
@@ -162,13 +248,8 @@ class ECFPCountFeaturiser:
 
         """
         hashed_molecules = self._initial_hash(molecules)
-        hash_counters = [
-            Counter(hashed_mol.atom_hashes) for hashed_mol in hashed_molecules
-        ]
-        for _ in range(radius):
-            for hash_counter, hashed_molecule in zip(hash_counters, hashed_molecules):
-                hashed_molecule.hash_step()
-                hash_counter.update(hashed_molecule.atom_hashes)
+        hash_lists = [mol.get_hash_list(radius) for mol in hashed_molecules]
+        hash_counters = [Counter(hash_list) for hash_list in hash_lists]
 
         # Convert hashes to indexes and prepare csr_array; see
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_array.html
