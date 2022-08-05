@@ -23,7 +23,7 @@ class DataReader:
 
     def __init__(self, dataset: Datasets) -> None:
         """Read data from disk."""
-        self.df = pd.read_csv(dataset, header=0)
+        self.df = pd.read_csv(dataset.value, header=0)
     
     def cv_indexes(self, num_folds: int = 10, random_seed: int = RANDOM_SEED) -> List[Tuple[List[int], List[int]]]:
         """Get the list of indexes in each fold of a K-fold cross-validation split.
