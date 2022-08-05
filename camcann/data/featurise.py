@@ -3,9 +3,9 @@ from collections import Counter
 from dataclasses import dataclass
 from enum import IntEnum
 from operator import getitem, methodcaller
+from os import PathLike
 from typing import (Callable, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Set,
                     Tuple, Union)
-from xml.etree.ElementInclude import include
 from zlib import crc32
 
 import numpy as np
@@ -94,6 +94,15 @@ class SMILESHashes:
     def smiles(self) -> List[str]:
         """Get the SMILES strings in the DataFrame."""
         return self.hash_df.SMILES.tolist()
+    
+    def save(self, path: PathLike):
+        """Save hash dataframe to path."""
+        self.hash_df.to_csv(path)
+    
+    @classmethod
+    def load(cls, path: PathLike):
+        """Load from a hash dataframe."""
+        return cls(pd.read_csv(path, header=0, index_col=0))
 
 def frag_to_smiles(mol: Mol, atoms: Union[int, Sequence[int]]) -> str:
     """Get the SMILES string for a given fragment."""
