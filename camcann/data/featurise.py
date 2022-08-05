@@ -3,13 +3,14 @@ from collections import Counter
 from dataclasses import dataclass
 from enum import IntEnum
 from operator import getitem, methodcaller
-from typing import (Callable, Dict, FrozenSet, List, NamedTuple, Optional, Set,
+from typing import (Callable, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Set,
                     Tuple, Union)
+from xml.etree.ElementInclude import include
 from zlib import crc32
 
 import numpy as np
 import pandas as pd
-from rdkit.Chem import MolFromSmiles
+from rdkit.Chem import MolFromSmiles, MolFragmentToSmiles
 from rdkit.Chem.rdchem import Atom, Bond, Mol
 from scipy.sparse import csr_array
 
@@ -59,6 +60,48 @@ class SimpleBond(NamedTuple):
             type_=getitem(BondType, str(bond.GetBondType())),
         )
 
+class SMILESHashes:
+    """Contains the fingerprint index and SMILES string associated with each hash."""
+    
+    def __init__(self, hash_df: Optional[pd.DataFrame]=None) -> None:
+        """Initialize hash DataFrame."""
+        if hash_df is None:
+            hash_df = pd.DataFrame({"fingerprint_index": [], "SMILES": []})
+
+        self.hash_df = hash_df
+    
+    def setdefault(self, hash_: int, smiles: str) -> int:
+        """Get the index for a given hash, generating a new one if necessary."""
+        try:
+            return self.hash_df.loc[hash_].fingerprint_index
+        except KeyError:
+            new_index = len(self)
+            self.hash_df.loc[hash_] = {"fingerprint_index": new_index, "SMILES": smiles}
+            return new_index
+    
+    def get_hash_idx(self, hash_: int) -> Optional[int]:
+        """Get the fingerprint index of a hash, if it is in the DataFrame."""
+        try:
+            return self.hash_df.loc[hash_].fingerprint_index
+        except KeyError:
+            return None
+    
+    def __len__(self) -> int:
+        """Get the number of hash entries."""
+        return len(self.hash_df.index)
+
+    @property
+    def smiles(self) -> List[str]:
+        """Get the SMILES strings in the DataFrame."""
+        return self.hash_df.SMILES.tolist()
+
+def frag_to_smiles(mol: Mol, atoms: Union[int, Sequence[int]]) -> str:
+    """Get the SMILES string for a given fragment."""
+    try:
+        len(atoms)
+    except TypeError:
+        atoms = [atoms]
+    return MolFragmentToSmiles(mol, atomsToUse=list(atoms), allHsExplicit=True)
 
 @dataclass
 class HashedMolecule:
@@ -66,6 +109,7 @@ class HashedMolecule:
 
     atom_hashes: List[int]
     bonds: List[SimpleBond]
+    rdk_mol: Mol
 
     def __post_init__(self) -> None:
         """Compute the atom interaction matrix and initialize atomic walks.
@@ -99,7 +143,7 @@ class HashedMolecule:
         # Initialize atomic walk dictionary
         self.atomic_walks: Dict[int, List[FrozenSet[int]]] = {0: [frozenset({idx}) for idx in range(len(self.atom_hashes))]}
         # Initialize cumulative atomic walks dictionary
-        self.cum_atomic_walks: Dict[int, FrozenSet[FrozenSet[int]]] = {1: frozenset(self.atomic_walks[0])}
+        self.cum_atomic_walks: Dict[int, List[FrozenSet[int]]] = {1: self.atomic_walks[0]}
 
     @classmethod
     def from_rdk(
@@ -109,6 +153,7 @@ class HashedMolecule:
         return cls(
             atom_hashes=hashes,
             bonds=[SimpleBond.from_rdk(bond) for bond in molecule.GetBonds()],
+            rdk_mol=molecule,
         )
 
     def hash_step(self):
@@ -139,7 +184,7 @@ class HashedMolecule:
             new_walks.append(new_walk)
 
         self.atomic_walks[largest_step + 1] = new_walks
-        self.cum_atomic_walks[largest_step + 2] =  self.cum_atomic_walks[largest_step + 1] | set(new_walks)
+        self.cum_atomic_walks[largest_step + 2] =  [cum_walk | set(new_walk) for cum_walk, new_walk in zip(self.cum_atomic_walks[largest_step + 1], new_walks)]
 
     def check_duplicates(self, radius: int) -> List[Tuple[int, Optional[int]]]:
         """Get a list of hash indexes that refer to same substructure at a given radius.
@@ -171,12 +216,28 @@ class HashedMolecule:
 
         return duplicates
     
-    def get_hash_list(self, num_steps: int) -> List[int]:
-        """Get a list of all hashes generated during a given number of steps."""
+    def get_hash_list(self, num_steps: int, smiles_hashes: Optional[SMILESHashes]=None) -> List[int]:
+        """Get a list of all hashes generated during a given number of steps.
+        
+        Args:
+            num_steps: The total number of atomic steps to perform.
+            smiles_hashes: An optional :class:`SMILESHashes` instance to update
+                with SMILES fragments associated with each hash.
+        
+        """
         hashes = self.atom_hashes[:]
+        include_smiles = smiles_hashes is not None
+        if include_smiles:
+            while 2 not in self.atomic_walks:
+                # Need to have these calculated for figuring out SMILES fragments.
+                self._update_atomic_walks()
+            smiles = [frag_to_smiles(self.rdk_mol, cum_walk) for cum_walk in self.cum_atomic_walks[1]]
+
         for steps_done in range(num_steps):
             self.hash_step()
             new_hashes = self.atom_hashes[:]
+            if include_smiles:
+                new_smiles = [frag_to_smiles(self.rdk_mol, cum_walk) for cum_walk in self.cum_atomic_walks[2 + steps_done]]
 
             if steps_done > 0:
                 # Potentially duplicate hashes in list
@@ -193,18 +254,25 @@ class HashedMolecule:
                 # Delete values
                 for delete_idx in sorted(to_delete, reverse=True):
                     new_hashes.pop(delete_idx)
+                    if include_smiles:
+                        new_smiles.pop(delete_idx)
             
             hashes.extend(new_hashes)
+            if include_smiles:
+                smiles.extend(new_smiles)
         
+        if include_smiles:
+            for hash_, smile in zip(hashes, smiles):
+                smiles_hashes.setdefault(hash_, smile)
         return hashes
 
 
 class ECFPCountFeaturiser:
     """Convert molecules to ECFPs with a canonical count of each circular group."""
 
-    def __init__(self, vocabulary: Dict[int, int] = {}) -> None:
-        """Initialize featuriser and its hashmap."""
-        self.vocabulary = vocabulary
+    def __init__(self, smiles_hashes: SMILESHashes = SMILESHashes()) -> None:
+        """Initialize SMILES hashes."""
+        self.smiles_hashes = smiles_hashes
 
     def featurise_atoms(self, molecule: Mol) -> List[int]:
         """Get the hashed features of a molecule's atoms."""
@@ -233,21 +301,27 @@ class ECFPCountFeaturiser:
             for mol, atom_hashes in zip(molecules, mols_atom_hashes)
         ]
 
-    def featurise_molecules(self, molecules: Mol, radius: int) -> np.ndarray:
+    def featurise_molecules(self, molecules: Mol, radius: int, add_new_hashes: bool = True) -> np.ndarray:
         """Featurise molecules as count vectors.
 
-        The :attr:`vocabulary` will be updated along the way. This means that
+        The :attr:`smiles_hashes` will be updated along the way. This means that
         multiple calls to this function may result in larger feature vectors. It
         is sufficient to pad the shorter feature vectors with zeroes, as by
-        necessity, the remaining groups will have values of zero.
+        necessity, the remaining groups will have values of zero; this can
+        be achieved using :meth:`pad_count_array`.
 
         Args:
             molecules: The molecules to featurise.
             radius: The number of adjacent atom groups to consider.
+            add_new_hashes: Whether to add new hashes to the
+                :attr:`smiles_hashes`. If ``False``, ignore newly encountered hashes.
 
         """
         hashed_molecules = self._initial_hash(molecules)
-        hash_lists = [mol.get_hash_list(radius) for mol in hashed_molecules]
+
+        get_hash_args = (radius, self.smiles_hashes) if add_new_hashes else (radius,)
+        hash_lists = [mol.get_hash_list(*get_hash_args) for mol in hashed_molecules]
+
         hash_counters = [Counter(hash_list) for hash_list in hash_lists]
 
         # Convert hashes to indexes and prepare csr_array; see
@@ -257,7 +331,10 @@ class ECFPCountFeaturiser:
         hash_idxs = []
         for hash_counter in hash_counters:
             for hash_, count in hash_counter.items():
-                hash_idx = self.vocabulary.setdefault(hash_, len(self.vocabulary))
+                hash_idx = self.smiles_hashes.get_hash_idx(hash_)
+                if hash_idx is None:
+                    continue
+
                 counts.append(count)
                 hash_idxs.append(hash_idx)
             idxptr.append(len(hash_idxs))
@@ -267,11 +344,20 @@ class ECFPCountFeaturiser:
         ).toarray()
 
         # Pad with extra zeroes as needed
-        num_padding_cols = len(self.vocabulary) - count_array.shape[1]
+        return self.pad_count_array(count_array)
+    
+    def pad_count_array(self, count_array: np.ndarray) -> np.ndarray:
+        """Pad a count array with zeroes till its features match the number of :attr:`smiles_hashes`."""
+        num_padding_cols = len(self.smiles_hashes) - count_array.shape[1]
         if num_padding_cols:
-            count_array = np.pad(count_array, (0, num_padding_cols), "constant")
-        
+            return np.pad(count_array, (0, num_padding_cols), "constant")
         return count_array
+    
+    def label_features(self, count_array: np.ndarray, original_smiles: Optional[List[str]]=None) -> pd.DataFrame:
+        """Label the features of a count array based on the current :attr:`smiles_hashes`."""
+        # Pad with extra zeroes as needed
+        column_labels = [f"Num {smiles}" for smiles in self.smiles_hashes.smiles]
+        return pd.DataFrame(self.pad_count_array(count_array), columns=column_labels, index=original_smiles)
 
 if __name__ == "__main__":
     # Quick and dirty test
@@ -281,4 +367,4 @@ if __name__ == "__main__":
     featuriser = ECFPCountFeaturiser()
     fingerprints = featuriser.featurise_molecules(test_molecules, 2)
 
-    print(pd.DataFrame({"SMILES": test_smiles, "Fingerprint": [np.array2string(fp) for fp in fingerprints]}))
+    print(featuriser.label_features(fingerprints, test_smiles))
