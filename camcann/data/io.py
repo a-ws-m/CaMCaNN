@@ -25,6 +25,7 @@ class DataReader:
         """Read data from disk."""
         self.df = pd.read_csv(dataset.value, header=0)
     
+    @property
     def cv_indexes(self, num_folds: int = 10, random_seed: int = RANDOM_SEED) -> List[Tuple[List[int], List[int]]]:
         """Get the list of indexes in each fold of a K-fold cross-validation split.
         
@@ -39,7 +40,8 @@ class DataReader:
         kf = KFold(n_splits=num_folds, shuffle=True, random_state=random_seed)
         return list(kf.split(self.df))
     
-    def get_train_test(self, fold: int, num_folds: int = 10, random_seed: int = RANDOM_SEED) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    @property
+    def train_test_data(self, fold: int, num_folds: int = 10, random_seed: int = RANDOM_SEED) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Get train and test slices for a given fold."""
         train_idxs, test_idxs = self.cv_indexes(num_folds=num_folds, random_seed=random_seed)[fold]
         return self.df.iloc[train_idxs], self.df.iloc[test_idxs]
