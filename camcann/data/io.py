@@ -17,6 +17,12 @@ class Datasets(Enum):
     NIST_ANIONICS = DATASET_FOLDER / "nist-anionics.csv"
     QIN_AND_NIST_ANIONICS = DATASET_FOLDER / "merged-data.csv"
 
+class QinDatasets(Enum):
+    """Qin datasets split by test and train subsets."""
+
+    QIN_NONIONICS_RESULTS = DATASET_FOLDER / "qin_nonionic_results.csv"
+    QIN_ALL_RESULTS = DATASET_FOLDER / "qin_all_results.csv"
+
 
 class DataReader:
     """Handle reading datasets from disk and preprocessing, plus cross-validation splitting."""
@@ -45,3 +51,13 @@ class DataReader:
         """Get train and test slices for a given fold."""
         train_idxs, test_idxs = self.cv_indexes(num_folds=num_folds, random_seed=random_seed)[fold]
         return self.df.iloc[train_idxs], self.df.iloc[test_idxs]
+
+class QinLoader:
+    """Handle reading Qin datasets from file and splitting into train and test subsets."""
+
+    def __init__(self, dataset: QinDatasets) -> None:
+        """Load data."""
+        df = pd.read_csv(dataset.value, header=0, index_col=0)
+        self.test_df = df[df.traintest=="test"]
+        self.train_df = df[df.traintest=="train"]
+    
