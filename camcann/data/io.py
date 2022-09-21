@@ -3,9 +3,15 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Tuple
 
+import numpy as np
 import pandas as pd
-from rdkit.Chem import MolToSmiles, MolFromSmiles
+from rdkit.Chem import MolFromSmiles
 from sklearn.model_selection import KFold
+from spektral.data import Dataset, Graph
+from spektral.layers import GCNConv
+from spektral.transforms import LayerPreprocess
+
+from .featurise.graph import MolNodeFeaturizer, mols_to_graph
 
 DATASET_FOLDER = Path(__file__).parent / "datasets"
 RANDOM_SEED = 2021
@@ -52,12 +58,29 @@ class DataReader:
         train_idxs, test_idxs = self.cv_indexes(num_folds=num_folds, random_seed=random_seed)[fold]
         return self.df.iloc[train_idxs], self.df.iloc[test_idxs]
 
-class QinLoader:
+class QinGraphData(Dataset):
     """Handle reading Qin datasets from file and splitting into train and test subsets."""
 
-    def __init__(self, dataset: QinDatasets) -> None:
-        """Load data."""
+    def __init__(self, dataset: QinDatasets, read_train: bool=True, mol_featuriser: MolNodeFeaturizer = MolNodeFeaturizer()) -> None:
+        """Load data.
+        
+        Args:
+            dataset: Which dataset to load.
+            read_train: Whether to read train data. :meth:`read` will load test data if this is ``False``.
+            mol_featuriser: The molecular featuriser to use. This is important for consistency with featurising, e.g. one hot encoding.
+        
+        """
         df = pd.read_csv(dataset.value, header=0, index_col=0)
-        self.test_df = df[df.traintest=="test"]
-        self.train_df = df[df.traintest=="train"]
-    
+        df.Molecules = [MolFromSmiles(smiles) for smiles in df.smiles]
+        df.Graphs = mols_to_graph(df.Molecules, mol_featuriser, df.exp)
+        self.graphs = list(df.Graphs)
+        self.apply(LayerPreprocess(GCNConv))
+
+        self.test_idxs, _ = np.where(df.traintest=="test")
+        self.train_idxs, _ = np.where(df.traintest=="train")
+
+        self.read_train: bool = read_train
+
+    def read(self) -> List[Graph]:
+        """Return the graphs for the selected dataset."""
+        return [self.graphs[i] for i in (self.train_idxs if self.read_train else self.test_idxs)]
