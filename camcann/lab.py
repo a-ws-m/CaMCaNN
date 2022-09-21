@@ -36,6 +36,9 @@ class Experiment:
         self.predict_path = results_path / "predictions.csv"
         self.tb_dir = results_path / "logs"
         self.metrics_path = results_path / "metrics.csv"
+        for path in [self.results_path, self.tb_dir]:
+            if not path.exists():
+                path.mkdir()
 
     @property
     def tb_run_dir(self) -> Path:
@@ -62,6 +65,7 @@ class Experiment:
             epochs=epochs,
             callbacks=callbacks,
         )
+        self.model.save(self.model_path)
 
     def _make_pred_df(self, predictions):
         """Make a DataFrame of predicted CMCs."""
