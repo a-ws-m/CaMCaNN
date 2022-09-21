@@ -4,7 +4,10 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from rdkit.Chem.rdchem import Atom, Mol
+from scipy.sparse import csc_matrix
 from sklearn.preprocessing import OneHotEncoder
+from spektral.data import Graph
+
 
 MolecularNodeMatrix = np.ndarray
 AllNodesMatrix = np.ndarray
@@ -65,6 +68,18 @@ def array_to_mol_list(
         loc += num_atoms
 
     return mat_list
+
+def get_mol_adj_mat(molecule: Mol) -> csc_matrix:
+    """Get the sparse adjacency matrix for a molecule."""
+    bonds: List[Tuple[int, int]] = [
+        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in molecule.GetBonds()
+    ]
+    num_atoms: int = molecule.GetNumAtoms()
+    adj_matrix = np.zeros((num_atoms, num_atoms))
+    for i, j in bonds:
+        adj_matrix[i][j] = 1
+        adj_matrix[j][i] = 1
+    return csc_matrix(adj_matrix, dtype=np.float32)
 
 
 class MolNodeFeaturizer:
@@ -142,3 +157,9 @@ class MolNodeFeaturizer:
         if not self.one_hot_trained:
             raise NotTrainedError()
         return self.one_hot.get_params()
+
+def mols_to_graph(mols: List[Mol], featuriser: MolNodeFeaturizer, targets: List[float]) -> Graph:
+    """Convert a molecule to a graph using a featuriser."""
+    adj_mats = [get_mol_adj_mat(mol) for mol in mols]
+    features = featuriser.featurize_all_molecules(mols)
+    return [Graph(x=x, a=a, y=target) for x, a, target in zip(features, adj_mats, targets)]
