@@ -112,10 +112,19 @@ class QinECFPData(QinDataLoader):
         if save_hashes:
             self.featuriser.smiles_hashes.save(hash_file)
     
+    def get_at_idxs(self, indexes: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Get the fingerprints and target values for the given indexes."""
+        return self.fingerprints[indexes, :], self.df.exp.loc[indexes]
+
     @property
     def train_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get numpy arrays of training data fingerprints and targets."""
-        return 
+        return self.get_at_idxs(self.train_idxs)
+
+    @property
+    def test_data(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Get numpy arrays of test data fingerprints and targets."""
+        return self.get_at_idxs(self.test_idxs)
     
 
 class QinGraphData(QinDataLoader):
