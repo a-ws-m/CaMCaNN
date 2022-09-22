@@ -1,7 +1,8 @@
 """Data loading and preprocessing utilities."""
+from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from spektral.data import Dataset, DisjointLoader, Graph
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
 
+from .featurise.ecfp import ECFPCountFeaturiser, SMILESHashes
 from .featurise.graph import MolNodeFeaturizer, mols_to_graph
 
 DATASET_FOLDER = Path(__file__).parent / "datasets"
@@ -66,8 +68,57 @@ class DataReader:
         )[fold]
         return self.df.iloc[train_idxs], self.df.iloc[test_idxs]
 
+class QinDataLoader(ABC):
+    """Handle reading Qin datasets from file."""
+    def __init__(self, dataset: QinDatasets) -> None:
+        """Load data and find train/test indexes.
+        
+        Args:
+            dataset: Which Qin dataset to load.
+        
+        """
+        self.df = pd.read_csv(dataset.value, header=0, index_col=0)
+        self.df.Molecules = [MolFromSmiles(smiles) for smiles in self.df.smiles]
+        self.test_idxs, _ = np.where(self.df.traintest == "test")
+        self.train_idxs, _ = np.where(self.df.traintest == "train")
 
-class QinGraphData:
+class QinECFPData(QinDataLoader):
+    """Handle reading Qin datasets from file and featurising with ECFP fingerprints."""
+    def __init__(self, dataset: QinDatasets, hash_file: Optional[Path]) -> None:
+        """Load data and initialise featuriser.
+        
+        Args:
+            dataset: Which Qin dataset to load.
+            hash_file: Where to save/load hash data to.
+        
+        """
+        super().__init__(dataset)
+
+        smiles_hashes = None
+        save_hashes = False
+
+        if hash_file is not None:
+            if hash_file.exists():
+                smiles_hashes = SMILESHashes.load(hash_file)
+            else:
+                save_hashes = True
+
+        if smiles_hashes is None:
+            smiles_hashes = SMILESHashes()
+
+        self.featuriser = ECFPCountFeaturiser(smiles_hashes)
+        
+        self.fingerprints = self.featuriser.featurise_molecules(list(self.df.Molecules), 2)
+        if save_hashes:
+            self.featuriser.smiles_hashes.save(hash_file)
+    
+    @property
+    def train_data(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Get numpy arrays of training data fingerprints and targets."""
+        return 
+    
+
+class QinGraphData(QinDataLoader):
     """Handle reading Qin datasets from file and splitting into train and test subsets."""
 
     def __init__(
@@ -75,22 +126,17 @@ class QinGraphData:
         dataset: QinDatasets,
         mol_featuriser: MolNodeFeaturizer = MolNodeFeaturizer(),
     ) -> None:
-        """Load data.
+        """Load data and initialise featuriser.
 
         Args:
             dataset: Which dataset to load.
-            read_train: Whether to read train data. :meth:`read` will load test data if this is ``False``.
             mol_featuriser: The molecular featuriser to use. This is important for consistency with featurising, e.g. one hot encoding.
 
         """
-        self.df = pd.read_csv(dataset.value, header=0, index_col=0)
-        self.df.Molecules = [MolFromSmiles(smiles) for smiles in self.df.smiles]
-        self.df.Graphs = mols_to_graph(self.df.Molecules, mol_featuriser, self.df.exp)
-        self.graphs = list(self.df.Graphs)
-        self.apply(LayerPreprocess(GCNConv))
+        super().__init__(dataset)
 
-        self.test_idxs, _ = np.where(self.df.traintest == "test")
-        self.train_idxs, _ = np.where(self.df.traintest == "train")
+        self.df.Graphs = mols_to_graph(self.df.Molecules, mol_featuriser, self.df.exp)
+        self.graphs = list(self.df.Graphs.map(LayerPreprocess(GCNConv)))
 
     class Subset(Dataset):
         """Handle graph data subsets."""
