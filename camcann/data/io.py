@@ -78,9 +78,9 @@ class QinDataLoader(ABC):
         
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
-        self.df.Molecules = [MolFromSmiles(smiles) for smiles in self.df.smiles]
-        self.test_idxs = np.where(self.df.traintest == "test")[0]
-        self.train_idxs = np.where(self.df.traintest == "train")[0]
+        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["smiles"]]
+        self.test_idxs = np.where(self.df["traintest"] == "test")[0]
+        self.train_idxs = np.where(self.df["traintest"] == "train")[0]
 
 class QinECFPData(QinDataLoader):
     """Handle reading Qin datasets from file and featurising with ECFP fingerprints."""
@@ -108,7 +108,7 @@ class QinECFPData(QinDataLoader):
 
         self.featuriser = ECFPCountFeaturiser(smiles_hashes)
         
-        self.fingerprints = self.featuriser.featurise_molecules(list(self.df.Molecules), 2)
+        self.fingerprints = self.featuriser.featurise_molecules(list(self.df["Molecules"]), 2)
         if save_hashes:
             self.featuriser.smiles_hashes.save(hash_file)
     
@@ -134,6 +134,7 @@ class QinGraphData(QinDataLoader):
         self,
         dataset: QinDatasets,
         mol_featuriser: MolNodeFeaturizer = MolNodeFeaturizer(),
+        do_preprocess: bool=True,
     ) -> None:
         """Load data and initialise featuriser.
 
@@ -144,8 +145,8 @@ class QinGraphData(QinDataLoader):
         """
         super().__init__(dataset)
 
-        graphs = mols_to_graph(list(self.df.Molecules), mol_featuriser, list(self.df.exp))
-        self.graphs = list(map(LayerPreprocess(GCNConv), graphs))
+        graphs = mols_to_graph(list(self.df["Molecules"]), mol_featuriser, list(self.df["exp"]))
+        self.graphs = list(map(LayerPreprocess(GCNConv), graphs)) if do_preprocess else graphs
 
     class Subset(Dataset):
         """Handle graph data subsets."""
