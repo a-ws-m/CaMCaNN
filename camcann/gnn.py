@@ -1,4 +1,5 @@
 from spektral.layers import GCNConv, GlobalAvgPool, LaPool
+from spektral.utils.convolution import gcn_filter
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Model
 
@@ -21,7 +22,7 @@ class QinGNN(Model):
 
     def call(self, inputs, training=None, mask=None):
         """Call the model."""
-        x, a = inputs
+        x, a, _ = inputs
         for layer in self.graph_layers:
             x = layer(x, a)
 
@@ -31,6 +32,7 @@ class QinGNN(Model):
             x = layer(x)
 
         return x
+
 
 class CoarseGNN(Model):
     """Graph neural network architecture with Laplacian Pooling."""
@@ -60,14 +62,16 @@ class CoarseGNN(Model):
 
     def call(self, inputs, training=None, mask=None):
         """Call the model."""
-        x, a = inputs
+        x, a, _ = inputs
+        lap = gcn_filter(a)
         for layer in self.full_graph_layers:
-            x = layer(x, a)
+            x = layer(x, lap)
 
         x, a = self.la_pool(x, a)
+        lap = gcn_filter(a)
 
         for layer in self.pooled_graph_layers:
-            x = layer(x, a)
+            x = layer(x, lap)
 
         x = self.avg_pool(x)
 
