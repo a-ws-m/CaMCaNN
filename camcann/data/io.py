@@ -152,8 +152,8 @@ class QinGraphData(QinDataLoader):
 
         def __init__(self, graphs: List[Graph]):
             """Store graphs."""
-            super().__init__()
             self.graphs = graphs
+            super().__init__()
 
         def read(self) -> List[Graph]:
             """Return the graphs for this subset."""
