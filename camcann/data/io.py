@@ -144,14 +144,15 @@ class QinGraphData(QinDataLoader):
         """
         super().__init__(dataset)
 
-        self.df.Graphs = mols_to_graph(self.df.Molecules, mol_featuriser, self.df.exp)
-        self.graphs = list(self.df.Graphs.map(LayerPreprocess(GCNConv)))
+        graphs = mols_to_graph(list(self.df.Molecules), mol_featuriser, list(self.df.exp))
+        self.graphs = list(map(LayerPreprocess(GCNConv), graphs))
 
     class Subset(Dataset):
         """Handle graph data subsets."""
 
-        def __init__(self, graphs: List[Graph], transforms=None):
-            super().__init__(transforms)
+        def __init__(self, graphs: List[Graph]):
+            """Store graphs."""
+            super().__init__()
             self.graphs = graphs
 
         def read(self) -> List[Graph]:
@@ -162,13 +163,13 @@ class QinGraphData(QinDataLoader):
     def train_dataset(self):
         """Get the training dataset."""
         train_graphs = [self.graphs[i] for i in self.train_idxs]
-        return self.Subset(self.train_graphs)
+        return self.Subset(train_graphs)
 
     @property
     def test_dataset(self):
         """Get the test dataset."""
         test_graphs = [self.graphs[i] for i in self.test_idxs]
-        return self.Subset(self.test_graphs)
+        return self.Subset(test_graphs)
 
     @property
     def all_dataset(self):
