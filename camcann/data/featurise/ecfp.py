@@ -310,7 +310,7 @@ class ECFPCountFeaturiser:
             for mol, atom_hashes in zip(molecules, mols_atom_hashes)
         ]
 
-    def featurise_molecules(self, molecules: Mol, radius: int, add_new_hashes: bool = True) -> np.ndarray:
+    def featurise_molecules(self, molecules: List[Mol], radius: int, add_new_hashes: bool = True) -> np.ndarray:
         """Featurise molecules as count vectors.
 
         The :attr:`smiles_hashes` will be updated along the way. This means that
