@@ -4,8 +4,18 @@ from dataclasses import dataclass
 from enum import IntEnum
 from operator import getitem, methodcaller
 from os import PathLike
-from typing import (Callable, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Set,
-                    Tuple, Union)
+from typing import (
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 from zlib import crc32
 
 import numpy as np
@@ -60,32 +70,48 @@ class SimpleBond(NamedTuple):
             type_=getitem(BondType, str(bond.GetBondType())),
         )
 
+
 class SMILESHashes:
-    """Contains the fingerprint index and SMILES string associated with each hash."""
-    
-    def __init__(self, hash_df: Optional[pd.DataFrame]=None) -> None:
+    """Contains information about each subgraph.
+
+    This information includes:
+        * The hash (an index)
+        * The SMILES string for that hash (not unique)
+        * An optional weight associated with the subgraph for a linear model.
+        * A boolean value stating whether the subgraph has been feature selected.
+
+    """
+
+    def __init__(self, hash_df: Optional[pd.DataFrame] = None) -> None:
         """Initialize hash DataFrame."""
         if hash_df is None:
-            hash_df = pd.DataFrame({"fingerprint_index": [], "SMILES": []})
+            hash_df = pd.DataFrame(
+                {"fingerprint_index": [], "SMILES": [], "weight": [], "selected": []}
+            )
 
         self.hash_df = hash_df
-    
+
     def setdefault(self, hash_: int, smiles: str) -> int:
         """Get the index for a given hash, generating a new one if necessary."""
         try:
             return self.hash_df.loc[hash_].fingerprint_index
         except KeyError:
             new_index = len(self)
-            self.hash_df.loc[hash_] = {"fingerprint_index": new_index, "SMILES": smiles}
+            self.hash_df.loc[hash_] = {
+                "fingerprint_index": new_index,
+                "SMILES": smiles,
+                "weight": pd.NA,
+                "selected": True,
+            }
             return new_index
-    
+
     def get_hash_idx(self, hash_: int) -> Optional[int]:
         """Get the fingerprint index of a hash, if it is in the DataFrame."""
         try:
             return self.hash_df.loc[hash_].fingerprint_index
         except KeyError:
             return None
-    
+
     def __len__(self) -> int:
         """Get the number of hash entries."""
         return len(self.hash_df.index)
@@ -95,14 +121,20 @@ class SMILESHashes:
         """Get the SMILES strings in the DataFrame."""
         return self.hash_df.SMILES.tolist()
     
+    @property
+    def selected_idxs(self) -> np.ndarray:
+        """Get the indexes of the feature selected subgraphs."""
+        return np.nonzero(self.hash_df.selected)
+
     def save(self, path: PathLike):
         """Save hash dataframe to path."""
         self.hash_df.to_csv(path)
-    
+
     @classmethod
     def load(cls, path: PathLike):
         """Load from a hash dataframe."""
         return cls(pd.read_csv(path, header=0, index_col=0))
+
 
 def frag_to_smiles(mol: Mol, atoms: Union[int, Sequence[int]]) -> str:
     """Get the SMILES string for a given fragment."""
@@ -111,6 +143,7 @@ def frag_to_smiles(mol: Mol, atoms: Union[int, Sequence[int]]) -> str:
     except TypeError:
         atoms = [atoms]
     return MolFragmentToSmiles(mol, atomsToUse=list(atoms), allHsExplicit=True)
+
 
 @dataclass
 class HashedMolecule:
@@ -132,7 +165,9 @@ class HashedMolecule:
         visited during a walk of a given length.
 
         """
-        bonded_atoms: List[List[Tuple[int, BondType]]] = [[] for _ in range(len(self.atom_hashes))]
+        bonded_atoms: List[List[Tuple[int, BondType]]] = [
+            [] for _ in range(len(self.atom_hashes))
+        ]
         for bond in self.bonds:
             for pair_idx in (0, 1):
                 # Add reference to other atom for both atoms in the bond
@@ -142,17 +177,30 @@ class HashedMolecule:
         # Sort atomic interactions based primarily on the type of bond and
         # secondarily on the atomic hash magnitude.
         self.atom_interactions: List[List[int]] = [
-            [bonded_atom[0] for bonded_atom in sorted(entry, key=lambda bond_info: (bond_info[1], self.atom_hashes[bond_info[0]]))]
+            [
+                bonded_atom[0]
+                for bonded_atom in sorted(
+                    entry,
+                    key=lambda bond_info: (
+                        bond_info[1],
+                        self.atom_hashes[bond_info[0]],
+                    ),
+                )
+            ]
             for entry in bonded_atoms
         ]
         for idx, interactions in enumerate(self.atom_interactions):
             # Add self-interactions
             interactions.insert(0, idx)
-        
+
         # Initialize atomic walk dictionary
-        self.atomic_walks: Dict[int, List[FrozenSet[int]]] = {0: [frozenset({idx}) for idx in range(len(self.atom_hashes))]}
+        self.atomic_walks: Dict[int, List[FrozenSet[int]]] = {
+            0: [frozenset({idx}) for idx in range(len(self.atom_hashes))]
+        }
         # Initialize cumulative atomic walks dictionary
-        self.cum_atomic_walks: Dict[int, List[FrozenSet[int]]] = {1: self.atomic_walks[0]}
+        self.cum_atomic_walks: Dict[int, List[FrozenSet[int]]] = {
+            1: self.atomic_walks[0]
+        }
 
     @classmethod
     def from_rdk(
@@ -169,15 +217,17 @@ class HashedMolecule:
         """Compute a single hash update step using bonded hashes."""
         new_hashes = []
         for interactions in self.atom_interactions:
-            new_hashes.append(hash_array(np.array([self.atom_hashes[idx] for idx in interactions])))
-        
+            new_hashes.append(
+                hash_array(np.array([self.atom_hashes[idx] for idx in interactions]))
+            )
+
         self.atom_hashes = new_hashes
-    
+
     def _update_atomic_walks(self):
         """Add another step to the :attr:`atomic_walks`.
-        
+
         This is used when keeping track of duplicate substructures.
-        
+
         """
         # Find largest step that we've already computed
         largest_step = max(self.atomic_walks.keys())
@@ -193,18 +243,23 @@ class HashedMolecule:
             new_walks.append(new_walk)
 
         self.atomic_walks[largest_step + 1] = new_walks
-        self.cum_atomic_walks[largest_step + 2] =  [cum_walk | set(new_walk) for cum_walk, new_walk in zip(self.cum_atomic_walks[largest_step + 1], new_walks)]
+        self.cum_atomic_walks[largest_step + 2] = [
+            cum_walk | set(new_walk)
+            for cum_walk, new_walk in zip(
+                self.cum_atomic_walks[largest_step + 1], new_walks
+            )
+        ]
 
     def check_duplicates(self, radius: int) -> List[Tuple[int, Optional[int]]]:
         """Get a list of hash indexes that refer to same substructure at a given radius.
-        
+
         Update atomic walks dictionary along the way.
 
         Returns:
             A list of `(index_1, index_2)`. Sometimes, substructures may be
             duplicates of a hash from a previous iteration. In this case, a
             tuple of `(index, None)` is returned.
-        
+
         """
         # Generate atom index sets for a walk of a given length
         while radius not in self.atomic_walks:
@@ -218,21 +273,23 @@ class HashedMolecule:
                 duplicates.append((idx, None))
                 continue
             try:
-                duplicates.append((idx, current_lvl_walks.index(walk, idx+1)))
+                duplicates.append((idx, current_lvl_walks.index(walk, idx + 1)))
             except ValueError:
                 # Set doesn't appear more than once in this level
                 continue
 
         return duplicates
-    
-    def get_hash_list(self, num_steps: int, smiles_hashes: Optional[SMILESHashes]=None) -> List[int]:
+
+    def get_hash_list(
+        self, num_steps: int, smiles_hashes: Optional[SMILESHashes] = None
+    ) -> List[int]:
         """Get a list of all hashes generated during a given number of steps.
-        
+
         Args:
             num_steps: The total number of atomic steps to perform.
             smiles_hashes: An optional :class:`SMILESHashes` instance to update
                 with SMILES fragments associated with each hash.
-        
+
         """
         hashes = self.atom_hashes[:]
         include_smiles = smiles_hashes is not None
@@ -240,13 +297,19 @@ class HashedMolecule:
             while 2 not in self.atomic_walks:
                 # Need to have these calculated for figuring out SMILES fragments.
                 self._update_atomic_walks()
-            smiles = [frag_to_smiles(self.rdk_mol, cum_walk) for cum_walk in self.cum_atomic_walks[1]]
+            smiles = [
+                frag_to_smiles(self.rdk_mol, cum_walk)
+                for cum_walk in self.cum_atomic_walks[1]
+            ]
 
         for steps_done in range(num_steps):
             self.hash_step()
             new_hashes = self.atom_hashes[:]
             if include_smiles:
-                new_smiles = [frag_to_smiles(self.rdk_mol, cum_walk) for cum_walk in self.cum_atomic_walks[2 + steps_done]]
+                new_smiles = [
+                    frag_to_smiles(self.rdk_mol, cum_walk)
+                    for cum_walk in self.cum_atomic_walks[2 + steps_done]
+                ]
 
             if steps_done > 0:
                 # Potentially duplicate hashes in list
@@ -257,7 +320,9 @@ class HashedMolecule:
                     if indexes[1] is None:
                         to_delete.append(indexes[0])
                     else:
-                        lower_hash_idx = indexes[new_hashes[indexes[1]] < new_hashes[indexes[0]]]
+                        lower_hash_idx = indexes[
+                            new_hashes[indexes[1]] < new_hashes[indexes[0]]
+                        ]
                         to_delete.append(lower_hash_idx)
 
                 # Delete values
@@ -265,11 +330,11 @@ class HashedMolecule:
                     new_hashes.pop(delete_idx)
                     if include_smiles:
                         new_smiles.pop(delete_idx)
-            
+
             hashes.extend(new_hashes)
             if include_smiles:
                 smiles.extend(new_smiles)
-        
+
         if include_smiles:
             for hash_, smile in zip(hashes, smiles):
                 smiles_hashes.setdefault(hash_, smile)
@@ -287,7 +352,9 @@ class ECFPCountFeaturiser:
         """Get the hashed features of a molecule's atoms."""
         atom_hashes = []
         for atom in molecule.GetAtoms():
-            atom_features = np.array([method(atom) for method in RDCHEM_ATOM_METHS.values()])
+            atom_features = np.array(
+                [method(atom) for method in RDCHEM_ATOM_METHS.values()]
+            )
             atom_hash = hash_array(atom_features)
             atom_hashes.append(atom_hash)
 
@@ -310,7 +377,9 @@ class ECFPCountFeaturiser:
             for mol, atom_hashes in zip(molecules, mols_atom_hashes)
         ]
 
-    def featurise_molecules(self, molecules: List[Mol], radius: int, add_new_hashes: bool = True) -> np.ndarray:
+    def featurise_molecules(
+        self, molecules: List[Mol], radius: int, add_new_hashes: bool = True
+    ) -> np.ndarray:
         """Featurise molecules as count vectors.
 
         The :attr:`smiles_hashes` will be updated along the way. This means that
@@ -348,25 +417,30 @@ class ECFPCountFeaturiser:
                 hash_idxs.append(hash_idx)
             idxptr.append(len(hash_idxs))
 
-        count_array = csr_array(
-            (counts, hash_idxs, idxptr)
-        ).toarray()
+        count_array = csr_array((counts, hash_idxs, idxptr)).toarray()
 
         # Pad with extra zeroes as needed
         return self.pad_count_array(count_array)
-    
+
     def pad_count_array(self, count_array: np.ndarray) -> np.ndarray:
         """Pad a count array with zeroes till its features match the number of :attr:`smiles_hashes`."""
         num_padding_cols = len(self.smiles_hashes) - count_array.shape[1]
         if num_padding_cols:
             return np.pad(count_array, (0, num_padding_cols), "constant")
         return count_array
-    
-    def label_features(self, count_array: np.ndarray, original_smiles: Optional[List[str]]=None) -> pd.DataFrame:
+
+    def label_features(
+        self, count_array: np.ndarray, original_smiles: Optional[List[str]] = None
+    ) -> pd.DataFrame:
         """Label the features of a count array based on the current :attr:`smiles_hashes`."""
         # Pad with extra zeroes as needed
         column_labels = [f"Num {smiles}" for smiles in self.smiles_hashes.smiles]
-        return pd.DataFrame(self.pad_count_array(count_array), columns=column_labels, index=original_smiles)
+        return pd.DataFrame(
+            self.pad_count_array(count_array),
+            columns=column_labels,
+            index=original_smiles,
+        )
+
 
 if __name__ == "__main__":
     # Quick and dirty test
