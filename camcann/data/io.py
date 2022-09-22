@@ -79,8 +79,8 @@ class QinDataLoader(ABC):
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
         self.df.Molecules = [MolFromSmiles(smiles) for smiles in self.df.smiles]
-        self.test_idxs, _ = np.where(self.df.traintest == "test")
-        self.train_idxs, _ = np.where(self.df.traintest == "train")
+        self.test_idxs = np.where(self.df.traintest == "test")[0]
+        self.train_idxs = np.where(self.df.traintest == "train")[0]
 
 class QinECFPData(QinDataLoader):
     """Handle reading Qin datasets from file and featurising with ECFP fingerprints."""
