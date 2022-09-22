@@ -12,11 +12,11 @@ from tensorflow.keras.metrics import (
 )
 from tensorflow.keras.models import Model
 
-from .data.io import QinDatasets, QinGraphData
+from .data.io import QinDatasets, QinECFPData, QinGraphData
 from .gnn import CoarseGNN, QinGNN
 
 
-class Experiment:
+class GraphExperiment:
     """Train a model on the Qin data, then report the results."""
 
     def __init__(
@@ -30,6 +30,12 @@ class Experiment:
             metrics=[RootMeanSquaredError(), MeanAbsoluteError()],
         )
         self.graph_data = QinGraphData(dataset)
+        print("First 10 graphs:")
+        print(self.graph_data.graphs[:10])
+        first_graph = self.graph_data.graphs[0]
+        print("First graph's data:")
+        print(f"{first_graph.x=}")
+        print(f"{first_graph.a=}")
 
         self.results_path = results_path
         self.model_path = results_path / "model"
@@ -94,7 +100,26 @@ class Experiment:
         )
         self._make_pred_df(predictions).to_csv(self.predict_path)
 
+
+class ECFPExperiment:
+    """Train and evaluate a simple, linear ECFP model."""
+
+    def __init__(self, dataset: QinDatasets, results_path: Path) -> None:
+        """Load dataset and initialise featuriser."""
+        self.results_path = results_path
+        self.model_path = results_path / "model"
+        self.predict_path = results_path / "predictions.csv"
+        self.metrics_path = results_path / "metrics.csv"
+        for path in [self.results_path, self.tb_dir]:
+            if not path.exists():
+                path.mkdir()
+
+        self.featuriser = QinECFPData(dataset)
+
+
 if __name__ == "__main__":
-    exp = Experiment(QinGNN, QinDatasets.QIN_NONIONICS_RESULTS, results_path=Path(".") / "test_model")
+    exp = GraphExperiment(
+        QinGNN, QinDatasets.QIN_NONIONICS_RESULTS, results_path=Path(".") / "test_model"
+    )
     exp.train(500)
     exp.test()
