@@ -69,8 +69,8 @@ def array_to_mol_list(
 
     return mat_list
 
-def get_mol_adj_mat(molecule: Mol) -> csc_matrix:
-    """Get the sparse adjacency matrix for a molecule."""
+def get_mol_adj_mat(molecule: Mol) -> np.ndarray:
+    """Get the adjacency matrix for a molecule."""
     bonds: List[Tuple[int, int]] = [
         (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in molecule.GetBonds()
     ]
@@ -79,8 +79,7 @@ def get_mol_adj_mat(molecule: Mol) -> csc_matrix:
     for i, j in bonds:
         adj_matrix[i][j] = 1
         adj_matrix[j][i] = 1
-    return csc_matrix(adj_matrix, dtype=np.float32)
-
+    return adj_matrix
 
 class MolNodeFeaturizer:
     """Featurize atoms in molecular graphs."""
