@@ -14,8 +14,8 @@ class QinGNN(Model):
         self.gcn_1 = GCNConv(256, "relu")
         self.gcn_2 = GCNConv(256, "relu")
         self.avg_pool = GlobalAvgPool()
-        self.readout_1 = Dense(256)
-        self.readout_2 = Dense(256)
+        self.readout_1 = Dense(256, activation="relu")
+        self.readout_2 = Dense(256, activation="relu")
         self.out = Dense(1)
 
         self.graph_layers: List[GCNConv] = [self.gcn_1, self.gcn_2]
@@ -51,8 +51,8 @@ class CoarseGNN(Model):
 
         self.avg_pool = GlobalAvgPool()
 
-        self.readout_1 = Dense(256)
-        self.readout_2 = Dense(256)
+        self.readout_1 = Dense(256, activation="relu")
+        self.readout_2 = Dense(256, activation="relu")
 
         self.out = Dense(1)
 
