@@ -91,7 +91,7 @@ class GraphExperiment:
         metrics = self.model.evaluate(
             loader.load(), steps=loader.steps_per_epoch, return_dict=True
         )
-        pd.DataFrame(metrics).to_csv(self.metrics_path)
+        pd.Series(metrics).to_csv(self.metrics_path)
 
         all_loader = self.graph_data.all_loader
         predictions = self.model.predict(
