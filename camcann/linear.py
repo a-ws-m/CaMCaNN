@@ -1,5 +1,5 @@
 """Linear CMC prediction model with feature selection."""
-from typing import Union, NamedTuple
+from typing import Dict, List, Union, NamedTuple
 from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler
