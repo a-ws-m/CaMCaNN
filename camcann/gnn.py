@@ -1,6 +1,6 @@
 from typing import List
 from spektral.layers import GCNConv, GlobalAvgPool, LaPool
-from spektral.utils.convolution import normalized_adjacency
+from spektral.layers.ops.graph import normalize_A
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Model
 
@@ -64,12 +64,12 @@ class CoarseGNN(Model):
     def call(self, inputs, training=None, mask=None):
         """Call the model."""
         x, a, _ = inputs
-        norm_a = normalized_adjacency(a)
+        norm_a = normalize_A(a)
         for layer in self.full_graph_layers:
             x = layer((x, norm_a))
 
         x, a = self.la_pool(x, a)
-        norm_a = normalized_adjacency(a)
+        norm_a = normalize_A(a)
 
         for layer in self.pooled_graph_layers:
             x = layer((x, norm_a))
