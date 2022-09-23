@@ -1,6 +1,7 @@
 """Test the performance of models on the Qin data."""
+from argparse import ArgumentParser
+from ast import parse
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Type
 
@@ -117,8 +118,22 @@ class ECFPExperiment:
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+
+    dataset_map = {"Nonionics": QinDatasets.QIN_NONIONICS_RESULTS, "All": QinDatasets.QIN_ALL_RESULTS}
+    model_map = {"QinModel": QinGNN, "CoarseModel": CoarseGNN, "ECFPLinear": None}
+
+    parser.add_argument("--model", dest="model", choices=list(model_map.keys()), help="The type of model to create.")
+    parser.add_argument("--dataset", dest="dataset", choices=list(dataset_map.keys()), help="The dataset to use.")
+    parser.add_argument("--name", dest="name", type=str, help="The name of the model.")
+    parser.add_argument("epochs", dest="epochs", type=int, help="The number of epochs to train.")
+    args = parser.parse_args()
+
+    dataset = dataset_map[args.dataset]
+    model = model_map[args.model]
+
     exp = GraphExperiment(
-        QinGNN, QinDatasets.QIN_NONIONICS_RESULTS, results_path=Path(".") / "test_model"
+        model, dataset, results_path=Path(".") / "test_model"
     )
-    exp.train(500)
+    exp.train(args.epochs)
     exp.test()
