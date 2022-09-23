@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Type
 
 import pandas as pd
-from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
+from tensorflow.keras.callbacks import TensorBoard
 from tensorflow.keras.metrics import (
     MeanAbsoluteError,
     RootMeanSquaredError,
@@ -15,7 +15,6 @@ from tensorflow.keras.models import Model
 from .data.io import QinDatasets, QinECFPData, QinGraphData
 from .gnn import CoarseGNN, QinGNN
 
-
 class GraphExperiment:
     """Train a model on the Qin data, then report the results."""
 
@@ -23,7 +22,7 @@ class GraphExperiment:
         self, model: Type[Model], dataset: QinDatasets, results_path: Path
     ) -> None:
         """Initialize the model and the datasets."""
-        self.model = model()
+        self.model: Model = model()
         self.model.compile(
             optimizer="adam",
             loss="mse",
@@ -90,13 +89,13 @@ class GraphExperiment:
         loader = self.graph_data.test_loader
 
         metrics = self.model.evaluate(
-            loader.load(), steps_per_epoch=loader.steps_per_epoch, return_dict=True
+            loader.load(), steps=loader.steps_per_epoch, return_dict=True
         )
         pd.DataFrame(metrics).to_csv(self.metrics_path)
 
         all_loader = self.graph_data.all_loader
         predictions = self.model.predict(
-            all_loader.load(), steps_per_epoch=all_loader.steps_per_epoch
+            all_loader.load(), steps=all_loader.steps_per_epoch
         )
         self._make_pred_df(predictions).to_csv(self.predict_path)
 
