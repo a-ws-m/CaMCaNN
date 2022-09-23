@@ -128,21 +128,17 @@ if __name__ == "__main__":
     model_map = {"QinModel": QinGNN, "CoarseModel": CoarseGNN, "ECFPLinear": None}
 
     parser.add_argument(
-        "--model",
-        dest="model",
+        "model",
         choices=list(model_map.keys()),
         help="The type of model to create.",
     )
     parser.add_argument(
-        "--dataset",
-        dest="dataset",
+        "dataset",
         choices=list(dataset_map.keys()),
         help="The dataset to use.",
     )
-    parser.add_argument("--name", dest="name", type=str, help="The name of the model.")
-    parser.add_argument(
-        "epochs", dest="epochs", type=int, help="The number of epochs to train."
-    )
+    parser.add_argument("name", type=str, help="The name of the model.")
+    parser.add_argument("epochs", type=int, help="The number of epochs to train.")
     args = parser.parse_args()
 
     dataset = dataset_map[args.dataset]
