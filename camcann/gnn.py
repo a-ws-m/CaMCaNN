@@ -1,3 +1,4 @@
+from typing import List
 from spektral.layers import GCNConv, GlobalAvgPool, LaPool
 from spektral.utils.convolution import gcn_filter
 from tensorflow.keras.layers import Dense
@@ -17,14 +18,14 @@ class QinGNN(Model):
         self.readout_2 = Dense(256)
         self.out = Dense(1)
 
-        self.graph_layers = [self.gcn_1, self.gcn_2]
+        self.graph_layers: List[GCNConv] = [self.gcn_1, self.gcn_2]
         self.readout_layers = [self.readout_1, self.readout_2, self.out]
 
     def call(self, inputs, training=None, mask=None):
         """Call the model."""
         x, a, _ = inputs
         for layer in self.graph_layers:
-            x = layer(x, a)
+            x = layer((x, a))
 
         x = self.avg_pool(x)
 
@@ -65,13 +66,13 @@ class CoarseGNN(Model):
         x, a, _ = inputs
         lap = gcn_filter(a)
         for layer in self.full_graph_layers:
-            x = layer(x, lap)
+            x = layer((x, lap))
 
         x, a = self.la_pool(x, a)
         lap = gcn_filter(a)
 
         for layer in self.pooled_graph_layers:
-            x = layer(x, lap)
+            x = layer((x, lap))
 
         x = self.avg_pool(x)
 
