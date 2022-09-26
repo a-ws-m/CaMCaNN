@@ -86,7 +86,14 @@ class SMILESHashes:
         """Initialize hash DataFrame."""
         if hash_df is None:
             hash_df = pd.DataFrame(
-                {"fingerprint_index": [], "SMILES": [], "weight": [], "selected": []}
+                {
+                    "fingerprint_index": [],
+                    "SMILES": [],
+                    "weight": [],
+                    "selected": [],
+                    "above_threshold_occurence": [],
+                    "norm_weight": []
+                }
             )
 
         self.hash_df = hash_df
@@ -101,7 +108,9 @@ class SMILESHashes:
                 "fingerprint_index": new_index,
                 "SMILES": smiles,
                 "weight": pd.NA,
-                "selected": True,
+                "selected": pd.NA,
+                "above_threshold_occurence": pd.NA,
+                "norm_weight": pd.NA,
             }
             return new_index
 
@@ -111,6 +120,29 @@ class SMILESHashes:
             return self.hash_df.loc[hash_].fingerprint_index
         except KeyError:
             return None
+    
+    def set_regularised_selection(self, support: np.ndarray):
+        """Set the ``selected`` column of the data frame based on a support array.
+        
+        The support array can be acquired using a scikit-learn
+        ``SelectFromModel`` selector. This must be used after the initial
+        removal of features below the threshold occurance. This function
+        determines the binary ``AND`` of ``above_threshold_occurance`` and
+        ``support``, filling in the missing values.
+        
+        """
+        if self.hash_df["above_threshold_occurance"].isnull().any():
+            raise ValueError("One or more subgraphs have not been checked for being above threshold occurance.")
+        
+        selected = self.hash_df["above_threshold_occurance"].to_numpy(copy=True)
+        selected[selected] = support
+        self.hash_df["selected"] = selected
+
+    def set_weights(self, norm_weights: np.ndarray, weights: np.ndarray):
+        """Set the weights of the has dataframe."""
+        selected = self.hash_df["selected"]
+        self.hash_df["weight"][selected] = weights
+        self.hash_df["norm_weight"][selected] = norm_weights
 
     def __len__(self) -> int:
         """Get the number of hash entries."""
@@ -120,7 +152,7 @@ class SMILESHashes:
     def smiles(self) -> List[str]:
         """Get the SMILES strings in the DataFrame."""
         return self.hash_df.SMILES.tolist()
-    
+
     @property
     def selected_idxs(self) -> np.ndarray:
         """Get the indexes of the feature selected subgraphs."""
