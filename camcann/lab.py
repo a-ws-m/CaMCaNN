@@ -6,11 +6,10 @@ from pathlib import Path
 from typing import Type
 
 import pandas as pd
+from spektral.layers import GCNConv
+from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.keras.metrics import (
-    MeanAbsoluteError,
-    RootMeanSquaredError,
-)
+from tensorflow.keras.metrics import MeanAbsoluteError, RootMeanSquaredError
 from tensorflow.keras.models import Model
 
 from .data.io import QinDatasets, QinECFPData, QinGraphData
@@ -30,7 +29,12 @@ class GraphExperiment:
             loss="mse",
             metrics=[RootMeanSquaredError(), MeanAbsoluteError()],
         )
-        self.graph_data = QinGraphData(dataset)
+        if isinstance(self.model, QinGNN):
+            preprocess = LayerPreprocess(GCNConv)
+        else:
+            preprocess = None
+        self.graph_data = QinGraphData(dataset, preprocess=preprocess)
+
         print("First 10 graphs:")
         print(self.graph_data.graphs[:10])
         first_graph = self.graph_data.graphs[0]

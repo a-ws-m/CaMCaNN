@@ -9,7 +9,6 @@ import pandas as pd
 from rdkit.Chem import MolFromSmiles
 from sklearn.model_selection import KFold
 from spektral.data import Dataset, DisjointLoader, Graph
-from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
 
 from .featurise.ecfp import ECFPCountFeaturiser, SMILESHashes
@@ -134,7 +133,7 @@ class QinGraphData(QinDataLoader):
         self,
         dataset: QinDatasets,
         mol_featuriser: MolNodeFeaturizer = MolNodeFeaturizer(),
-        do_preprocess: bool=True,
+        preprocess: Optional[LayerPreprocess]=None,
     ) -> None:
         """Load data and initialise featuriser.
 
@@ -146,7 +145,7 @@ class QinGraphData(QinDataLoader):
         super().__init__(dataset)
 
         graphs = mols_to_graph(list(self.df["Molecules"]), mol_featuriser, list(self.df["exp"]))
-        self.graphs = list(map(LayerPreprocess(GCNConv), graphs)) if do_preprocess else graphs
+        self.graphs = list(map(preprocess, graphs)) if preprocess is not None else graphs
 
     class Subset(Dataset):
         """Handle graph data subsets."""
