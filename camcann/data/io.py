@@ -98,12 +98,12 @@ class QinECFPData(QinDataLoader):
 
         if hash_file is not None:
             if hash_file.exists():
-                smiles_hashes = SMILESHashes.load(hash_file)
+                self.smiles_hashes = SMILESHashes.load(hash_file)
             else:
                 save_hashes = True
 
         if smiles_hashes is None:
-            smiles_hashes = SMILESHashes()
+            self.smiles_hashes = SMILESHashes()
 
         self.featuriser = ECFPCountFeaturiser(smiles_hashes)
         
@@ -124,6 +124,11 @@ class QinECFPData(QinDataLoader):
     def test_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get numpy arrays of test data fingerprints and targets."""
         return self.get_at_idxs(self.test_idxs)
+    
+    @property
+    def all_data(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Get numpy arrays of all data fingerprints and targets."""
+        return self.fingerprints, self.df.exp.to_numpy()
     
 
 class QinGraphData(QinDataLoader):
