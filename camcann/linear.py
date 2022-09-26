@@ -1,7 +1,10 @@
 """Linear CMC prediction model with feature selection."""
+from pathlib import Path
+from tokenize import Name
 from typing import Dict, List, Union, NamedTuple
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import make_pipeline
 from sklearn.feature_selection import SelectFromModel
+from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import ElasticNetCV, RidgeCV
 import numpy as np
@@ -9,37 +12,32 @@ import numpy as np
 from .data.featurise.ecfp import SMILESHashes
 
 
-class ECFPResults(NamedTuple):
-    """Contains the results for a single fold's evaluation."""
+class RidgeResults(NamedTuple):
+    """Hold the results of a ridge regression models.
 
+    Args:
+        best_rmse: The best root mean squared error during training.
+        alpha: The best alpha identified during training.
+        coefs: The weights of each subgraph from training.
+        test_rmse: The testing RMSE.
+
+    """
+
+    best_rmse: float
+    alpha: float
+    coefs: np.ndarray
     test_rmse: float
 
-    @property
-    def train_cv_rmse(self) -> float:
-        """Get the best RMSE from the train set cross-validation."""
-        # mses = self.pipeline[-1].cv_values_
-        # return np.min(np.mean(mses, axis=1))
-        return -self.pipeline[-1].best_score_
+    def get_unnormed_contribs(self, scaler: StandardScaler) -> np.ndarray:
+        """Get the contributions of the unnormalised subgraphs."""
+        return scaler.inverse_transform(self.coefs)
 
-    @property
-    def reduced_num_features(self) -> int:
-        """Get the number of features after final selection."""
-        return self.pipeline[1].get_support().sum()
-
-    @property
-    def best_alpha(self) -> float:
-        """Get the best alpha from ridge regression."""
-        return self.pipeline[-1].alpha_
-
-    def group_weights(self, all_groups: List[str]) -> Dict[str, float]:
-        """Get the weights associated with each group after final training."""
-        weights = self.pipeline[-1].coef_
-        initial_idxs = np.flatnonzero(self.initial_groups.values)
-
-        final_groups = self.pipeline[1].get_support()
-        final_idxs = initial_idxs[final_groups]
-
-        return {all_groups[idx]: weight for idx, weight in zip(final_idxs, weights)}
+    def __repr__(self) -> str:
+        return (
+            f"Best train RMSE: {self.best_rmse}\n"
+            f"Best alpha: {self.alpha}\n"
+            f"Test RMSE: {self.test_rmse}"
+        )
 
 
 class LinearECFPModel:
@@ -59,6 +57,10 @@ class LinearECFPModel:
         self.train_targets = train_targets
         self.test_fps = test_fps
         self.test_targets = test_targets
+
+        self.scaler = StandardScaler()
+        self.encv = ElasticNetCV(l1_ratio=[0.1, 0.5, 0.7, 0.9, 0.95, 0.99, 1])
+        self.ridge = RidgeCV(scoring="neg_root_mean_squared_error")
 
     def remove_low_freq_subgraphs(self, threshold: Union[float, int]) -> int:
         """Amend the smiles hashes to remove those that only occur once in the training data.
@@ -83,38 +85,43 @@ class LinearECFPModel:
         self.smiles_hashes.hash_df["above_threshold_occurance"] = include_group
         return (~include_group).sum()
 
-    def train(self):
-        """Train the model"""
-        #TODO
+    def elastic_feature_select(self) -> int:
+        """Feature selection using Elastic Net CV regularisation.
 
+        Returns:
+            The number of subgraphs returned.
 
-def single_fold_routine(train_idxs, test_idxs, linear: bool = True) -> FoldResults:
-    """Perform a single fold training routine."""
-    # Get train/test data split
-    train_df = features_df.iloc[train_idxs]
-    test_df = features_df.iloc[test_idxs]
+        """
+        selection_pipeline = make_pipeline(self.scaler, self.encv)
+        selection_pipeline.fit(self.train_fps, self.train_targets)
+        self.selector = SelectFromModel(self.envc, threshold="mean", prefit=True)
 
-    train_targets = all_targets.iloc[train_idxs]
-    test_targets = all_targets.iloc[test_idxs]
+        support = self.selector.get_support()
+        self.smiles_hashes.set_regularised_selection(support)
+        return (~support).sum()
 
-    # 1. Remove features that only occur once
-    has_group = train_df > 0
-    include_group = has_group.sum() > 1
+    def ridge_model_train_test(self) -> RidgeResults:
+        """Train and test the ridge regression model."""
+        self.model = make_pipeline(self.scaler, self.selector, self.ridge)
+        self.model.fit(self.train_fps, self.train_targets)
+        self.test_predictions = self.model.predict(self.test_fps)
+        test_rmse = np.sqrt(
+            mean_squared_error(self.test_targets, self.test_predictions)
+        ).item()
+        self.results = RidgeResults(
+            best_rmse=self.ridge.best_score_,
+            alpha=self.ridge.alpha_,
+            coefs=self.ridge.coef_,
+            test_rmse=test_rmse,
+        )
+        self.smiles_hashes.set_weights(
+            self.results.coefs, self.results.get_unnormed_contribs(self.selector)
+        )
+        return self.results
 
-    train_feats = train_df.iloc[:, include_group.values]
-    test_feats = test_df.iloc[:, include_group.values]
-
-    # 2. Train initial model and 3. feature selection
-    elastic_net = ElasticNetCV(l1_ratio=[0.1, 0.5, 0.7, 0.9, 0.95, 0.99, 1])
-    selector = SelectFromModel(elastic_net, threshold="mean")
-
-    alphas = np.logspace(-10, 10, 21)
-    out = RidgeCV(scoring="neg_root_mean_squared_error", alphas=alphas)
-
-    pipe = make_pipeline(StandardScaler(), selector, out)
-    pipe.fit(train_feats, train_targets)
-
-    test_pred = pipe.predict(test_feats)
-    test_rmse = np.sqrt(mean_squared_error(test_targets, test_pred))
-
-    return FoldResults(include_group, pipe, test_rmse)
+    def predict(self, fps: np.ndarray) -> np.ndarray:
+        """Get an array of predictions."""
+        try:
+            return self.model.predict(fps)
+        except AttributeError:
+            raise ValueError("Must first fit model.")
