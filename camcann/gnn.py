@@ -68,7 +68,7 @@ class CoarseGNN(Model):
         for layer in self.full_graph_layers:
             x = layer((x, norm_a))
 
-        x, a = self.la_pool(x, a)
+        x, a = self.la_pool((x, a))
         norm_a = normalize_A(a)
 
         for layer in self.pooled_graph_layers:
