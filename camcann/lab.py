@@ -203,7 +203,8 @@ if __name__ == "__main__":
         help="The dataset to use.",
     )
     parser.add_argument("name", type=str, help="The name of the model.")
-    parser.add_argument("epochs", type=int, help="The number of epochs to train.")
+    parser.add_argument("-e", "--epochs", type=int, help="The number of epochs to train.")
+
     args = parser.parse_args()
 
     dataset = dataset_map[args.dataset]
