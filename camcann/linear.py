@@ -83,7 +83,15 @@ class LinearECFPModel:
 
         self.smiles_hashes.hash_df["selected"] = list(include_group)
         self.smiles_hashes.hash_df["above_threshold_occurance"] = list(include_group)
+
+        self.train_fps_filtered = self._apply_low_freq_filter(self.train_fps)
+        self.test_fps_filtered = self._apply_low_freq_filter(self.test_fps)
+
         return (~include_group).sum()
+    
+    def _apply_low_freq_filter(self, fps: np.ndarray) -> np.ndarray:
+        """Apply the low frequency subgraph filter to given fingerprints."""
+        return fps[:, self.smiles_hashes.hash_df["above_threshold_occurance"].to_numpy()]
 
     def elastic_feature_select(self) -> int:
         """Feature selection using Elastic Net CV regularisation.
@@ -93,7 +101,7 @@ class LinearECFPModel:
 
         """
         selection_pipeline = make_pipeline(self.scaler, self.encv)
-        selection_pipeline.fit(self.train_fps, self.train_targets)
+        selection_pipeline.fit(self.train_fps_filtered, self.train_targets)
         self.selector = SelectFromModel(self.encv, threshold="mean", prefit=True)
 
         support = self.selector.get_support()
@@ -103,8 +111,8 @@ class LinearECFPModel:
     def ridge_model_train_test(self) -> RidgeResults:
         """Train and test the ridge regression model."""
         self.model = make_pipeline(self.scaler, self.selector, self.ridge)
-        self.model.fit(self.train_fps, self.train_targets)
-        self.test_predictions = self.model.predict(self.test_fps)
+        self.model.fit(self.train_fps_filtered, self.train_targets)
+        self.test_predictions = self.model.predict(self.test_fps_filtered)
         test_rmse = np.sqrt(
             mean_squared_error(self.test_targets, self.test_predictions)
         ).item()
