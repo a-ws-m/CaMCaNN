@@ -62,7 +62,7 @@ class LinearECFPModel:
         self.encv = ElasticNetCV(l1_ratio=[0.1, 0.5, 0.7, 0.9, 0.95, 0.99, 1])
         self.ridge = RidgeCV(scoring="neg_root_mean_squared_error")
 
-    def remove_low_freq_subgraphs(self, threshold: Union[float, int]) -> int:
+    def remove_low_freq_subgraphs(self, threshold: Union[float, int] = 1) -> int:
         """Amend the smiles hashes to remove those that only occur once in the training data.
 
         Args:
