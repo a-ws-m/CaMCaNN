@@ -130,6 +130,6 @@ class LinearECFPModel:
     def predict(self, fps: np.ndarray) -> np.ndarray:
         """Get an array of predictions."""
         try:
-            return self.model.predict(fps)
+            return self.model.predict(self._apply_low_freq_filter(fps))
         except AttributeError:
             raise ValueError("Must first fit model.")
