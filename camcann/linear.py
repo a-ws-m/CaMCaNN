@@ -79,10 +79,10 @@ class LinearECFPModel:
             threshold = int(np.floor(threshold * self.train_fps.size[0]))
 
         has_group = self.train_fps > 0
-        include_group = has_group.sum() > threshold
+        include_group = has_group.sum(axis=0) > threshold
 
-        self.smiles_hashes.hash_df["selected"] = include_group
-        self.smiles_hashes.hash_df["above_threshold_occurance"] = include_group
+        self.smiles_hashes.hash_df["selected"] = list(include_group)
+        self.smiles_hashes.hash_df["above_threshold_occurance"] = list(include_group)
         return (~include_group).sum()
 
     def elastic_feature_select(self) -> int:
