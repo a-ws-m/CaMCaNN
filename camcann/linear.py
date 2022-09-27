@@ -30,7 +30,7 @@ class RidgeResults(NamedTuple):
 
     def get_unnormed_contribs(self, scaler: StandardScaler) -> np.ndarray:
         """Get the contributions of the unnormalised subgraphs."""
-        return scaler.inverse_transform(self.coefs)
+        return scaler.inverse_transform(self.coefs.reshape(-1, 1))
 
     def __repr__(self) -> str:
         return (
