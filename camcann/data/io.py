@@ -102,14 +102,16 @@ class QinECFPData(QinDataLoader):
 
         if hash_file is not None:
             if hash_file.exists():
-                self.smiles_hashes = SMILESHashes.load(hash_file)
+                smiles_hashes = SMILESHashes.load(hash_file)
             else:
                 save_hashes = True
 
         if smiles_hashes is None:
-            self.smiles_hashes = SMILESHashes()
+            smiles_hashes = SMILESHashes()
+        
+        self.smiles_hashes: SMILESHashes = smiles_hashes
 
-        self.featuriser = ECFPCountFeaturiser(smiles_hashes)
+        self.featuriser = ECFPCountFeaturiser(self.smiles_hashes)
 
         self.fingerprints = self.featuriser.featurise_molecules(
             list(self.df["Molecules"]), 2
