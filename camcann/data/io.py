@@ -67,29 +67,33 @@ class DataReader:
         )[fold]
         return self.df.iloc[train_idxs], self.df.iloc[test_idxs]
 
+
 class QinDataLoader(ABC):
     """Handle reading Qin datasets from file."""
+
     def __init__(self, dataset: QinDatasets) -> None:
         """Load data and find train/test indexes.
-        
+
         Args:
             dataset: Which Qin dataset to load.
-        
+
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["smiles"]]
         self.test_idxs = np.where(self.df["traintest"] == "test")[0]
         self.train_idxs = np.where(self.df["traintest"] == "train")[0]
 
+
 class QinECFPData(QinDataLoader):
     """Handle reading Qin datasets from file and featurising with ECFP fingerprints."""
-    def __init__(self, dataset: QinDatasets, hash_file: Optional[Path]) -> None:
+
+    def __init__(self, dataset: QinDatasets, hash_file: Optional[Path] = None) -> None:
         """Load data and initialise featuriser.
-        
+
         Args:
             dataset: Which Qin dataset to load.
             hash_file: Where to save/load hash data to.
-        
+
         """
         super().__init__(dataset)
 
@@ -106,11 +110,13 @@ class QinECFPData(QinDataLoader):
             self.smiles_hashes = SMILESHashes()
 
         self.featuriser = ECFPCountFeaturiser(smiles_hashes)
-        
-        self.fingerprints = self.featuriser.featurise_molecules(list(self.df["Molecules"]), 2)
+
+        self.fingerprints = self.featuriser.featurise_molecules(
+            list(self.df["Molecules"]), 2
+        )
         if save_hashes:
             self.featuriser.smiles_hashes.save(hash_file)
-    
+
     def get_at_idxs(self, indexes: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """Get the fingerprints and target values for the given indexes."""
         return self.fingerprints[indexes, :], self.df.exp.loc[indexes]
@@ -124,12 +130,12 @@ class QinECFPData(QinDataLoader):
     def test_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get numpy arrays of test data fingerprints and targets."""
         return self.get_at_idxs(self.test_idxs)
-    
+
     @property
     def all_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get numpy arrays of all data fingerprints and targets."""
         return self.fingerprints, self.df.exp.to_numpy()
-    
+
 
 class QinGraphData(QinDataLoader):
     """Handle reading Qin datasets from file and splitting into train and test subsets."""
@@ -138,7 +144,7 @@ class QinGraphData(QinDataLoader):
         self,
         dataset: QinDatasets,
         mol_featuriser: MolNodeFeaturizer = MolNodeFeaturizer(),
-        preprocess: Optional[LayerPreprocess]=None,
+        preprocess: Optional[LayerPreprocess] = None,
     ) -> None:
         """Load data and initialise featuriser.
 
@@ -149,8 +155,12 @@ class QinGraphData(QinDataLoader):
         """
         super().__init__(dataset)
 
-        graphs = mols_to_graph(list(self.df["Molecules"]), mol_featuriser, list(self.df["exp"]))
-        self.graphs = list(map(preprocess, graphs)) if preprocess is not None else graphs
+        graphs = mols_to_graph(
+            list(self.df["Molecules"]), mol_featuriser, list(self.df["exp"])
+        )
+        self.graphs = (
+            list(map(preprocess, graphs)) if preprocess is not None else graphs
+        )
 
     class Subset(Dataset):
         """Handle graph data subsets."""
