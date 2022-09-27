@@ -94,7 +94,7 @@ class LinearECFPModel:
         """
         selection_pipeline = make_pipeline(self.scaler, self.encv)
         selection_pipeline.fit(self.train_fps, self.train_targets)
-        self.selector = SelectFromModel(self.envc, threshold="mean", prefit=True)
+        self.selector = SelectFromModel(self.encv, threshold="mean", prefit=True)
 
         support = self.selector.get_support()
         self.smiles_hashes.set_regularised_selection(support)
