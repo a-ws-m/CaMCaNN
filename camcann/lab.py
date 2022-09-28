@@ -263,18 +263,33 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", "--epochs", type=int, help="The number of epochs to train."
     )
+    parser.add_argument("--and-uq", action="store_true", help="Re-train the GNN and then the uncertainty quantification model.")
+    parser.add_argument("--just-uq", action="store_true", help="Just train the uncertainty quantifier.")
 
     args = parser.parse_args()
+
+    if args.and_uq and args.just_uq:
+        raise ValueError("Cannot set both `--and-uq` and `--just-uq` flags.")
+    
 
     dataset = dataset_map[args.dataset]
     model = model_map[args.model]
 
+    do_uq = args.and_uq or args.just_uq
+
     results_path = Path(".") / args.name
 
     if model is LinearECFPModel:
+        if do_uq:
+            raise NotImplementedError("Cannot use UQ with linear ECFP model.")
+
         exp = ECFPExperiment(dataset, results_path=results_path)
         exp.train_test()
     else:
-        exp = GraphExperiment(model, dataset, results_path=results_path)
-        exp.train(args.epochs)
-        exp.test()
+        pretrained = args.just_uq
+        exp = GraphExperiment(model, dataset, results_path=results_path, pretrained=pretrained)
+        if not pretrained:
+            exp.train(args.epochs)
+            exp.test()
+        if do_uq:
+            exp.train_uq()
