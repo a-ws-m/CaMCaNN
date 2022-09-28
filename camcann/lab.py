@@ -1,58 +1,90 @@
 """Test the performance of models on the Qin data."""
 from argparse import ArgumentParser
-from ast import parse
 from datetime import datetime
 from pathlib import Path
-from typing import Type
+from typing import Type, Optional
 
+import numpy as np
 import pandas as pd
 import tensorflow as tf
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import TensorBoard
 from tensorflow.keras.metrics import MeanAbsoluteError, RootMeanSquaredError
-from tensorflow.keras.models import Model
+from tensorflow.keras.models import Model, load_model
 
 from .data.io import RANDOM_SEED, QinDatasets, QinECFPData, QinGraphData
 from .gnn import CoarseGNN, QinGNN
 from .linear import LinearECFPModel, RidgeResults
+from .uq import GraphGPProcess
 
 RANDOM_SEED = 2022
 
+
 class GraphExperiment:
-    """Train a model on the Qin data, then report the results."""
+    """Train a model on the Qin data, as well as a model with UQ, then report their results.
+
+    Args:
+        model: The type of model to use.
+        dataset: Which Qin dataset to use.
+        results_path: Where to save the model, its predictions and its metrics.
+        pretrained: If training the UQ model, this specifies whether there is a pre-existing model in the :attr:`results_path`.
+
+    """
 
     def __init__(
-        self, model: Type[Model], dataset: QinDatasets, results_path: Path
+        self,
+        model: Type[Model],
+        dataset: QinDatasets,
+        results_path: Path,
+        pretrained: bool = False,
     ) -> None:
         """Initialize the model and the datasets."""
+        self.results_path = results_path
+        self.model_path = results_path / "model"
+
+        self.predict_path = results_path / "predictions.csv"
+        self.uq_predict_path = results_path / "uq_predictions.csv"
+
+        self.tb_dir = results_path / "logs"
+
+        self.metrics_path = results_path / "metrics.csv"
+        self.uq_train_metrics_path = results_path / "uq_train_metrics.csv"
+        self.uq_test_metrics_path = results_path / "uq_test_metrics.csv"
+
+        for path in [self.results_path, self.tb_dir]:
+            if not path.exists():
+                path.mkdir()
+
         self.model: Model = model()
         self.model.compile(
             optimizer="adam",
             loss="mse",
             metrics=[RootMeanSquaredError(), MeanAbsoluteError()],
         )
-        if isinstance(self.model, QinGNN):
+
+        if model is QinGNN:
             preprocess = LayerPreprocess(GCNConv)
         else:
             preprocess = None
         self.graph_data = QinGraphData(dataset, preprocess=preprocess)
 
-        print("First 10 graphs:")
-        print(self.graph_data.graphs[:10])
-        first_graph = self.graph_data.graphs[0]
-        print("First graph's data:")
-        print(f"{first_graph.x=}")
-        print(f"{first_graph.a=}")
+        if pretrained:
+            loaded_model = load_model(self.model_path)
 
-        self.results_path = results_path
-        self.model_path = results_path / "model"
-        self.predict_path = results_path / "predictions.csv"
-        self.tb_dir = results_path / "logs"
-        self.metrics_path = results_path / "metrics.csv"
-        for path in [self.results_path, self.tb_dir]:
-            if not path.exists():
-                path.mkdir()
+            train_data = self.graph_data.train_dataset
+            self.model.predict(train_data.load(), steps=train_data.steps_per_epoch)
+            loaded_model.predict(train_data.load(), steps=train_data.steps_per_epoch)
+
+            for latent_layer, buffer in zip(self.model.layers, loaded_model.layers):
+                latent_layer.set_weights(buffer.get_weights())
+
+        # print("First 10 graphs:")
+        # print(self.graph_data.graphs[:10])
+        # first_graph = self.graph_data.graphs[0]
+        # print("First graph's data:")
+        # print(f"{first_graph.x=}")
+        # print(f"{first_graph.a=}")
 
     @property
     def tb_run_dir(self) -> Path:
@@ -81,17 +113,36 @@ class GraphExperiment:
         )
         self.model.save(self.model_path)
 
-    def _make_pred_df(self, predictions):
-        """Make a DataFrame of predicted CMCs."""
-        return pd.DataFrame(
-            {
-                "smiles": self.graph_data.df.smiles,
-                "exp": self.graph_data.df.exp,
-                "qin": self.graph_data.df.pred,
-                "pred": predictions,
-                "traintest": self.graph_data.df.traintest,
-            }
+    def train_uq(self):
+        """Train and test the uncertainty quantified model."""
+        loaded_model = load_model(self.model_path)
+        self.uq_model = GraphGPProcess(
+            self.model, self.graph_data.train_loader, loaded_model
         )
+
+        train_metrics = self.uq_model.evaluate(self.graph_data.train_loader)
+        test_metrics = self.uq_model.evaluate(self.graph_data.test_loader)
+
+        pd.Series(train_metrics).to_csv(self.uq_train_metrics_path)
+        pd.Series(test_metrics).to_csv(self.uq_test_metrics_path)
+
+        means, stddevs = self.uq_model.predict(self.graph_data.all_loader)
+        self._make_pred_df(means, stddevs).to_csv(self.uq_predict_path)
+
+    def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
+        """Make a DataFrame of predicted CMCs."""
+        data = {
+            "smiles": self.graph_data.df.smiles,
+            "exp": self.graph_data.df.exp,
+            "qin": self.graph_data.df.pred,
+            "pred": predictions,
+            "traintest": self.graph_data.df.traintest,
+        }
+
+        if stddevs is not None:
+            data["stddev"] = stddevs
+
+        return pd.DataFrame(data)
 
     def test(self):
         """Get test metrics and report predictions for all data."""
@@ -209,7 +260,9 @@ if __name__ == "__main__":
         help="The dataset to use.",
     )
     parser.add_argument("name", type=str, help="The name of the model.")
-    parser.add_argument("-e", "--epochs", type=int, help="The number of epochs to train.")
+    parser.add_argument(
+        "-e", "--epochs", type=int, help="The number of epochs to train."
+    )
 
     args = parser.parse_args()
 
