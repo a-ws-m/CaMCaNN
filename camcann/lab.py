@@ -6,16 +6,18 @@ from pathlib import Path
 from typing import Type
 
 import pandas as pd
+import tensorflow as tf
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import TensorBoard
 from tensorflow.keras.metrics import MeanAbsoluteError, RootMeanSquaredError
 from tensorflow.keras.models import Model
 
-from .data.io import QinDatasets, QinECFPData, QinGraphData
+from .data.io import RANDOM_SEED, QinDatasets, QinECFPData, QinGraphData
 from .gnn import CoarseGNN, QinGNN
 from .linear import LinearECFPModel, RidgeResults
 
+RANDOM_SEED = 2022
 
 class GraphExperiment:
     """Train a model on the Qin data, then report the results."""
@@ -180,6 +182,10 @@ class ECFPExperiment:
 
 
 if __name__ == "__main__":
+
+    # Set random seed
+    tf.random.set_seed(RANDOM_SEED)
+
     parser = ArgumentParser()
 
     dataset_map = {
