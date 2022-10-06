@@ -1,15 +1,17 @@
 """Linear CMC prediction model with feature selection."""
+from optparse import Option
 from pathlib import Path
 from tokenize import Name
-from typing import Dict, List, Union, NamedTuple
+from typing import Dict, List, Optional, Union, NamedTuple
 from sklearn.pipeline import make_pipeline
 from sklearn.feature_selection import SelectFromModel
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import ElasticNetCV, RidgeCV
+from sklearn.linear_model import ElasticNetCV, RidgeCV, BayesianRidge
 import numpy as np
 
 from .data.featurise.ecfp import SMILESHashes
+from .uq import nll
 
 
 class RidgeResults(NamedTuple):
@@ -20,6 +22,8 @@ class RidgeResults(NamedTuple):
         alpha: The best alpha identified during training.
         coefs: The weights of each subgraph from training.
         test_rmse: The testing RMSE.
+        train_nll: The final negative log likelihood during training.
+        test_nll: The negative log likelihood on the test data.
 
     """
 
@@ -27,6 +31,8 @@ class RidgeResults(NamedTuple):
     alpha: float
     coefs: np.ndarray
     test_rmse: float
+    train_nll: Optional[float] = None
+    test_nll: Optional[float] = None
 
     def get_unnormed_contribs(self, scaler: StandardScaler) -> np.ndarray:
         """Get the contributions of the unnormalised subgraphs."""
@@ -34,11 +40,18 @@ class RidgeResults(NamedTuple):
         return self.coefs * scaled_ones
 
     def __repr__(self) -> str:
-        return (
+        rep = (
             f"Best train RMSE: {self.best_rmse}\n"
             f"Best alpha: {self.alpha}\n"
             f"Test RMSE: {self.test_rmse}"
         )
+
+        if self.train_nll is not None:
+            rep += f"\nFinal train NLL: {self.train_nll}"
+        if self.test_nll is not None:
+            rep += f"\nTest train NLL: {self.test_nll}"
+
+        return rep
 
 
 class LinearECFPModel:
@@ -114,9 +127,7 @@ class LinearECFPModel:
         self.model = make_pipeline(self.scaler, self.selector, self.ridge)
         self.model.fit(self.train_fps_filtered, self.train_targets)
         self.test_predictions = self.model.predict(self.test_fps_filtered)
-        test_rmse = np.sqrt(
-            mean_squared_error(self.test_targets, self.test_predictions)
-        ).item()
+        test_rmse = mean_squared_error(self.test_targets, self.test_predictions, squared=False)
         self.results = RidgeResults(
             best_rmse=self.ridge.best_score_,
             alpha=self.ridge.alpha_,
@@ -134,3 +145,41 @@ class LinearECFPModel:
             return self.model.predict(self._apply_low_freq_filter(fps))
         except AttributeError:
             raise ValueError("Must first fit model.")
+
+class ProbECFPModel(LinearECFPModel):
+    """A linear model based on ECFPs, but using Bayesian ridge regression."""
+
+    def __init__(
+        self,
+        smiles_hashes: SMILESHashes,
+        train_fps: np.ndarray,
+        train_targets: np.ndarray,
+        test_fps: np.ndarray,
+        test_targets: np.ndarray,
+    ) -> None:
+        """Initialize smiles hash dataframe."""
+        super().__init__(smiles_hashes, train_fps, train_targets, test_fps, test_targets)
+        self.ridge = BayesianRidge(compute_score=True)
+
+    def ridge_model_train_test(self) -> RidgeResults:
+        """Train and test the Bayesian ridge regression model."""
+        self.model = make_pipeline(self.scaler, self.selector, self.ridge)
+        self.model.fit(self.train_fps_filtered, self.train_targets)
+
+        self.test_predictions, self.test_stds = self.model.predict(self.test_fps_filtered, {"return_std": True})
+
+        test_rmse = mean_squared_error(self.test_targets, self.test_predictions, squared=False)
+        test_nll = nll(self.test_predictions, self.test_stds, self.test_targets)
+
+        self.results = RidgeResults(
+            best_rmse=self.ridge.best_score_,
+            alpha=self.ridge.alpha_,
+            coefs=self.ridge.coef_,
+            test_rmse=test_rmse,
+            train_nll=-self.ridge.scores_[-1],
+            test_nll=test_nll,
+        )
+        self.smiles_hashes.set_weights(
+            self.results.coefs, self.results.get_unnormed_contribs(self.selector)
+        )
+        return self.results
