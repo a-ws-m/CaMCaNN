@@ -129,7 +129,7 @@ class LinearECFPModel:
         self.test_predictions = self.model.predict(self.test_fps_filtered)
         test_rmse = mean_squared_error(self.test_targets, self.test_predictions, squared=False)
         self.results = RidgeResults(
-            best_rmse=self.ridge.best_score_,
+            best_rmse=-self.ridge.best_score_,
             alpha=self.ridge.alpha_,
             coefs=self.ridge.coef_,
             test_rmse=test_rmse,
@@ -172,7 +172,7 @@ class ProbECFPModel(LinearECFPModel):
         test_nll = nll(self.test_predictions, self.test_stds, self.test_targets)
 
         self.results = RidgeResults(
-            best_rmse=self.ridge.best_score_,
+            best_rmse=-self.ridge.best_score_,
             alpha=self.ridge.alpha_,
             coefs=self.ridge.coef_,
             test_rmse=test_rmse,
