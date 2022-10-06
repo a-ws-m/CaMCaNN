@@ -140,9 +140,20 @@ class SMILESHashes:
 
     def set_weights(self, norm_weights: np.ndarray, weights: np.ndarray):
         """Set the weights of the has dataframe."""
-        selected = self.hash_df["selected"]
-        self.hash_df.loc[selected, "weight"] = weights
-        self.hash_df.loc[selected, "norm_weight"] = norm_weights
+        selected = self.hash_df["selected"].values
+        try:
+            self.hash_df.loc[selected, "weight"] = weights.flatten()
+        except ValueError as e:
+            weights_size = weights.flatten().size
+            selected_size = self.hash_df.loc[selected, "weight"].values.size
+
+            print("Size mismatch when saving weights!")
+            print(f"Size of included features: {selected_size}")
+            print(f"Size of assigned weights: {weights_size}")
+
+            raise e
+
+        self.hash_df.loc[selected, "norm_weight"] = norm_weights.flatten()
 
     def __len__(self) -> int:
         """Get the number of hash entries."""
