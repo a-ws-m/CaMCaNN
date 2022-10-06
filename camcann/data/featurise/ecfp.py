@@ -141,8 +141,8 @@ class SMILESHashes:
     def set_weights(self, norm_weights: np.ndarray, weights: np.ndarray):
         """Set the weights of the has dataframe."""
         selected = self.hash_df["selected"]
-        self.hash_df["weight"][selected] = weights
-        self.hash_df["norm_weight"][selected] = norm_weights
+        self.hash_df.loc[selected, "weight"] = weights
+        self.hash_df.loc[selected, "norm_weight"] = norm_weights
 
     def __len__(self) -> int:
         """Get the number of hash entries."""
