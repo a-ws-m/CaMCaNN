@@ -10,6 +10,11 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern
 from sklearn.preprocessing import StandardScaler
 
+def nll(pred_mean: np.ndarray, pred_std: np.ndarray, true_vals: np.ndarray):
+    """Get the negative log likelihood of a given set of predictions."""
+    return -norm.logpdf(true_vals, loc=pred_mean, scale=pred_std).sum()
+
+
 class GraphGPProcess:
     def __init__(
         self,
@@ -70,17 +75,14 @@ class GraphGPProcess:
         targets = np.array([graph.y for graph in test_data.dataset.graphs])
         means, stddevs = self.predict(test_data)
 
-        log_likelihood = sum(
-            norm.logpdf(target, loc=mean, scale=stddev)
-            for target, mean, stddev in zip(targets, means, stddevs)
-        )
+        neg_log_likelihood = nll(means, stddevs, targets)
 
         mae = np.mean(np.abs(targets - means))
         mse = np.mean(np.square(targets - means))
         rmse = np.sqrt(mse)
 
         return {
-            "log_likelihood": log_likelihood,
+            "nll": neg_log_likelihood,
             "mae": mae,
             "mse": mse,
             "rmse": rmse,
