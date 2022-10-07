@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from rdkit.Chem import MolFromSmiles
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from spektral.data import Dataset, DisjointLoader, Graph
 from spektral.transforms import LayerPreprocess
 
@@ -81,6 +81,7 @@ class QinDataLoader(ABC):
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["smiles"]]
         self.test_idxs = np.where(self.df["traintest"] == "test")[0]
+        self.optimise_idxs, self.validation_idxs = train_test_split(self.test_idxs, test_size=0.9, random_state=2022)
         self.train_idxs = np.where(self.df["traintest"] == "train")[0]
 
 
@@ -181,6 +182,18 @@ class QinGraphData(QinDataLoader):
         """Get the training dataset."""
         train_graphs = [self.graphs[i] for i in self.train_idxs]
         return self.Subset(train_graphs)
+    
+    @property
+    def optim_dataset(self):
+        """Get the optimisation dataset."""
+        optim_graphs = [self.graphs[i] for i in self.optim_idxs]
+        return self.Subset(optim_graphs)
+
+    @property
+    def val_dataset(self):
+        """Get the validation dataset."""
+        val_graphs = [self.graphs[i] for i in self.val_idxs]
+        return self.Subset(val_graphs)
 
     @property
     def test_dataset(self):
@@ -197,6 +210,16 @@ class QinGraphData(QinDataLoader):
     def train_loader(self):
         """Get the training data loader."""
         return DisjointLoader(self.train_dataset)
+
+    @property
+    def optim_loader(self):
+        """Get the optimisation data loader."""
+        return DisjointLoader(self.optim_dataset)
+
+    @property
+    def val_loader(self):
+        """Get the validation data loader."""
+        return DisjointLoader(self.val_dataset)
 
     @property
     def test_loader(self):

@@ -2,27 +2,28 @@
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
-from typing import Type, Optional
+from typing import Any, Callable, Optional
 
+import keras_tuner
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
-from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.keras.metrics import MeanAbsoluteError, RootMeanSquaredError
+from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from tensorflow.keras.models import Model, load_model
 
 from .data.io import RANDOM_SEED, QinDatasets, QinECFPData, QinGraphData
-from .gnn import CoarseGNN, QinGNN
+from .gnn import build_gnn
 from .linear import LinearECFPModel, RidgeResults
 from .uq import GraphGPProcess
 
 RANDOM_SEED = 2022
 
+
 class BaseExperiment:
     """Train a model on the Qin data, potentially with separate UQ, and report results.
-    
+
     Args:
         model: The type of model to use.
         dataset: Which Qin dataset to use.
@@ -30,7 +31,10 @@ class BaseExperiment:
         debug: Enable debugging print messages.
 
     """
-    def __init__(self, model, dataset: QinDatasets, results_path: Path, debug: bool=False) -> None:
+
+    def __init__(
+        self, model, dataset: QinDatasets, results_path: Path, debug: bool = False
+    ) -> None:
         """Initialise paths."""
         self.results_path = results_path
         self.model_path = results_path / "model"
@@ -48,6 +52,7 @@ class BaseExperiment:
         self.dataset = dataset
         self.debug = debug
 
+
 class GraphExperiment(BaseExperiment):
     """Train a model on the Qin data, as well as a model with UQ, then report their results.
 
@@ -61,41 +66,39 @@ class GraphExperiment(BaseExperiment):
 
     def __init__(
         self,
-        model: Type[Model],
+        hypermodel: Callable[[Any], Model],
         dataset: QinDatasets,
         results_path: Path,
         debug: bool = False,
         pretrained: bool = False,
     ) -> None:
         """Initialize the model and the datasets."""
-        super().__init__(model, dataset, results_path, debug)
+        super().__init__(hypermodel, dataset, results_path, debug)
 
         self.tb_dir = results_path / "logs"
-
         self.tb_dir.mkdir(exist_ok=True)
 
-        self.model: Model = model()
-        self.model.compile(
-            optimizer="adam",
-            loss="mse",
-            metrics=[RootMeanSquaredError(), MeanAbsoluteError()],
+        self.tuner = keras_tuner.Hyperband(
+            hypermodel=hypermodel,
+            objective="val_root_mean_squared_error",
+            max_epochs=500,
+            seed=2022,
+            directory=str(results_path.absolute()),
+            project_name="gnn_search",
         )
 
-        if model is QinGNN:
-            preprocess = LayerPreprocess(GCNConv)
-        else:
-            preprocess = None
-        self.graph_data = QinGraphData(dataset, preprocess=preprocess)
+        self.graph_data = QinGraphData(dataset, preprocess=LayerPreprocess(GCNConv))
 
         if pretrained:
-            loaded_model = load_model(self.model_path)
+            loaded_model = self.tuner.get_best_models()[0]
 
             train_data = self.graph_data.train_dataset
-            self.model.predict(train_data.load(), steps=train_data.steps_per_epoch)
-            loaded_model.predict(train_data.load(), steps=train_data.steps_per_epoch)
+            # TODO: Fix this using build
+            # self.model.predict(train_data.load(), steps=train_data.steps_per_epoch)
+            # loaded_model.predict(train_data.load(), steps=train_data.steps_per_epoch)
 
-            for latent_layer, buffer in zip(self.model.layers, loaded_model.layers):
-                latent_layer.set_weights(buffer.get_weights())
+            # for latent_layer, buffer in zip(self.model.layers, loaded_model.layers):
+            #     latent_layer.set_weights(buffer.get_weights())
 
         if self.debug:
             print("First 10 graphs:")
@@ -110,27 +113,41 @@ class GraphExperiment(BaseExperiment):
         """Get a new tensorboard log directory for a current run."""
         return self.tb_dir / str(datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
 
-    def train(self, epochs: int):
-        """Train the model, reporting data via tensorboard."""
+    def search(self, epochs: int):
+        """Search the hyperparameter space, reporting data via tensorboard."""
         loader = self.graph_data.train_loader
 
         callbacks = []
-        # if self.patience:
-        #     es_callback = EarlyStopping(
-        #         min_delta=self.min_delta,
-        #         patience=self.patience,
-        #         restore_best_weights=True,
-        #     )
-        #     callbacks.append(es_callback)
+        es_callback = EarlyStopping(
+            min_delta=0,
+            patience=100,
+            restore_best_weights=True,
+        )
+        callbacks.append(es_callback)
         callbacks.append(TensorBoard(log_dir=self.tb_run_dir))
 
-        self.model.fit(
+        self.tuner.search(
             loader.load(),
             steps_per_epoch=loader.steps_per_epoch,
+            validation_data=self.graph_data.val_loader,
+            validation_steps=self.graph_data.val_loader.steps_per_epoch,
             epochs=epochs,
             callbacks=callbacks,
         )
-        self.model.save(self.model_path)
+
+    def train_best(self, epochs: int):
+        """Train the best hyperparameters on all the data."""
+        best_hp = self.tuner.get_best_hyperparameters()[0]
+        self.model = self.model_type.build(best_hp)
+        callbacks = [TensorBoard(log_dir=self.tb_run_dir)]
+        self.model_type.fit(
+            best_hp,
+            self.model,
+            self.graph_data.optim_loader,
+            steps_per_epoch=self.graph_data.optim_loader.steps_per_epoch,
+            epochs=epochs,
+            callbacks=callbacks,
+        )
 
     def train_uq(self):
         """Train and test the uncertainty quantified model."""
@@ -189,7 +206,7 @@ class ECFPExperiment(BaseExperiment):
         self.hash_path = results_path / "hashes.csv"
 
         self.featuriser = QinECFPData(dataset)
-        
+
         train_fps, train_targets = self.featuriser.train_data
         test_fps, test_targets = self.featuriser.test_data
 
@@ -262,8 +279,7 @@ if __name__ == "__main__":
         "All": QinDatasets.QIN_ALL_RESULTS,
     }
     model_map = {
-        "QinModel": QinGNN,
-        "CoarseModel": CoarseGNN,
+        "GNNModel": build_gnn,
         "ECFPLinear": LinearECFPModel,
     }
 
@@ -281,14 +297,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", "--epochs", type=int, help="The number of epochs to train."
     )
-    parser.add_argument("--and-uq", action="store_true", help="Re-train the GNN and then the uncertainty quantification model.")
-    parser.add_argument("--just-uq", action="store_true", help="Just train the uncertainty quantifier.")
+    parser.add_argument(
+        "--and-uq",
+        action="store_true",
+        help="Re-train the GNN and then the uncertainty quantification model.",
+    )
+    parser.add_argument(
+        "--just-uq", action="store_true", help="Just train the uncertainty quantifier."
+    )
 
     args = parser.parse_args()
 
     if args.and_uq and args.just_uq:
         raise ValueError("Cannot set both `--and-uq` and `--just-uq` flags.")
-    
 
     dataset = dataset_map[args.dataset]
     model = model_map[args.model]
@@ -301,12 +322,15 @@ if __name__ == "__main__":
         if do_uq:
             raise NotImplementedError("Cannot use UQ with linear ECFP model.")
 
-        exp = ECFPExperiment(dataset, results_path=results_path)
+        exp: BaseExperiment = ECFPExperiment(dataset, results_path=results_path)
         exp.train_test()
     else:
         pretrained = args.just_uq
-        exp = GraphExperiment(model, dataset, results_path=results_path, pretrained=pretrained)
+        exp = GraphExperiment(
+            build_gnn, dataset, results_path=results_path, pretrained=pretrained
+        )
         if not pretrained:
+            exp.search(args.epochs)
             exp.train(args.epochs)
             exp.test()
         if do_uq:
