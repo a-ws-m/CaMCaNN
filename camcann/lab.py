@@ -129,7 +129,7 @@ class GraphExperiment(BaseExperiment):
         self.tuner.search(
             loader.load(),
             steps_per_epoch=loader.steps_per_epoch,
-            validation_data=self.graph_data.val_loader,
+            validation_data=self.graph_data.val_loader.load(),
             validation_steps=self.graph_data.val_loader.steps_per_epoch,
             epochs=epochs,
             callbacks=callbacks,
