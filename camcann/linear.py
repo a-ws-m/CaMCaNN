@@ -116,6 +116,7 @@ class LinearECFPModel:
         """
         selection_pipeline = make_pipeline(self.scaler, self.encv)
         selection_pipeline.fit(self.train_fps_filtered, self.train_targets)
+
         self.selector = SelectFromModel(self.encv, threshold="mean", prefit=True)
 
         support = self.selector.get_support()
@@ -126,6 +127,7 @@ class LinearECFPModel:
         """Train and test the ridge regression model."""
         self.model = make_pipeline(self.scaler, self.selector, self.ridge)
         self.model.fit(self.train_fps_filtered, self.train_targets)
+
         self.test_predictions = self.model.predict(self.test_fps_filtered)
         test_rmse = mean_squared_error(self.test_targets, self.test_predictions, squared=False)
         self.results = RidgeResults(
@@ -135,7 +137,7 @@ class LinearECFPModel:
             test_rmse=test_rmse,
         )
         self.smiles_hashes.set_weights(
-            self.results.coefs, self.results.get_unnormed_contribs(self.selector)
+            self.results.coefs, self.results.get_unnormed_contribs(self.scaler)
         )
         return self.results
 
