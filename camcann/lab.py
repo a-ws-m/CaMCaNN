@@ -143,7 +143,7 @@ class GraphExperiment(BaseExperiment):
         self.model_type.fit(
             best_hp,
             self.model,
-            self.graph_data.optim_loader,
+            self.graph_data.optim_loader.load(),
             steps_per_epoch=self.graph_data.optim_loader.steps_per_epoch,
             epochs=epochs,
             callbacks=callbacks,
@@ -331,7 +331,7 @@ if __name__ == "__main__":
         )
         if not pretrained:
             exp.search(args.epochs)
-            exp.train(args.epochs)
+            exp.train_best(args.epochs)
             exp.test()
         if do_uq:
             exp.train_uq()
