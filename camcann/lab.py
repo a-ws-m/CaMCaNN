@@ -20,8 +20,35 @@ from .uq import GraphGPProcess
 
 RANDOM_SEED = 2022
 
+class BaseExperiment:
+    """Train a model on the Qin data, potentially with separate UQ, and report results.
+    
+    Args:
+        model: The type of model to use.
+        dataset: Which Qin dataset to use.
+        results_path: The directory in which to save results.
+        debug: Enable debugging print messages.
 
-class GraphExperiment:
+    """
+    def __init__(self, model, dataset: QinDatasets, results_path: Path, debug: bool=False) -> None:
+        """Initialise paths."""
+        self.results_path = results_path
+        self.model_path = results_path / "model"
+
+        self.predict_path = results_path / "predictions.csv"
+        self.uq_predict_path = results_path / "uq_predictions.csv"
+
+        self.metrics_path = results_path / "metrics.csv"
+        self.uq_train_metrics_path = results_path / "uq_train_metrics.csv"
+        self.uq_test_metrics_path = results_path / "uq_test_metrics.csv"
+
+        self.results_path.mkdir(exist_ok=True)
+
+        self.model_type = model
+        self.dataset = dataset
+        self.debug = debug
+
+class GraphExperiment(BaseExperiment):
     """Train a model on the Qin data, as well as a model with UQ, then report their results.
 
     Args:
@@ -37,24 +64,15 @@ class GraphExperiment:
         model: Type[Model],
         dataset: QinDatasets,
         results_path: Path,
+        debug: bool = False,
         pretrained: bool = False,
     ) -> None:
         """Initialize the model and the datasets."""
-        self.results_path = results_path
-        self.model_path = results_path / "model"
-
-        self.predict_path = results_path / "predictions.csv"
-        self.uq_predict_path = results_path / "uq_predictions.csv"
+        super().__init__(model, dataset, results_path, debug)
 
         self.tb_dir = results_path / "logs"
 
-        self.metrics_path = results_path / "metrics.csv"
-        self.uq_train_metrics_path = results_path / "uq_train_metrics.csv"
-        self.uq_test_metrics_path = results_path / "uq_test_metrics.csv"
-
-        for path in [self.results_path, self.tb_dir]:
-            if not path.exists():
-                path.mkdir()
+        self.tb_dir.mkdir(exist_ok=True)
 
         self.model: Model = model()
         self.model.compile(
@@ -79,12 +97,13 @@ class GraphExperiment:
             for latent_layer, buffer in zip(self.model.layers, loaded_model.layers):
                 latent_layer.set_weights(buffer.get_weights())
 
-        # print("First 10 graphs:")
-        # print(self.graph_data.graphs[:10])
-        # first_graph = self.graph_data.graphs[0]
-        # print("First graph's data:")
-        # print(f"{first_graph.x=}")
-        # print(f"{first_graph.a=}")
+        if self.debug:
+            print("First 10 graphs:")
+            print(self.graph_data.graphs[:10])
+            first_graph = self.graph_data.graphs[0]
+            print("First graph's data:")
+            print(f"{first_graph.x=}")
+            print(f"{first_graph.a=}")
 
     @property
     def tb_run_dir(self) -> Path:
@@ -160,21 +179,20 @@ class GraphExperiment:
         self._make_pred_df(predictions).to_csv(self.predict_path)
 
 
-class ECFPExperiment:
+class ECFPExperiment(BaseExperiment):
     """Train and evaluate a simple, linear ECFP model."""
 
     def __init__(self, dataset: QinDatasets, results_path: Path) -> None:
         """Load dataset and initialise featuriser."""
-        self.results_path = results_path
+        super().__init__(model, dataset, results_path)
+
         self.hash_path = results_path / "hashes.csv"
-        self.predict_path = results_path / "predictions.csv"
-        self.metrics_path = results_path / "metrics.csv"
-        if not self.results_path.exists():
-            self.results_path.mkdir()
 
         self.featuriser = QinECFPData(dataset)
+        
         train_fps, train_targets = self.featuriser.train_data
         test_fps, test_targets = self.featuriser.test_data
+
         self.model = LinearECFPModel(
             self.featuriser.smiles_hashes,
             train_fps,
