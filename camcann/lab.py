@@ -80,7 +80,7 @@ class GraphExperiment(BaseExperiment):
 
         self.tuner = keras_tuner.Hyperband(
             hypermodel=hypermodel,
-            objective="val_root_mean_squared_error",
+            objective="val_mean_squared_error",
             max_epochs=500,
             seed=2022,
             directory=str(results_path.absolute()),
