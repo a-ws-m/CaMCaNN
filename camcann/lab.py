@@ -115,7 +115,7 @@ class GraphExperiment(BaseExperiment):
 
     def search(self, epochs: int):
         """Search the hyperparameter space, reporting data via tensorboard."""
-        loader = self.graph_data.train_loader
+        loader = self.graph_data.optim_loader
 
         callbacks = []
         es_callback = EarlyStopping(
