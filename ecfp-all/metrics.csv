@@ -1,0 +1,6 @@
+,0
+num_low_freq,133.0
+num_low_import,253.0
+best_train_rmse,0.4051809580554928
+best_alpha,10.0
+test_rmse,0.29598429732008086
