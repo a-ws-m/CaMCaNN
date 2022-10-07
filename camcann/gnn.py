@@ -1,82 +1,96 @@
-from typing import List
-from spektral.layers import GCNConv, GlobalAvgPool, LaPool, TAGConv
-from spektral.layers.ops import normalize_A
-from tensorflow.keras.layers import Dense
+from typing import List, Type
+
+import keras_tuner
+from spektral.layers import (
+    GCNConv,
+    GlobalAttentionPool,
+    GlobalAttnSumPool,
+    GlobalAvgPool,
+    GlobalSumPool,
+)
+from spektral.layers.pooling.global_pool import GlobalPool
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.metrics import MeanAbsoluteError, RootMeanSquaredError
 from tensorflow.keras.models import Model
 
 
 class QinGNN(Model):
     """Graph neural network architecture described by Qin et al."""
 
-    def __init__(self) -> None:
-        """Initialize layers."""
+    def __init__(
+        self,
+        channels: List[int] = [256] * 2,
+        mlp_hidden_dim: List[int] = [256, 256],
+        pool_func: Type[GlobalPool] = GlobalAvgPool,
+        latent_model: bool = False,
+    ):
+        """Initialize model layers."""
         super().__init__()
-        self.gcn_1 = GCNConv(256, "relu")
-        self.gcn_2 = GCNConv(256, "relu")
-        self.avg_pool = GlobalAvgPool()
-        self.readout_1 = Dense(256, activation="relu")
-        self.readout_2 = Dense(256, activation="relu")
-        self.out = Dense(1)
+        self.graph_layers: List[GCNConv] = [GCNConv(channel) for channel in channels]
+        self.pool = pool_func()
+        self.output_mlp = (
+            self.make_mlp(channels[-1], mlp_hidden_dim)
+            if not latent_model
+            else lambda x: x
+        )
 
-        self.graph_layers: List[GCNConv] = [self.gcn_1, self.gcn_2]
-        self.readout_layers = [self.readout_1, self.readout_2, self.out]
+    def make_mlp(self, input_size: int, mlp_hidden_dim: List[int]) -> Model:
+        """Make MLP postprocessing layers."""
+        dense_layers = [Dense(dim, activation="relu") for dim in mlp_hidden_dim] + [
+            Dense(1)
+        ]
+
+        mlp_input = Input((input_size))
+        mlp_prop = dense_layers[0](mlp_input)
+
+        for layer in dense_layers[1:-1]:
+            mlp_prop = layer(mlp_prop)
+            if self.dropouts[2] is not None:
+                mlp_prop = self.dropouts[2](mlp_prop)
+
+        mlp_output = dense_layers[-1](mlp_prop)
+
+        return Model(mlp_input, mlp_output)
 
     def call(self, inputs, training=None, mask=None):
-        """Call the model."""
-        x, a, _ = inputs
-        for layer in self.graph_layers:
+        try:
+            x, a, _ = inputs
+        except ValueError:
+            x, a = inputs
+
+        for layer, prelu in zip(self.graph_layers, self.prelus):
             x = layer((x, a))
 
-        x = self.avg_pool(x)
-
-        for layer in self.readout_layers:
-            x = layer(x)
-
-        return x
+        out = self.pool(x)
+        return self.output_mlp(out)
 
 
-class CoarseGNN(Model):
-    """Graph neural network architecture with Laplacian Pooling."""
+def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
+    """Build a GNN using keras tuner."""
+    num_channels = hp.Int("graph_layers", min_value=1, max_value=3)
+    num_mlp_layers = hp.Int("mlp_hidden_layers", min_value=1, max_value=2)
 
-    def __init__(self) -> None:
-        """Initialize layers."""
-        super().__init__()
-        self.gcn_1 = GCNConv(256, activation="relu")
-        self.gcn_2 = GCNConv(256, activation="relu")
+    pool_funcs = {
+        "global_avg_pool": GlobalAvgPool,
+        "global_sum_pool": GlobalSumPool,
+        "global_attn_pool": GlobalAttentionPool,
+        "global_attn_sum_pool": GlobalAttnSumPool,
+    }
+    pool_func = pool_funcs[hp.Choice("pooling_func", list(pool_funcs.keys()))]
 
-        self.la_pool = LaPool()
+    graph_channels = [
+        hp.Int(f"graph_channels_{i}", min_value=32, max_value=512, step=32)
+        for i in range(num_channels)
+    ]
+    mlp_hidden_dim = [
+        hp.Int(f"mlp_hidden_dim_{i}", min_value=32, max_value=512, step=32)
+        for i in range(num_mlp_layers)
+    ]
 
-        self.gcn_3 = GCNConv(256, activation="relu")
-        self.gcn_4 = GCNConv(256, activation="relu")
-
-        self.avg_pool = GlobalAvgPool()
-
-        self.readout_1 = Dense(256, activation="relu")
-        self.readout_2 = Dense(256, activation="relu")
-
-        self.out = Dense(1)
-
-        self.full_graph_layers = [self.gcn_1, self.gcn_2]
-        self.pooled_graph_layers = [self.gcn_3, self.gcn_4]
-
-        self.readout_layers = [self.readout_1, self.readout_2, self.out]
-
-    def call(self, inputs, training=None, mask=None):
-        """Call the model."""
-        x, a, _ = inputs
-        norm_a = normalize_A(a)
-        for layer in self.full_graph_layers:
-            x = layer((x, norm_a))
-
-        x, a = self.la_pool((x, a))
-        norm_a = normalize_A(a)
-
-        for layer in self.pooled_graph_layers:
-            x = layer((x, norm_a))
-
-        x = self.avg_pool(x)
-
-        for layer in self.readout_layers:
-            x = layer(x)
-
-        return x
+    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func)
+    model.compile(
+        optimizer="adam",
+        loss="mse",
+        metrics=[RootMeanSquaredError(), MeanAbsoluteError()],
+    )
+    return model
