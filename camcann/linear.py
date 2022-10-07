@@ -34,9 +34,10 @@ class RidgeResults(NamedTuple):
     train_nll: Optional[float] = None
     test_nll: Optional[float] = None
 
-    def get_unnormed_contribs(self, scaler: StandardScaler) -> np.ndarray:
+    def get_unnormed_contribs(self, scaler: StandardScaler, selector: SelectFromModel) -> np.ndarray:
         """Get the contributions of the unnormalised subgraphs."""
         scaled_ones = scaler.transform(np.ones((1, scaler.n_features_in_)))
+        scaled_ones = selector.transform(scaled_ones)
         return self.coefs * scaled_ones
 
     def __repr__(self) -> str:
@@ -137,7 +138,7 @@ class LinearECFPModel:
             test_rmse=test_rmse,
         )
         self.smiles_hashes.set_weights(
-            self.results.coefs, self.results.get_unnormed_contribs(self.scaler)
+            self.results.coefs, self.results.get_unnormed_contribs(self.scaler, self.selector)
         )
         return self.results
 
@@ -182,6 +183,6 @@ class ProbECFPModel(LinearECFPModel):
             test_nll=test_nll,
         )
         self.smiles_hashes.set_weights(
-            self.results.coefs, self.results.get_unnormed_contribs(self.selector)
+            self.results.coefs, self.results.get_unnormed_contribs(self.scaler, self.selector)
         )
         return self.results
