@@ -58,7 +58,7 @@ class QinGNN(Model):
         except ValueError:
             x, a = inputs
 
-        for layer, prelu in zip(self.graph_layers, self.prelus):
+        for layer in self.graph_layers:
             x = layer((x, a))
 
         out = self.pool(x)
