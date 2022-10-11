@@ -142,8 +142,8 @@ class GraphExperiment(BaseExperiment):
         self.model_type.fit(
             best_hp,
             self.model,
-            self.graph_data.optim_loader.load(),
-            steps_per_epoch=self.graph_data.optim_loader.steps_per_epoch,
+            self.graph_data.train_loader.load(),
+            steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
             epochs=epochs,
             callbacks=callbacks,
         )
