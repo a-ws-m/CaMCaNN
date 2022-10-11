@@ -84,7 +84,7 @@ def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
 
     pool_kwargs = dict()
     if pool_func_key == "global_attn_pool":
-        pool_channels = hp.Int(**HIDDEN_DIM_CHOICES)
+        pool_channels = hp.Int("pool_channels", **HIDDEN_DIM_CHOICES)
         pool_kwargs["chanels"] = pool_channels
 
     graph_channels = [
