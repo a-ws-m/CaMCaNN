@@ -81,7 +81,7 @@ class GraphExperiment(BaseExperiment):
         self.tuner = keras_tuner.Hyperband(
             hypermodel=hypermodel,
             objective="val_loss",
-            max_epochs=500,
+            max_epochs=550,
             seed=2022,
             directory=str(results_path.absolute()),
             project_name="gnn_search",
