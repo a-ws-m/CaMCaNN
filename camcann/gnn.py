@@ -30,7 +30,7 @@ class QinGNN(Model):
         self.graph_layers: List[GCNConv] = [GCNConv(channel) for channel in channels]
         self.pool = pool_func(pooling_channels) if pooling_channels else pool_func()
         self.output_mlp = (
-            self.make_mlp(channels[-1], mlp_hidden_dim)
+            self.make_mlp(pooling_channels if pooling_channels else channels[-1], mlp_hidden_dim)
             if not latent_model
             else lambda x: x
         )
