@@ -66,9 +66,9 @@ class QinGNN(Model):
 
 def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
     """Build a GNN using keras tuner."""
-    HIDDEN_DIM_CHOICES = dict(min_value=16, max_value=272, step=64)
+    HIDDEN_DIM_CHOICES = dict(min_value=64, max_value=320, step=64)
 
-    num_channels = hp.Int("graph_layers", min_value=1, max_value=3)
+    num_channels = hp.Int("graph_layers", min_value=2, max_value=3)
     num_mlp_layers = hp.Int("mlp_hidden_layers", min_value=1, max_value=2)
 
     pool_funcs = {
