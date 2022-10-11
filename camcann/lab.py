@@ -113,7 +113,7 @@ class GraphExperiment(BaseExperiment):
         """Get a new tensorboard log directory for a current run."""
         return self.tb_dir / str(datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
 
-    def search(self, epochs: int):
+    def search(self):
         """Search the hyperparameter space, reporting data via tensorboard."""
         loader = self.graph_data.optim_loader
 
@@ -131,7 +131,6 @@ class GraphExperiment(BaseExperiment):
             steps_per_epoch=loader.steps_per_epoch,
             validation_data=self.graph_data.val_loader.load(),
             validation_steps=self.graph_data.val_loader.steps_per_epoch,
-            epochs=epochs,
             callbacks=callbacks,
         )
 
@@ -330,7 +329,7 @@ if __name__ == "__main__":
             build_gnn, dataset, results_path=results_path, pretrained=pretrained
         )
         if not pretrained:
-            exp.search(args.epochs)
+            exp.search()
             exp.train_best(args.epochs)
             exp.test()
         if do_uq:
