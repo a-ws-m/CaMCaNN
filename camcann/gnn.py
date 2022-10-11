@@ -46,8 +46,6 @@ class QinGNN(Model):
 
         for layer in dense_layers[1:-1]:
             mlp_prop = layer(mlp_prop)
-            if self.dropouts[2] is not None:
-                mlp_prop = self.dropouts[2](mlp_prop)
 
         mlp_output = dense_layers[-1](mlp_prop)
 
