@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import List, Type, Optional
 
 import keras_tuner
 from spektral.layers import (
@@ -22,12 +22,13 @@ class QinGNN(Model):
         channels: List[int] = [256] * 2,
         mlp_hidden_dim: List[int] = [256, 256],
         pool_func: Type[GlobalPool] = GlobalAvgPool,
+        pool_kwargs: Optional[dict] = None,
         latent_model: bool = False,
     ):
         """Initialize model layers."""
         super().__init__()
         self.graph_layers: List[GCNConv] = [GCNConv(channel) for channel in channels]
-        self.pool = pool_func()
+        self.pool = pool_func(**pool_kwargs)
         self.output_mlp = (
             self.make_mlp(channels[-1], mlp_hidden_dim)
             if not latent_model
@@ -67,6 +68,8 @@ class QinGNN(Model):
 
 def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
     """Build a GNN using keras tuner."""
+    HIDDEN_DIM_CHOICES = dict(min_value=16, max_value=272, step=64)
+
     num_channels = hp.Int("graph_layers", min_value=1, max_value=3)
     num_mlp_layers = hp.Int("mlp_hidden_layers", min_value=1, max_value=2)
 
@@ -76,18 +79,24 @@ def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
         "global_attn_pool": GlobalAttentionPool,
         "global_attn_sum_pool": GlobalAttnSumPool,
     }
-    pool_func = pool_funcs[hp.Choice("pooling_func", list(pool_funcs.keys()))]
+    pool_func_key = hp.Choice("pooling_func", list(pool_funcs.keys()))
+    pool_func = pool_funcs[pool_func_key]
+
+    pool_kwargs = dict()
+    if pool_func_key == "global_attn_pool":
+        pool_channels = hp.Int(**HIDDEN_DIM_CHOICES)
+        pool_kwargs["chanels"] = pool_channels
 
     graph_channels = [
-        hp.Int(f"graph_channels_{i}", min_value=32, max_value=512, step=32)
+        hp.Int(f"graph_channels_{i}", **HIDDEN_DIM_CHOICES)
         for i in range(num_channels)
     ]
     mlp_hidden_dim = [
-        hp.Int(f"mlp_hidden_dim_{i}", min_value=32, max_value=512, step=32)
+        hp.Int(f"mlp_hidden_dim_{i}", **HIDDEN_DIM_CHOICES)
         for i in range(num_mlp_layers)
     ]
 
-    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func)
+    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func, pool_kwargs)
     model.compile(
         optimizer="adam",
         loss="mse",
