@@ -22,13 +22,13 @@ class QinGNN(Model):
         channels: List[int] = [256] * 2,
         mlp_hidden_dim: List[int] = [256, 256],
         pool_func: Type[GlobalPool] = GlobalAvgPool,
-        pool_kwargs: Optional[dict] = None,
+        pooling_channels: Optional[int] = None,
         latent_model: bool = False,
     ):
         """Initialize model layers."""
         super().__init__()
         self.graph_layers: List[GCNConv] = [GCNConv(channel) for channel in channels]
-        self.pool = pool_func(**pool_kwargs)
+        self.pool = pool_func(pooling_channels) if pooling_channels else pool_func()
         self.output_mlp = (
             self.make_mlp(channels[-1], mlp_hidden_dim)
             if not latent_model
@@ -82,10 +82,7 @@ def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
     pool_func_key = hp.Choice("pooling_func", list(pool_funcs.keys()))
     pool_func = pool_funcs[pool_func_key]
 
-    pool_kwargs = dict()
-    if pool_func_key == "global_attn_pool":
-        pool_channels = hp.Int("pool_channels", **HIDDEN_DIM_CHOICES)
-        pool_kwargs["chanels"] = pool_channels
+    pool_channels = hp.Int("pool_channels", **HIDDEN_DIM_CHOICES) if pool_func_key == "global_attn_pool" else None
 
     graph_channels = [
         hp.Int(f"graph_channels_{i}", **HIDDEN_DIM_CHOICES)
@@ -96,7 +93,7 @@ def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
         for i in range(num_mlp_layers)
     ]
 
-    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func, pool_kwargs)
+    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func, pool_channels)
     model.compile(
         optimizer="adam",
         loss="mse",
