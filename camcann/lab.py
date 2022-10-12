@@ -109,9 +109,15 @@ class GraphExperiment(BaseExperiment):
             print(f"{first_graph.a=}")
 
     @property
+    def tb_search_dir(self) -> Path:
+        """Get a new tensorboard log directory for searching."""
+        return self.tb_dir / "search-logs"
+
+    @property
     def tb_run_dir(self) -> Path:
-        """Get a new tensorboard log directory for a current run."""
+        """Get a new tensorboard log directory for final model training."""
         return self.tb_dir / str(datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
+
 
     def search(self):
         """Search the hyperparameter space, reporting data via tensorboard."""
@@ -120,11 +126,11 @@ class GraphExperiment(BaseExperiment):
         callbacks = []
         es_callback = EarlyStopping(
             min_delta=0,
-            patience=100,
+            patience=150,
             restore_best_weights=True,
         )
         callbacks.append(es_callback)
-        callbacks.append(TensorBoard(log_dir=self.tb_run_dir))
+        callbacks.append(TensorBoard(log_dir=self.tb_search_dir))
 
         self.tuner.search(
             loader.load(),
@@ -138,14 +144,35 @@ class GraphExperiment(BaseExperiment):
         """Train the best hyperparameters on all the data."""
         best_hp = self.tuner.get_best_hyperparameters()[0]
         self.model = self.model_type(best_hp)
-        callbacks = [TensorBoard(log_dir=self.tb_run_dir)]
+
+        es_callback = EarlyStopping(
+            min_delta=0,
+            patience=150,
+            restore_best_weights=True,
+        )
+        callbacks = [TensorBoard(log_dir=self.tb_run_dir), es_callback]
+
+        print("Fitting best model with validation...")
         self.model.fit(
-            self.graph_data.train_loader.load(),
-            steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
+            self.graph_data.optim_loader.load(),
+            steps_per_epoch=self.graph_data.optim_loader.steps_per_epoch,
+            validation_data=self.graph_data.val_loader.load(),
+            validation_steps=self.graph_data.val_loader.steps_per_epoch,
             epochs=epochs,
             callbacks=callbacks,
         )
         self.model.save(self.model_path)
+
+        print("Fine tuning best model on all data...")
+        callbacks = [TensorBoard(log_dir=self.tb_run_dir)]
+        self.model.fit(
+            self.graph_data.train_loader.load(),
+            steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
+            epochs=np.floor_divide(epochs, 10),
+            callbacks=callbacks,
+        )
+        print("Done!")
+
 
     def train_uq(self):
         """Train and test the uncertainty quantified model."""
