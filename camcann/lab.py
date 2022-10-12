@@ -145,6 +145,7 @@ class GraphExperiment(BaseExperiment):
             epochs=epochs,
             callbacks=callbacks,
         )
+        self.model.save(self.model_path)
 
     def train_uq(self):
         """Train and test the uncertainty quantified model."""
@@ -189,7 +190,7 @@ class GraphExperiment(BaseExperiment):
         all_loader = self.graph_data.all_loader
         predictions = self.model.predict(
             all_loader.load(), steps=all_loader.steps_per_epoch
-        )
+        ).flatten()
         self._make_pred_df(predictions).to_csv(self.predict_path)
 
 
