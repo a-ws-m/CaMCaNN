@@ -139,9 +139,7 @@ class GraphExperiment(BaseExperiment):
         best_hp = self.tuner.get_best_hyperparameters()[0]
         self.model = self.model_type(best_hp)
         callbacks = [TensorBoard(log_dir=self.tb_run_dir)]
-        self.model_type.fit(
-            best_hp,
-            self.model,
+        self.model.fit(
             self.graph_data.train_loader.load(),
             steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
             epochs=epochs,
