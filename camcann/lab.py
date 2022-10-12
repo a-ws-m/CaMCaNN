@@ -137,7 +137,7 @@ class GraphExperiment(BaseExperiment):
     def train_best(self, epochs: int):
         """Train the best hyperparameters on all the data."""
         best_hp = self.tuner.get_best_hyperparameters()[0]
-        self.model = self.model_type.build(best_hp)
+        self.model = self.model_type(best_hp)
         callbacks = [TensorBoard(log_dir=self.tb_run_dir)]
         self.model_type.fit(
             best_hp,
@@ -304,6 +304,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--just-uq", action="store_true", help="Just train the uncertainty quantifier."
     )
+    parser.add_argument("--only-best", action="store_true", help="For GNN -- don't perform search, only train the best model.")
 
     args = parser.parse_args()
 
@@ -329,7 +330,8 @@ if __name__ == "__main__":
             build_gnn, dataset, results_path=results_path, pretrained=pretrained
         )
         if not pretrained:
-            exp.search()
+            if not args.only_best:
+                exp.search()
             exp.train_best(args.epochs)
             exp.test()
         if do_uq:
