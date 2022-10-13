@@ -142,6 +142,10 @@ class GraphExperiment(BaseExperiment):
     def train_best(self, epochs: int):
         """Train the best hyperparameters on all the data."""
         best_hp = self.tuner.get_best_hyperparameters()[0]
+
+        print("Best hyperparameters:")
+        print(best_hp)
+
         self.model = self.tuner.hypermodel.build(best_hp)
 
         es_callback = EarlyStopping(
