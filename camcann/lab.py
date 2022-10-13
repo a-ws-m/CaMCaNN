@@ -83,7 +83,7 @@ class GraphExperiment(BaseExperiment):
             objective="val_loss",
             max_epochs=550,
             seed=2022,
-            hyperband_iterations=3,
+            hyperband_iterations=1,
             directory=str(results_path.absolute()),
             project_name="gnn_search",
         )
