@@ -115,9 +115,9 @@ class GraphExperiment(BaseExperiment):
         return self.tb_dir / "search-logs"
 
     @property
-    def tb_run_dir(self) -> Path:
+    def tb_train_dir(self) -> Path:
         """Get a new tensorboard log directory for final model training."""
-        return self.tb_dir / str(datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
+        return self.tb_dir / "train-best"
 
 
     def search(self):
@@ -150,7 +150,7 @@ class GraphExperiment(BaseExperiment):
             patience=150,
             restore_best_weights=True,
         )
-        callbacks = [TensorBoard(log_dir=self.tb_run_dir), es_callback]
+        callbacks = [TensorBoard(log_dir=self.tb_train_dir), es_callback]
 
         print("Fitting best model with validation...")
         self.model.fit(
@@ -164,7 +164,7 @@ class GraphExperiment(BaseExperiment):
         self.model.save(self.model_path)
 
         print("Fine tuning best model on all data...")
-        callbacks = [TensorBoard(log_dir=self.tb_run_dir)]
+        callbacks = [TensorBoard(log_dir=self.tb_train_dir)]
         self.model.fit(
             self.graph_data.train_loader.load(),
             steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
