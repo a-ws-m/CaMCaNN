@@ -119,7 +119,6 @@ class GraphExperiment(BaseExperiment):
         """Get a new tensorboard log directory for final model training."""
         return self.tb_dir / "train-best"
 
-
     def search(self):
         """Search the hyperparameter space, reporting data via tensorboard."""
         loader = self.graph_data.optim_loader
@@ -127,7 +126,7 @@ class GraphExperiment(BaseExperiment):
         callbacks = []
         es_callback = EarlyStopping(
             min_delta=0,
-            patience=150,
+            patience=100,
         )
         callbacks.append(es_callback)
         callbacks.append(TensorBoard(log_dir=self.tb_search_dir))
@@ -150,7 +149,7 @@ class GraphExperiment(BaseExperiment):
             patience=150,
             restore_best_weights=True,
         )
-        callbacks = [TensorBoard(log_dir=self.tb_train_dir), es_callback]
+        callbacks = [TensorBoard(log_dir=self.tb_train_dir / "with-val"), es_callback]
 
         print("Fitting best model with validation...")
         self.model.fit(
@@ -164,7 +163,7 @@ class GraphExperiment(BaseExperiment):
         self.model.save(self.model_path)
 
         print("Fine tuning best model on all data...")
-        callbacks = [TensorBoard(log_dir=self.tb_train_dir)]
+        callbacks = [TensorBoard(log_dir=self.tb_train_dir / "fine-tune")]
         self.model.fit(
             self.graph_data.train_loader.load(),
             steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
@@ -279,9 +278,6 @@ class ECFPExperiment(BaseExperiment):
         print("Doing elastic net feature selection...")
         num_low_import = self.model.elastic_feature_select()
         print(f"{num_low_import} subgraphs removed.")
-        print("Fitting ridge models...")
-        ridge_results = self.model.ridge_model_train_test()
-        print(ridge_results)
 
         # Write results
         self.model.smiles_hashes.save(self.hash_path)
