@@ -79,8 +79,8 @@ class QinDataLoader(ABC):
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["smiles"]]
         self.test_idxs = np.where(self.df["traintest"] == "test")[0]
-        self.optim_idxs, self.val_idxs = train_test_split(self.test_idxs, test_size=0.1, random_state=2022)
         self.train_idxs = np.where(self.df["traintest"] == "train")[0]
+        self.optim_idxs, self.val_idxs = train_test_split(self.train_idxs, train_size=0.9, random_state=2022)
 
 
 class QinECFPData(QinDataLoader):
