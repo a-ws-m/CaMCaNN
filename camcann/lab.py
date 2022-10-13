@@ -83,6 +83,7 @@ class GraphExperiment(BaseExperiment):
             objective="val_loss",
             max_epochs=550,
             seed=2022,
+            hyperband_iterations=3,
             directory=str(results_path.absolute()),
             project_name="gnn_search",
         )
@@ -127,7 +128,6 @@ class GraphExperiment(BaseExperiment):
         es_callback = EarlyStopping(
             min_delta=0,
             patience=150,
-            restore_best_weights=True,
         )
         callbacks.append(es_callback)
         callbacks.append(TensorBoard(log_dir=self.tb_search_dir))
@@ -143,7 +143,7 @@ class GraphExperiment(BaseExperiment):
     def train_best(self, epochs: int):
         """Train the best hyperparameters on all the data."""
         best_hp = self.tuner.get_best_hyperparameters()[0]
-        self.model = self.model_type(best_hp)
+        self.model = self.tuner.hypermodel.build(best_hp)
 
         es_callback = EarlyStopping(
             min_delta=0,
@@ -168,9 +168,10 @@ class GraphExperiment(BaseExperiment):
         self.model.fit(
             self.graph_data.train_loader.load(),
             steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
-            epochs=np.floor_divide(epochs, 10),
+            epochs=np.floor_divide(epochs, 100),
             callbacks=callbacks,
         )
+        self.model.save(self.model_path)
         print("Done!")
 
 
