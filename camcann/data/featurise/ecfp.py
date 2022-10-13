@@ -1,18 +1,20 @@
 """Molecular featurisation utilities."""
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from enum import IntEnum
 from operator import getitem, methodcaller
 from os import PathLike
+from pathlib import Path
 from typing import (
     Callable,
+    DefaultDict,
     Dict,
     FrozenSet,
     List,
     NamedTuple,
     Optional,
     Sequence,
-    Set,
+    TypeAlias,
     Tuple,
     Union,
 )
@@ -23,6 +25,8 @@ import pandas as pd
 from rdkit.Chem import MolFromSmiles, MolFragmentToSmiles
 from rdkit.Chem.rdchem import Atom, Bond, Mol
 from scipy.sparse import csr_array
+
+AtomicIndex: TypeAlias = int
 
 RDCHEM_ATOM_METH_NAMES: Dict[str, str] = {
     "number": "GetAtomicNum",
@@ -59,7 +63,7 @@ class BondType(IntEnum):
 class SimpleBond(NamedTuple):
     """Contain minimalistic information about bonds."""
 
-    atom_idxs: Tuple[int, int]
+    atom_idxs: Tuple[AtomicIndex, AtomicIndex]
     type_: BondType
 
     @classmethod
@@ -92,7 +96,7 @@ class SMILESHashes:
                     "weight": [],
                     "selected": [],
                     "above_threshold_occurence": [],
-                    "norm_weight": []
+                    "norm_weight": [],
                 }
             )
 
@@ -120,20 +124,22 @@ class SMILESHashes:
             return self.hash_df.loc[hash_].fingerprint_index
         except KeyError:
             return None
-    
+
     def set_regularised_selection(self, support: np.ndarray):
         """Set the ``selected`` column of the data frame based on a support array.
-        
+
         The support array can be acquired using a scikit-learn
         ``SelectFromModel`` selector. This must be used after the initial
         removal of features below the threshold occurance. This function
         determines the binary ``AND`` of ``above_threshold_occurance`` and
         ``support``, filling in the missing values.
-        
+
         """
         if self.hash_df["above_threshold_occurance"].isnull().any():
-            raise ValueError("One or more subgraphs have not been checked for being above threshold occurance.")
-        
+            raise ValueError(
+                "One or more subgraphs have not been checked for being above threshold occurance."
+            )
+
         selected = self.hash_df["above_threshold_occurance"].to_numpy(copy=True)
         selected[selected] = support
         self.hash_df["selected"] = selected
@@ -208,9 +214,9 @@ class HashedMolecule:
         visited during a walk of a given length.
 
         """
-        bonded_atoms: List[List[Tuple[int, BondType]]] = [
-            [] for _ in range(len(self.atom_hashes))
-        ]
+        bonded_atoms: DefaultDict[
+            AtomicIndex, List[Tuple[AtomicIndex, BondType]]
+        ] = defaultdict(list)
         for bond in self.bonds:
             for pair_idx in (0, 1):
                 # Add reference to other atom for both atoms in the bond
@@ -219,29 +225,34 @@ class HashedMolecule:
 
         # Sort atomic interactions based primarily on the type of bond and
         # secondarily on the atomic hash magnitude.
-        self.atom_interactions: List[List[int]] = [
-            [
-                bonded_atom[0]
-                for bonded_atom in sorted(
-                    entry,
-                    key=lambda bond_info: (
-                        bond_info[1],
-                        self.atom_hashes[bond_info[0]],
-                    ),
-                )
-            ]
-            for entry in bonded_atoms
-        ]
-        for idx, interactions in enumerate(self.atom_interactions):
+        self.atom_interactions: DefaultDict[
+            AtomicIndex, List[AtomicIndex]
+        ] = defaultdict(list)
+        self.atom_interactions.update(
+            {
+                atom_index: [
+                    bond_tuple[0]
+                    for bond_tuple in sorted(
+                        entry,
+                        key=lambda bond_info: (
+                            bond_info[1],
+                            self.atom_hashes[bond_info[0]],
+                        ),
+                    )
+                ]
+                for atom_index, entry in bonded_atoms.items()
+            }
+        )
+        for atom_idx, interactions in self.atom_interactions.items():
             # Add self-interactions
-            interactions.insert(0, idx)
+            interactions.insert(0, atom_idx)
 
         # Initialize atomic walk dictionary
-        self.atomic_walks: Dict[int, List[FrozenSet[int]]] = {
+        self.atomic_walks: Dict[int, List[FrozenSet[AtomicIndex]]] = {
             0: [frozenset({idx}) for idx in range(len(self.atom_hashes))]
         }
         # Initialize cumulative atomic walks dictionary
-        self.cum_atomic_walks: Dict[int, List[FrozenSet[int]]] = {
+        self.cum_atomic_walks: Dict[int, List[FrozenSet[AtomicIndex]]] = {
             1: self.atomic_walks[0]
         }
 
@@ -259,7 +270,7 @@ class HashedMolecule:
     def hash_step(self):
         """Compute a single hash update step using bonded hashes."""
         new_hashes = []
-        for interactions in self.atom_interactions:
+        for interactions in self.atom_interactions.values():
             new_hashes.append(
                 hash_array(np.array([self.atom_hashes[idx] for idx in interactions]))
             )
@@ -276,7 +287,7 @@ class HashedMolecule:
         largest_step = max(self.atomic_walks.keys())
 
         # Do another step
-        new_walks = []
+        new_walks: List[FrozenSet[AtomicIndex]] = []
         for walk in self.atomic_walks[largest_step]:
             walk_buffer = set()
             for atom_idx in walk:
@@ -293,7 +304,7 @@ class HashedMolecule:
             )
         ]
 
-    def check_duplicates(self, radius: int) -> List[Tuple[int, Optional[int]]]:
+    def check_duplicates(self, radius: int) -> List[Tuple[AtomicIndex, Optional[AtomicIndex]]]:
         """Get a list of hash indexes that refer to same substructure at a given radius.
 
         Update atomic walks dictionary along the way.
@@ -310,16 +321,19 @@ class HashedMolecule:
         current_lvl_walks = self.atomic_walks[radius]
         cumulative_walks = self.cum_atomic_walks[radius]
 
-        duplicates = []
+        duplicates: List[Tuple[AtomicIndex, Optional[AtomicIndex]]] = []
         for idx, walk in enumerate(current_lvl_walks):
             if walk in cumulative_walks:
                 duplicates.append((idx, None))
                 continue
             try:
-                duplicates.append((idx, current_lvl_walks.index(walk, idx + 1)))
+                duplicates.append((idx, current_lvl_walks.index(walk, 0, idx)))
             except ValueError:
-                # Set doesn't appear more than once in this level
-                continue
+                try:
+                    duplicates.append((idx, current_lvl_walks.index(walk, idx + 1)))
+                except ValueError:
+                    # Set doesn't appear more than once in this level
+                    continue
 
         return duplicates
 
@@ -345,18 +359,18 @@ class HashedMolecule:
                 for cum_walk in self.cum_atomic_walks[1]
             ]
 
-        for steps_done in range(num_steps):
+        for steps_done in range(1, num_steps + 1):
             self.hash_step()
             new_hashes = self.atom_hashes[:]
             if include_smiles:
                 new_smiles = [
                     frag_to_smiles(self.rdk_mol, cum_walk)
-                    for cum_walk in self.cum_atomic_walks[2 + steps_done]
+                    for cum_walk in self.cum_atomic_walks[1 + steps_done]
                 ]
 
-            if steps_done > 0:
+            if steps_done > 1:
                 # Potentially duplicate hashes in list
-                duplicates = self.check_duplicates(steps_done + 1)
+                duplicates = self.check_duplicates(steps_done)
 
                 to_delete = []
                 for indexes in duplicates:
@@ -487,10 +501,17 @@ class ECFPCountFeaturiser:
 
 if __name__ == "__main__":
     # Quick and dirty test
-    test_smiles = ["C(C)(C)CC"]
+    all_results = pd.read_csv(
+        Path(__file__).parents[1] / "datasets" / "qin_all_results.csv", header=0
+    )
+    test_smiles = all_results["smiles"]
+    test_smiles = test_smiles[test_smiles.str.contains("Br-")]
     test_molecules = [MolFromSmiles(test_smile) for test_smile in test_smiles]
 
     featuriser = ECFPCountFeaturiser()
     fingerprints = featuriser.featurise_molecules(test_molecules, 2)
 
-    print(featuriser.label_features(fingerprints, test_smiles))
+    # print(featuriser.label_features(fingerprints, test_smiles))
+    # print(featuriser.smiles_hashes.smiles)
+    print(featuriser.smiles_hashes.hash_df.SMILES)
+    assert featuriser.smiles_hashes.hash_df.SMILES.is_unique
