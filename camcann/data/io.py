@@ -17,6 +17,18 @@ from .featurise.graph import MolNodeFeaturizer, mols_to_graph
 DATASET_FOLDER = Path(__file__).parent / "datasets"
 RANDOM_SEED = 2021
 
+class GraphData(Dataset):
+    """Handle graph data subsets."""
+
+    def __init__(self, graphs: List[Graph]):
+        """Store graphs."""
+        self.graphs = graphs
+        super().__init__()
+
+    def read(self) -> List[Graph]:
+        """Return the graphs for this subset."""
+        return self.graphs
+
 
 class Datasets(Enum):
     """Available datasets."""
@@ -24,6 +36,18 @@ class Datasets(Enum):
     QIN = DATASET_FOLDER / "qin-data.csv"
     NIST_ANIONICS = DATASET_FOLDER / "nist-anionics.csv"
     QIN_AND_NIST_ANIONICS = DATASET_FOLDER / "merged-data.csv"
+
+
+def get_nist_data(
+    mol_featuriser: MolNodeFeaturizer,
+    preprocess: Optional[LayerPreprocess] = None,
+) -> Tuple[DisjointLoader, pd.DataFrame]:
+    """Get a data loader for the NIST anionics data."""
+    df = pd.read_csv(Datasets.NIST_ANIONICS.value, header=0)
+    df["Molecules"] = [MolFromSmiles(smiles) for smiles in df["smiles"]]
+    graphs = mols_to_graph(list(df["Molecules"]), mol_featuriser, list(df["exp"]))
+    graphs = list(map(preprocess, graphs)) if preprocess is not None else graphs
+    return DisjointLoader(GraphData(graphs), shuffle=False), df
 
 
 class QinDatasets(Enum):
@@ -39,6 +63,7 @@ class DataReader:
     def __init__(self, dataset: Datasets) -> None:
         """Read data from disk."""
         self.df = pd.read_csv(dataset.value, header=0)
+        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["SMILES"]]
 
     def cv_indexes(
         self, num_folds: int = 10, random_seed: int = RANDOM_SEED
@@ -80,7 +105,9 @@ class QinDataLoader(ABC):
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["smiles"]]
         self.test_idxs = np.where(self.df["traintest"] == "test")[0]
         self.train_idxs = np.where(self.df["traintest"] == "train")[0]
-        self.optim_idxs, self.val_idxs = train_test_split(self.train_idxs, train_size=0.9, random_state=2022)
+        self.optim_idxs, self.val_idxs = train_test_split(
+            self.train_idxs, train_size=0.9, random_state=2022
+        )
 
 
 class QinECFPData(QinDataLoader):
@@ -107,7 +134,7 @@ class QinECFPData(QinDataLoader):
 
         if smiles_hashes is None:
             smiles_hashes = SMILESHashes()
-        
+
         self.smiles_hashes: SMILESHashes = smiles_hashes
 
         self.featuriser = ECFPCountFeaturiser(self.smiles_hashes)
@@ -156,58 +183,47 @@ class QinGraphData(QinDataLoader):
         """
         super().__init__(dataset)
 
+        self.mol_featuriser = mol_featuriser
         graphs = mols_to_graph(
-            list(self.df["Molecules"]), mol_featuriser, list(self.df["exp"])
+            list(self.df["Molecules"]), self.mol_featuriser, list(self.df["exp"])
         )
         self.graphs = (
             list(map(preprocess, graphs)) if preprocess is not None else graphs
         )
 
-    class Subset(Dataset):
-        """Handle graph data subsets."""
-
-        def __init__(self, graphs: List[Graph]):
-            """Store graphs."""
-            self.graphs = graphs
-            super().__init__()
-
-        def read(self) -> List[Graph]:
-            """Return the graphs for this subset."""
-            return self.graphs
-
     @property
     def train_dataset(self):
         """Get the training dataset."""
         train_graphs = [self.graphs[i] for i in self.train_idxs]
-        return self.Subset(train_graphs)
-    
+        return GraphData(train_graphs)
+
     @property
     def optim_dataset(self):
         """Get the optimisation dataset."""
         optim_graphs = [self.graphs[i] for i in self.optim_idxs]
-        return self.Subset(optim_graphs)
+        return GraphData(optim_graphs)
 
     @property
     def val_dataset(self):
         """Get the validation dataset."""
         val_graphs = [self.graphs[i] for i in self.val_idxs]
-        return self.Subset(val_graphs)
+        return GraphData(val_graphs)
 
     @property
     def test_dataset(self):
         """Get the test dataset."""
         test_graphs = [self.graphs[i] for i in self.test_idxs]
-        return self.Subset(test_graphs)
+        return GraphData(test_graphs)
 
     @property
     def all_dataset(self):
         """Get the full dataset."""
-        return self.Subset(self.graphs)
+        return GraphData(self.graphs)
 
     @property
     def train_loader(self):
         """Get the training data loader."""
-        return DisjointLoader(self.train_dataset)
+        return DisjointLoader(self.train_dataset, shuffle=False)
 
     @property
     def optim_loader(self):
