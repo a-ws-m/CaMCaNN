@@ -187,7 +187,8 @@ class GraphExperiment(BaseExperiment):
         with (self.results_path / "nist-results.json").open("w") as f:
             json.dump(nist_metrics, f)
 
-        nist_df["pred"] = nist_predictions.flatten()
+        nist_df["pred"] = None
+        nist_df["pred"][nist_df["Convertable"]] = nist_predictions.flatten()
         nist_df.to_csv(self.results_path / "nist-predictions.csv", columns=["SMILES", "log CMC", "pred"])
 
         return nist_metrics
