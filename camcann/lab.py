@@ -78,6 +78,11 @@ class GraphExperiment(BaseExperiment):
         self.tb_dir = results_path / "logs"
         self.tb_dir.mkdir(exist_ok=True)
 
+        self.tb_search_dir = self.tb_dir / "search-logs"
+        self.tb_train_dir = self.tb_dir / "train-best"
+
+        self.best_hp_file = self.results_path / "best_hps.json"
+
         self.tuner = keras_tuner.Hyperband(
             hypermodel=hypermodel,
             objective="val_loss",
@@ -109,16 +114,6 @@ class GraphExperiment(BaseExperiment):
             print(f"{first_graph.x=}")
             print(f"{first_graph.a=}")
 
-    @property
-    def tb_search_dir(self) -> Path:
-        """Get a new tensorboard log directory for searching."""
-        return self.tb_dir / "search-logs"
-
-    @property
-    def tb_train_dir(self) -> Path:
-        """Get a new tensorboard log directory for final model training."""
-        return self.tb_dir / "train-best"
-
     def search(self):
         """Search the hyperparameter space, reporting data via tensorboard."""
         loader = self.graph_data.optim_loader
@@ -143,8 +138,9 @@ class GraphExperiment(BaseExperiment):
         """Train the best hyperparameters on all the data."""
         best_hp = self.tuner.get_best_hyperparameters()[0]
 
+        best_hps_dict = best_hp.get_config()["values"]
         print("Best hyperparameters:")
-        print(best_hp)
+        print(best_hp.get_config())
 
         self.model = self.tuner.hypermodel.build(best_hp)
 
@@ -171,7 +167,7 @@ class GraphExperiment(BaseExperiment):
         self.model.fit(
             self.graph_data.train_loader.load(),
             steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
-            epochs=np.floor_divide(epochs, 100),
+            epochs=np.floor_divide(epochs, 10),
             callbacks=callbacks,
         )
         self.model.save(self.model_path)
