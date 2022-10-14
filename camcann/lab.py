@@ -1,6 +1,7 @@
 """Test the performance of models on the Qin data."""
 from argparse import ArgumentParser
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -140,7 +141,10 @@ class GraphExperiment(BaseExperiment):
 
         best_hps_dict = best_hp.get_config()["values"]
         print("Best hyperparameters:")
-        print(best_hp.get_config())
+        print(best_hps_dict)
+
+        with self.best_hp_file.open("w") as f:
+            json.dump(best_hps_dict, f)
 
         self.model = self.tuner.hypermodel.build(best_hp)
 
