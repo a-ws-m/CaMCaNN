@@ -44,7 +44,7 @@ def get_nist_data(
 ) -> Tuple[DisjointLoader, pd.DataFrame]:
     """Get a data loader for the NIST anionics data."""
     df = pd.read_csv(Datasets.NIST_ANIONICS.value, header=0)
-    df["Molecules"] = [MolFromSmiles(smiles) for smiles in df["smiles"]]
+    df["Molecules"] = [MolFromSmiles(smiles) for smiles in df["SMILES"]]
     graphs = mols_to_graph(list(df["Molecules"]), mol_featuriser, list(df["exp"]))
     graphs = list(map(preprocess, graphs)) if preprocess is not None else graphs
     return DisjointLoader(GraphData(graphs), shuffle=False), df
