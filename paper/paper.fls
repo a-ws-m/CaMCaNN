@@ -536,6 +536,7 @@ INPUT .\sections\method.tex
 INPUT sections\method.tex
 INPUT .\sections\method.tex
 INPUT sections\method.tex
+INPUT C:\Users\Alexander\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
 INPUT .\sections\results.tex
 INPUT sections\results.tex
 INPUT .\sections\results.tex

@@ -34,6 +34,17 @@ Table~\ref{tab:data-split}.
     \end{tabular}
 \end{table}
 
+A QSPR pipeline requires choosing two essential functions: a representation
+function, whose parameters are defined before training the model, and a
+mathematical form that maps this representation to a prediction. The processes
+by which these functions are developed are called \emph{feature engineering} and
+\emph{model selection}, respectively.
+
+\subsection{Feature engineering}
+
+The ideal molecular representation depends on the task at hand. Ideally, it
+should be compact, but complete: ``as simple as possible, but not simpler.''
+
 We can generalise further and skip the classification by applying a similar
 linear model to the headgroup, based on the number of and type of chemical
 groups that constitute it. In this approach, we split the molecule into

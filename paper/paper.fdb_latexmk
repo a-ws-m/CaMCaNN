@@ -1,13 +1,13 @@
 # Fdb version 3
-["bibtex paper"] 1666005363 "paper.aux" "paper.bbl" "paper" 1666005364
+["bibtex paper"] 1666015948 "paper.aux" "paper.bbl" "paper" 1666029709
   "C:/Users/Alexander/AppData/Local/Programs/MiKTeX/bibtex/bst/achemso/achemso.bst" 1664362228 30310 bfba74738dde869465c75dd49a1a6bd6 ""
-  "acs-paper.bib" 1666005364 306 2ec6e2c563f7f14bcefed0d36c308168 "pdflatex"
+  "acs-paper.bib" 1666029709 306 2ec6e2c563f7f14bcefed0d36c308168 "pdflatex"
   "camcann.bib" 1666001043 20633 8bd33adf0d241fc480d8dc9c570e8c6e ""
-  "paper.aux" 1666005364 1809 25eaae754fa5ef3c82f8c7eb2c34dc88 "pdflatex"
+  "paper.aux" 1666029709 1809 c4e3261aac8b53b26e9a813e60e1ed31 "pdflatex"
   (generated)
   "paper.bbl"
   "paper.blg"
-["pdflatex"] 1666005363 "c:/Users/Alexander/dev/CaMCaNN/paper/paper.tex" "paper.pdf" "paper" 1666005364
+["pdflatex"] 1666029707 "c:/Users/Alexander/dev/CaMCaNN/paper/paper.tex" "paper.pdf" "paper" 1666029709
   "C:/Users/Alexander/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1665955047 155376 c8e0ef4cbdc9f0c1c9fd29be203a0942 ""
   "C:/Users/Alexander/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1650289046 10256855 f1ebdd396620ce77ebad875f9382a5b1 ""
   "C:/Users/Alexander/AppData/Local/Programs/MiKTeX/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1233955448 1004 54797486969f23fa377b128694d548df ""
@@ -97,11 +97,11 @@
   "C:/Users/Alexander/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388494052 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/Alexander/AppData/Local/Programs/MiKTeX/tex/latex/xkeyval/xkeyval.sty" 1623005690 4902 efb3d66683a2da2a232f71e3a571a899 ""
   "c:/Users/Alexander/dev/CaMCaNN/paper/paper.tex" 1666004034 7070 c854f78faaf73d2844d80a670ee2d664 ""
-  "paper.aux" 1666005364 1809 25eaae754fa5ef3c82f8c7eb2c34dc88 "pdflatex"
-  "paper.bbl" 1666005363 3571 e8eb2a856694aa92c9d0151e323d1a9d "bibtex paper"
+  "paper.aux" 1666029709 1809 c4e3261aac8b53b26e9a813e60e1ed31 "pdflatex"
+  "paper.bbl" 1666015949 3571 e8eb2a856694aa92c9d0151e323d1a9d "bibtex paper"
   "paper.tex" 1666004034 7070 c854f78faaf73d2844d80a670ee2d664 ""
   "sections/introduction.tex" 1666001985 2943 a048da9594f3d57f7fcb8f6ed7cbea5e ""
-  "sections/method.tex" 1666005361 4425 feb1177cb0ba11f657b85531998683c8 ""
+  "sections/method.tex" 1666029706 4971 e78dd5d6a1a8c7f42d282ffa0c2b2bdb ""
   "sections/results.tex" 0 -1 0 ""
   (generated)
   "acs-paper.bib"
