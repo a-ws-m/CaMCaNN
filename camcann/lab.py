@@ -181,7 +181,7 @@ class GraphExperiment(BaseExperiment):
         loaded_model = load_model(self.model_path)
         nist_data, nist_df = get_nist_data(self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv))
 
-        nist_metrics = loaded_model.evaluate(nist_data.load(), steps=nist_data.steps_per_epoch)
+        nist_metrics = loaded_model.evaluate(nist_data.load(), steps=nist_data.steps_per_epoch, return_dict=True)
         nist_predictions = loaded_model.predict(nist_data.load(), steps=nist_data.steps_per_epoch)
 
         with (self.results_path / "nist-results.json").open("w") as f:

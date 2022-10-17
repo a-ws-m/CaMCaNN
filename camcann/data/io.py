@@ -68,7 +68,12 @@ class DataReader:
     def __init__(self, dataset: Datasets) -> None:
         """Read data from disk."""
         self.df = pd.read_csv(dataset.value, header=0)
-        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["SMILES"]]
+        try:
+            smiles = self.df["smiles"]
+        except KeyError:
+            smiles = self.df["SMILES"]
+        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles]
+
 
     def cv_indexes(
         self, num_folds: int = 10, random_seed: int = RANDOM_SEED
