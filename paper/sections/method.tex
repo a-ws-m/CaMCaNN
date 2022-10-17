@@ -1,0 +1,59 @@
+A dataset of 202 surfactants was used, which was curated by a previous work
+\cite{qinPredictingCriticalMicelle2021a} by accumulating results from several
+publications. This dataset was selected because, to the authors' knowledge, it
+is currently the largest public dataset of CMCs for several classes of
+surfactant collected at standard conditions, in an aqueous environment between
+\SIrange{20}{25}{\celsius}. These data were split into training and test
+subsets, to simulate the real-world scenario of using a model to make inferences
+about molecules for which no data is available. The training data was used to
+fit the models, whilst test data was `locked away' until it had been decided
+that the model was optimised, and the performance metrics on the test data was
+used for comparison. For some models, the training data was further split into
+optimisation and validation subsets; the optimisation data was used when
+calculating the loss function during model fitting and the validation data was
+used for on-the-fly evaluation of model performance during training.
+
+To provide a consistent benchmark of model performance, the same train/test data
+splits were used as \citet{qinPredictingCriticalMicelle2021a} and models were
+also trained and evaluated using only the nonionic surfactants from the dataset,
+so as to test whether generalised all-surfactant models can be as accurate as
+models trained on one class of surfactant. The number of each class of
+surfactant in the train and test subsets of the data are shown in
+Table~\ref{tab:data-split}.
+
+\begin{table}
+    \centering
+    \caption{The number of each class of surfactant contained in the train/test subsets of the CMC dataset.}
+    \label{tab:data-split}
+    \begin{tabular}{@{}llrrrr@{}} \toprule \multicolumn{2}{c}{Data subset} & \multicolumn{4}{c}{Number of}                                                    \\
+               \cmidrule(r){1-2}\cmidrule(l){3-6}  Surfactant classes  & Train/test                    & Nonionics & Anionics & Cationics & Zwitterionics \\
+               \midrule All                                            & Train                         & 110       & 30       & 31        & 9             \\
+                                                                       & Test                          & 12        & 4        & 4         & 2             \\
+               Nonionics                                               & Train                         & 98        &          &           &               \\
+                                                                       & Test                          & 12        &          &           &               \\\bottomrule
+    \end{tabular}
+\end{table}
+
+We can generalise further and skip the classification by applying a similar
+linear model to the headgroup, based on the number of and type of chemical
+groups that constitute it. In this approach, we split the molecule into
+\emph{atomic environments} up to a certain radius, $r$: each subgraph is centred
+on an atom and extends $r$ steps along connecting bonds. Now, a small change in
+headgroup composition is reflected in a change in subgraph counts, and provided
+the new subgraph exists in our training data, the model can adjust its
+prediction accordingly. Tail group branching is also considered, to an extent:
+branch points in a carbon chain are distinguished from the rest, as they
+constitute a \ce{CH} subgraph, rather than a \ce{CH2}.
+
+Still, this approach relies on a discrete representation of the surfactant and,
+to ensure a good fit, all subgraphs of interest must be well represented in the
+dataset. Neural network approaches that work on molecular graphs are capable of
+learning a continuous representation of surfactants. They have been explored
+previously for CMC prediction and demonstrated promising results. However,
+although the continuous representation ensures that inferences can be made even
+for molecules with chemistry that is completely different from the training
+data, neural networks cannot reliably extrapolate in this way. In the case of
+the ECFP model, the discretisation gives a clear indicator to the researcher as
+to whether the model can be reliably applied: if a molecule contains subgraphs
+that do not appear in the training data, its prediction is less reliable. It is
+difficult to assess the same for a neural network.
