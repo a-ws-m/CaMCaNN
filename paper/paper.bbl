@@ -8,7 +8,7 @@
 \providecommand*\mcitethebibliography{\thebibliography}
 \csname @ifundefined\endcsname{endmcitethebibliography}
   {\let\endmcitethebibliography\endthebibliography}{}
-\begin{mcitethebibliography}{10}
+\begin{mcitethebibliography}{12}
 \providecommand*\natexlab[1]{#1}
 \providecommand*\mciteSetBstSublistMode[1]{}
 \providecommand*\mciteSetBstMaxWidthForm[2]{}
@@ -115,6 +115,25 @@ Chen,~C.; Ye,~W.; Zuo,~Y.; Zheng,~C.; Ong,~S.~P. Graph {{Networks}} as a
   Hahn]{rogersExtendedConnectivityFingerprints2010}
 Rogers,~D.; Hahn,~M. Extended-{{Connectivity Fingerprints}}. \emph{Journal of
   Chemical Information and Modeling} \textbf{2010}, \emph{50}, 742--754\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Li \latin{et~al.}(2017)Li, Cheng, Wang, Morstatter, Trevino, Tang, and
+  Liu]{liFeatureSelectionData2017}
+Li,~J.; Cheng,~K.; Wang,~S.; Morstatter,~F.; Trevino,~R.~P.; Tang,~J.; Liu,~H.
+  Feature {{Selection}}: {{A Data Perspective}}. \emph{ACM Computing Surveys}
+  \textbf{2017}, \emph{50}, 94:1--94:45\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Tibshirani(1996)]{tibshiraniRegressionShrinkageSelection1996}
+Tibshirani,~R. Regression {{Shrinkage}} and {{Selection}} via the {{Lasso}}.
+  \emph{Journal of the Royal Statistical Society. Series B (Methodological)}
+  \textbf{1996}, \emph{58}, 267--288\relax
 \mciteBstWouldAddEndPuncttrue
 \mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
 {\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax

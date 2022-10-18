@@ -29,7 +29,7 @@ Table~\ref{tab:data-split}.
                \cmidrule(r){1-2}\cmidrule(l){3-6}  Surfactant classes  & Train/test                    & Nonionics & Anionics & Cationics & Zwitterionics \\
                \midrule All                                            & Train                         & 110       & 30       & 31        & 9             \\
                                                                        & Test                          & 12        & 4        & 4         & 2             \\
-               Nonionics                                               & Train                         & 98        &          &           &               \\
+               Nonionics                                               & Train                         & 110        &          &           &               \\
                                                                        & Test                          & 12        &          &           &               \\\bottomrule
     \end{tabular}
 \end{table}
@@ -101,6 +101,7 @@ environments in the training data up to radius $r$, $\{e_i \mid 0 \leq i \leq
 N\}$, is extracted and the resulting feature vector is
 
 \begin{equation}
+    \label{eq:ecfp}
     \vec{c}_i = \text{Count}(e_i).
 \end{equation}
 
@@ -123,13 +124,54 @@ a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
 so that there is multicollinearity. This redundancy can impede model fitting and
 interpretation.
 
-TODO: Graph representation description.
+Both of the approaches described so far rely on molecular feature vectors that
+cannot describe the molecule's topology. A molecular graph is a structure that
+achieves this, and it is a popular choice for cheminformatics as well as
+visualisation of molecular structure. In this approach, each atom is considered
+a \emph{node} and each bond an \emph{edge}. Rather than having a single feature
+vector to describe the molecule as a whole, each atom is assigned its own
+feature vector based on properties such as its element, hybridisation state,
+charge, etc. These feature vectors are concatenated into a node feature matrix.
+The graph's structure is then defined by a binary adjacency matrix.
+
+TODO: Graph representation maths and description.
 
 \subsection{Model selection}
 
+Based on the prior knowledge encoded in Equation~\ref{eq:klevens}, it is
+reasonable to assume that certain atomic environments have a linear relationship
+to $\log X_{cmc}$. It therefore seems justified to apply a linear model to the
+ECFP fingerprints described in Equation~\ref{eq:ecfp}. However, the issues of
+the large feature vector size and multicollinearity must be addressed; a na\"ive
+fit using ordinary least squares (OLS) would likely produce poor results. To
+that end, a process of \emph{feature selection} was applied, whereby a subset of
+the atomic environments were selected for use in the model. There are several
+approaches to feature selection\cite{liFeatureSelectionData2017}; here, we chose
+an approach based on \emph{regularisation}.
+
+In this approach, we include a term in the loss function that depends on the
+norm of the learned parameters, or `weights', $\vec{w}$. The two types of constraints
+considered in this paper are $L_1$ and $L_2$ regularisation, which correspond to
+the inclusion of $L_1$ and $L_2$ norms, respectively. By combining $L_1$
+regularisation with the least squares regressor, we obtain the least absolute
+shrinkage and selection operator (LASSO)\cite{tibshiraniRegressionShrinkageSelection1996}:
+
+\begin{equation}
+    \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} ||\mathbf{X}\vec{w} - \vec{y}||_2 ^ 2 + \alpha ||\vec{w}||_1},\quad \alpha \geq 0
+\end{equation}
+
+where $\mathbf{X}$ are the training data feature vectors, stacked row-wise into
+a matrix; $\vec{y}$ are the true values of $\log X_{cmc}$; and $\alpha$ is a
+user-defined hyperparameter describing the degree of regularisation. By imposing
+the $L_1$ penalty, the model is biased towards learning a \emph{sparse} weight
+vector: many of its elements will be negligible. The corresponding features can
+be removed from the representation.
+
+One problem with LASSO 
+
 TODO:
 \begin{itemize}
-    \item ECFP linear model and feature selection description.
+    \item ElasticNet description.
     \item Graph neural network model description.
     \item Hyperband description.
 \end{itemize}

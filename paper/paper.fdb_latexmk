@@ -1,13 +1,13 @@
 # Fdb version 3
-["bibtex paper"] 1666053699 "paper.aux" "paper.bbl" "paper" 1666053843
+["bibtex paper"] 1666104183 "paper.aux" "paper.bbl" "paper" 1666104185
   "C:/Users/Alexander/AppData/Local/Programs/MiKTeX/bibtex/bst/achemso/achemso.bst" 1664362228 30310 bfba74738dde869465c75dd49a1a6bd6 ""
-  "acs-paper.bib" 1666053841 306 2ec6e2c563f7f14bcefed0d36c308168 "pdflatex"
-  "camcann.bib" 1666049029 27936 1c8a008a86eda6f8da7c9ebadf0682c2 ""
-  "paper.aux" 1666053841 2671 902d5f71dd0eab693df12cf85a89e97b "pdflatex"
+  "acs-paper.bib" 1666104184 306 2ec6e2c563f7f14bcefed0d36c308168 "pdflatex"
+  "camcann.bib" 1666104182 34079 d5def6ed0f60ffa76a5948553f75e7f0 ""
+  "paper.aux" 1666104184 3084 54c580948580ba2b7ba2e70e87ef0b4c "pdflatex"
   (generated)
   "paper.bbl"
   "paper.blg"
-["pdflatex"] 1666053840 "c:/Users/Alexander/dev/CaMCaNN/paper/paper.tex" "paper.pdf" "paper" 1666053843
+["pdflatex"] 1666104183 "c:/Users/Alexander/dev/CaMCaNN/paper/paper.tex" "paper.pdf" "paper" 1666104185
   "C:/Users/Alexander/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1665955047 155376 c8e0ef4cbdc9f0c1c9fd29be203a0942 ""
   "C:/Users/Alexander/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/tcrm1200.pk" 1666053842 14064 fe33759b50c67aa0f517b0344319853c ""
   "C:/Users/Alexander/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1650289046 10256855 f1ebdd396620ce77ebad875f9382a5b1 ""
@@ -103,11 +103,11 @@
   "C:/Users/Alexander/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388494052 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/Alexander/AppData/Local/Programs/MiKTeX/tex/latex/xkeyval/xkeyval.sty" 1623005690 4902 efb3d66683a2da2a232f71e3a571a899 ""
   "c:/Users/Alexander/dev/CaMCaNN/paper/paper.tex" 1666053697 7019 762b90ed3c86d6e8c9af618b3fca9df0 ""
-  "paper.aux" 1666053841 2671 902d5f71dd0eab693df12cf85a89e97b "pdflatex"
-  "paper.bbl" 1666053700 5610 1206dafb6cfcb25eafe44823be22c140 "bibtex paper"
+  "paper.aux" 1666104184 3084 54c580948580ba2b7ba2e70e87ef0b4c "pdflatex"
+  "paper.bbl" 1666104183 6515 e92a35a9938166776e2af0c6e79f0a60 "bibtex paper"
   "paper.tex" 1666053697 7019 762b90ed3c86d6e8c9af618b3fca9df0 ""
   "sections/introduction.tex" 1666049805 2955 32301b944f954f177cdf3be86f25b785 ""
-  "sections/method.tex" 1666053839 7826 21df8e80b338aab53450125fe0c09d48 ""
+  "sections/method.tex" 1666104183 10427 e6ff1da89a101fecab017cb1bb5fd8d3 ""
   "sections/results.tex" 1666053742 60 67318ff62a7e03866ae37cc714d6d64e ""
   (generated)
   "acs-paper.bib"
