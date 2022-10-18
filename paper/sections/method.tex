@@ -43,28 +43,93 @@ by which these functions are developed are called \emph{feature engineering} and
 \subsection{Feature engineering}
 
 The ideal molecular representation depends on the task at hand. Ideally, it
-should be compact, but complete: ``as simple as possible, but not simpler.''
+should be compact, but complete
+\cite{faberCrystalStructureRepresentations2015,himanenDScribeLibraryDescriptors2020};
+`as simple as possible, but not simpler.' To that end, the representation should
+contain enough information to distinguish between isomers that with distinct
+properties, though concessions can be made if we restrict the model's domain and
+self-impose limits on the type of isomers we expose the model to, both during
+training and in use. Representations may also include descriptions of state,
+such as temperature and pressure \cite{chenGraphNetworksUniversal2019}, but this
+is redundant in cases where the training data spans a very limited range of
+states.
 
-We can generalise further and skip the classification by applying a similar
-linear model to the headgroup, based on the number of and type of chemical
-groups that constitute it. In this approach, we split the molecule into
-\emph{atomic environments} up to a certain radius, $r$: each subgraph is centred
-on an atom and extends $r$ steps along connecting bonds. Now, a small change in
-headgroup composition is reflected in a change in subgraph counts, and provided
-the new subgraph exists in our training data, the model can adjust its
-prediction accordingly. Tail group branching is also considered, to an extent:
-branch points in a carbon chain are distinguished from the rest, as they
-constitute a \ce{CH} subgraph, rather than a \ce{CH2}.
+In the case of the Stauff-Klevens model, the representation effectively has two
+components: the category of the headgroup, and the length of the tail group. The
+model technically distinguishes between isomers by imposing strict constraints
+on the structure of the molecules to which it can be applied: position and
+functional isomers correspond to distinctive categories, so that the model must
+learn independent parameters for each of them, and the constraint on the tail
+group means that chain isomers or the presence of non-alkyl groups in the carbon
+chain are not permitted. Mathematically, this representation can be formalised using
+a technique called \emph{one-hot encoding} and by defining the set of headgroups for which
+we have data, $\{h_i \mid 0 \leq i \leq N\}$. The encoding is a vector given by
 
-Still, this approach relies on a discrete representation of the surfactant and,
-to ensure a good fit, all subgraphs of interest must be well represented in the
-dataset. Neural network approaches that work on molecular graphs are capable of
-learning a continuous representation of surfactants. They have been explored
-previously for CMC prediction and demonstrated promising results. However,
-although the continuous representation ensures that inferences can be made even
-for molecules with chemistry that is completely different from the training
-data, neural networks cannot reliably extrapolate in this way. In the case of
-the ECFP model, the discretisation gives a clear indicator to the researcher as
-to whether the model can be reliably applied: if a molecule contains subgraphs
-that do not appear in the training data, its prediction is less reliable. It is
-difficult to assess the same for a neural network.
+\begin{equation}
+    \label{eq:one-hot}
+    \vec{s}_i = \begin{cases}
+        1 & \text{if headgroup is } h_i \\
+        0 & \text{otherwise.}
+    \end{cases}
+\end{equation}
+
+Different headgroups therefore correspond to orthogonal encodings. If we have a
+set of trained parameters $\{A_i, B_i\}$ corresponding to headgroup $h_i$,
+Equation~\ref{eq:klevens} can be rewritten as
+
+\begin{equation}
+    \log X_{cmc} = \mathbf{W}\vec{s} \cdot \begin{bmatrix}
+        1 \\ -n_c
+    \end{bmatrix},\quad \mathbf{W} = \begin{pmatrix}
+        A_1 & A_2 & \dots  & A_N\\
+        B_1 & B_2 & \dots & B_N\\
+    \end{pmatrix}.
+\end{equation}
+
+We can try to make the approach more general by decomposing a molecule into
+smaller sets of \emph{atomic environments} and representing it by the number of
+each of these constituents. Because certain groups of atoms and bonds are common
+in organic surfactants, the resulting feature vectors are not orthogonal, and we
+can apply the model even when we have made small changes to the headgroup, or
+introduce branching and other functional groups to the tail.
+
+In this approach, the molecule is split into atomic environments up to a given
+radius, $r$: each environment is centred on an atom and extends $r$ steps along
+connecting bonds. Effectively, we discard the categorical encoding in favour of
+introducing more continuous, count-based features, like $n_c$. The set of all
+environments in the training data up to radius $r$, $\{e_i \mid 0 \leq i \leq
+N\}$, is extracted and the resulting feature vector is
+
+\begin{equation}
+    \vec{c}_i = \text{Count}(e_i).
+\end{equation}
+
+Now, a change in headgroup composition is reflected in a change in subgraph
+counts, and provided the new subgraph exists in our training data, the model can
+adjust its prediction accordingly. Branch points in a carbon chain are
+distinguished from main-chain groups, as they terminate in a \ce{CH} group,
+rather than \ce{CH2}. This type of representation is called an
+\emph{extended-connectivity fingerprint} (ECFP)
+\cite{rogersExtendedConnectivityFingerprints2010}.
+
+However, these fingerprints do not necessarily distinguish between all
+positional isomers or chain isomers, particularly with smaller values of $r$,
+nor are stereoisomers treated differently. Another potential disadvantage is
+that the number of unique atomic environments is potentially very large relative
+to the size of the data available, which poses a risk of overfitting.
+Furthermore, larger environments necessarily envelop smaller ones, which means
+that there is some duplicate information in the representation: the presence of
+a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
+so that there is multicollinearity. This redundancy can impede model fitting and
+interpretation.
+
+TODO: Graph representation description.
+
+\subsection{Model selection}
+
+TODO:
+\begin{itemize}
+    \item ECFP linear model and feature selection description.
+    \item Graph neural network model description.
+    \item Hyperband description.
+\end{itemize}

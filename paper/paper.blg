@@ -9,44 +9,44 @@ Reallocating 'singl_function' (item size: 4) to 100 items.
 Database file #1: acs-paper.bib
 Database file #2: camcann.bib
 achemso 2022-09-28 v3.13d
-You've used 6 entries,
+You've used 10 entries,
             2539 wiz_defined-function locations,
-            795 strings with 7918 characters,
-and the built_in function-call counts, 2071 in all, are:
-= -- 175
-> -- 95
-< -- 5
-+ -- 39
-- -- 33
-* -- 205
-:= -- 274
-add.period$ -- 10
-call.type$ -- 6
+            832 strings with 9171 characters,
+and the built_in function-call counts, 3733 in all, are:
+= -- 307
+> -- 202
+< -- 6
++ -- 81
+- -- 71
+* -- 394
+:= -- 499
+add.period$ -- 18
+call.type$ -- 10
 change.case$ -- 4
 chr.to.int$ -- 2
-cite$ -- 6
-duplicate$ -- 109
-empty$ -- 150
-format.name$ -- 35
-if$ -- 395
+cite$ -- 10
+duplicate$ -- 199
+empty$ -- 253
+format.name$ -- 79
+if$ -- 710
 int.to.chr$ -- 0
 int.to.str$ -- 1
 missing$ -- 0
-newline$ -- 63
-num.names$ -- 15
-pop$ -- 11
+newline$ -- 91
+num.names$ -- 27
+pop$ -- 18
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 0
-skip$ -- 6
+skip$ -- 10
 stack$ -- 0
-substring$ -- 162
-swap$ -- 103
-text.length$ -- 10
+substring$ -- 264
+swap$ -- 207
+text.length$ -- 18
 text.prefix$ -- 0
 top$ -- 1
-type$ -- 39
+type$ -- 67
 warning$ -- 0
-while$ -- 23
+while$ -- 38
 width$ -- 0
-write$ -- 93
+write$ -- 145
