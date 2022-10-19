@@ -5,12 +5,12 @@ is currently the largest public dataset of CMCs for several classes of
 surfactant collected at standard conditions, in an aqueous environment between
 \SIrange{20}{25}{\celsius}. These data were split into training and test
 subsets, to simulate the real-world scenario of using a model to make inferences
-about molecules for which no data is available. The training data was used to
-fit the models, whilst test data was `locked away' until it had been decided
-that the model was optimised, and the performance metrics on the test data was
-used for comparison. For some models, the training data was further split into
-optimisation and validation subsets; the optimisation data was used when
-calculating the loss function during model fitting and the validation data was
+about molecules for which no data is available. The training data were used to
+fit the models, whilst test data were `locked away' until it had been decided
+that the model was optimised, and the performance metrics on the test data were
+used for comparison. For some models, the training data were further split into
+optimisation and validation subsets; the optimisation data were used when
+calculating the loss function during model fitting and the validation data were
 used for on-the-fly evaluation of model performance during training.
 
 To provide a consistent benchmark of model performance, the same train/test data
@@ -93,6 +93,8 @@ in organic surfactants, the resulting feature vectors are not orthogonal, and we
 can apply the model even when we have made small changes to the headgroup, or
 introduce branching and other functional groups to the tail.
 
+\subsubsection{Extended-connectivity fingerprints}
+
 In this approach, the molecule is split into atomic environments up to a given
 radius, $r$: each environment is centred on an atom and extends $r$ steps along
 connecting bonds. Effectively, we discard the categorical encoding in favour of
@@ -124,6 +126,8 @@ a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
 so that there is multicollinearity. This redundancy can impede model fitting and
 interpretation.
 
+\subsubsection{Molecular graph representation}
+
 Both of the approaches described so far rely on molecular feature vectors that
 cannot describe the molecule's topology. A molecular graph is a structure that
 achieves this, and it is a popular choice for cheminformatics as well as
@@ -138,6 +142,8 @@ TODO: Graph representation maths and description.
 
 \subsection{Model selection}
 
+\subsubsection{ECFP model}
+
 Based on the prior knowledge encoded in Equation~\ref{eq:klevens}, it is
 reasonable to assume that certain atomic environments have a linear relationship
 to $\log X_{cmc}$. It therefore seems justified to apply a linear model to the
@@ -151,27 +157,64 @@ an approach based on \emph{regularisation}.
 
 In this approach, we include a term in the loss function that depends on the
 norm of the learned parameters, or `weights', $\vec{w}$. The two types of constraints
-considered in this paper are $L_1$ and $L_2$ regularisation, which correspond to
-the inclusion of $L_1$ and $L_2$ norms, respectively. By combining $L_1$
+considered in this paper are $\ell_1$ and $\ell_2$ regularisation, which correspond to
+the inclusion of $\ell_1$ and $\ell_2$ norms, respectively. By combining $\ell_1$
 regularisation with the least squares regressor, we obtain the least absolute
 shrinkage and selection operator (LASSO)\cite{tibshiraniRegressionShrinkageSelection1996}:
 
 \begin{equation}
-    \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} ||\mathbf{X}\vec{w} - \vec{y}||_2 ^ 2 + \alpha ||\vec{w}||_1},\quad \alpha \geq 0
+    \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} \left \Vert \mathbf{X}\vec{w} - \vec{y} \right \Vert_2 ^ 2 + \alpha \left \Vert \vec{w} \right \Vert_1},
 \end{equation}
+where $n_{\text{samples}}$ is the number of training samples; $\mathbf{X}$ are
+the training data feature vectors, stacked row-wise into a matrix; $\vec{y}$ are
+the true values of $\log X_{cmc}$; and $\alpha$ is a user-defined hyperparameter
+describing the degree of regularisation ($\alpha \geq 0$). By imposing the $\ell_1$ penalty, the
+model is biased towards learning a \emph{sparse} weight vector: many of its
+elements will be negligible. The corresponding features can be removed from the
+representation.
 
-where $\mathbf{X}$ are the training data feature vectors, stacked row-wise into
-a matrix; $\vec{y}$ are the true values of $\log X_{cmc}$; and $\alpha$ is a
-user-defined hyperparameter describing the degree of regularisation. By imposing
-the $L_1$ penalty, the model is biased towards learning a \emph{sparse} weight
-vector: many of its elements will be negligible. The corresponding features can
-be removed from the representation.
+However, LASSO has two major flaws that make it inappropriate for the task of
+ECFP regression:
 
-One problem with LASSO 
+\begin{itemize}
+    \item The number of unique atomic environments is greater than the size of
+    the training data, but LASSO will select at most $n_\text{samples}$ features
+    \cite{efronLeastAngleRegression2004}. Therefore, some important environments
+    may still be excluded.
+    \item LASSO tends to select only one of a group of highly correlated
+    variables, when there is no reason why that particular one should be
+    prioritised \cite{zouRegularizationVariableSelection2005}. This is
+    undesirable because we want to include both large and small atomic
+    environments, despite their large correlation, and we might be misled into
+    thinking that some highly correlated environments have no effect on CMC.
+\end{itemize}
+
+ElasticNet addresses these issues by imposing an additional $\ell_2$ penalty \cite{zouRegularizationVariableSelection2005}:
+
+\begin{equation}
+    \label{eq:elastic}
+    \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} \left \Vert \mathbf{X}\vec{w} - \vec{y} \right \Vert_2 ^ 2 + \alpha\rho \left \Vert \vec{w} \right \Vert_1} + \frac{\alpha(1 - \rho)}{2} \left \Vert \vec{w} \right \Vert_2^2,
+\end{equation}
+where $\rho$ is a user-defined hyperparameter controlling the proportions of the
+regularisation terms. This removes the hard limit on the number of features that can be
+selected and also exhibits the `grouping effect', whereby features with high correlation
+tend to be assigned similar weights.
+
+Because of these advantages, an ElasticNet linear regression model was applied
+to predict $\log X_{cmc}$ using the ECFP features. Both hyperparameters,
+$\alpha$ and $\rho$, must be defined when training the model. In order to select
+the best values, $k$-fold cross-validation was employed: the training data were
+partitioned into $k$ subsets of roughly equal size. $k$ models were trained
+using $k-1$ subsets, and the final subset was used for validation. The average
+mean-squared error of the $k$ models, evaluated on their respective validation
+subsets, is the model's final score. This routine was applied for a range of
+$\alpha$ and $\rho$ combinations, and the lowest scoring combination was used.
+The hyperparameter search space is defined in the Supplementary Information.
+
+\subsubsection{Molecular graph model}
 
 TODO:
 \begin{itemize}
-    \item ElasticNet description.
     \item Graph neural network model description.
     \item Hyperband description.
 \end{itemize}
