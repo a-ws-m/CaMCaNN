@@ -35,6 +35,7 @@ class Datasets(Enum):
 
     QIN = DATASET_FOLDER / "qin-data.csv"
     NIST_ANIONICS = DATASET_FOLDER / "nist-anionics.csv"
+    NIST_NEW = DATASET_FOLDER / "nist-new-vals.csv"
     QIN_AND_NIST_ANIONICS = DATASET_FOLDER / "merged-data.csv"
 
 
@@ -43,13 +44,13 @@ def get_nist_data(
     preprocess: Optional[LayerPreprocess] = None,
 ) -> Tuple[DisjointLoader, pd.DataFrame]:
     """Get a data loader for the NIST anionics data."""
-    df = pd.read_csv(Datasets.NIST_ANIONICS.value, header=0)
+    df = pd.read_csv(Datasets.NIST_NEW.value, header=0)
     df["Molecules"] = [MolFromSmiles(smiles) for smiles in df["SMILES"]]
 
     df["Convertable"] = ~df["SMILES"].str.contains(r"(Mn)|(Cs)|(Mg)")
     convertable_df = df[df["Convertable"]]
 
-    graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC"]))
+    graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC (micro M)"]))
     graphs = list(map(preprocess, graphs)) if preprocess is not None else graphs
 
     return DisjointLoader(GraphData(graphs), shuffle=False), df
