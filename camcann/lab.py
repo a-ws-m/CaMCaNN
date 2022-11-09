@@ -15,7 +15,7 @@ from tensorflow.keras.models import Model, load_model
 
 from .data.io import RANDOM_SEED, QinDatasets, QinECFPData, QinGraphData, get_nist_data
 from .gnn import build_gnn
-from .linear import LinearECFPModel, RidgeResults
+from .linear import LinearECFPModel, ElasticResults
 from .uq import GraphGPProcess
 
 RANDOM_SEED = 2022
@@ -187,8 +187,9 @@ class GraphExperiment(BaseExperiment):
         with (self.results_path / "nist-results.json").open("w") as f:
             json.dump(nist_metrics, f)
 
-        nist_df["pred"] = None
-        nist_df["pred"][nist_df["Convertable"]] = nist_predictions.flatten()
+        # nist_df["pred"] = None
+        # nist_df["pred"][nist_df["Convertable"]] = nist_predictions.flatten()
+        nist_df["pred"] = nist_predictions.flatten()
         nist_df.to_csv(self.results_path / "nist-predictions.csv", columns=["SMILES", "log CMC", "pred"])
 
         return nist_metrics
@@ -276,16 +277,16 @@ class ECFPExperiment(BaseExperiment):
         )
 
     def _metrics_series(
-        self, num_low_freq: int, num_low_import: int, ridge_results: RidgeResults
+        self, num_low_freq: int, elastic_results: ElasticResults
     ) -> pd.Series:
         """Get metrics as a pandas series for writing to disk."""
         return pd.Series(
             {
                 "num_low_freq": num_low_freq,
-                "num_low_import": num_low_import,
-                "best_train_rmse": ridge_results.best_rmse,
-                "best_alpha": ridge_results.alpha,
-                "test_rmse": ridge_results.test_rmse,
+                "num_non_negligible": elastic_results.num_non_negligible,
+                "train_rmse": elastic_results.train_rmse,
+                "best_alpha": elastic_results.alpha,
+                "test_rmse": elastic_results.test_rmse,
             }
         )
 
@@ -295,7 +296,7 @@ class ECFPExperiment(BaseExperiment):
         num_low_freq = self.model.remove_low_freq_subgraphs()
         print(f"{num_low_freq} subgraphs removed.")
         print("Doing elastic net feature selection...")
-        num_low_import = self.model.elastic_feature_select()
+        elastic_results = self.model.elastic_feature_select()
         print(f"{num_low_import} subgraphs removed.")
 
         # Write results
@@ -303,7 +304,7 @@ class ECFPExperiment(BaseExperiment):
         predictions = self.model.predict(self.featuriser.all_data[0])
         results_df = self._make_pred_df(predictions)
         results_df.to_csv(self.predict_path)
-        self._metrics_series(num_low_freq, num_low_import, ridge_results).to_csv(
+        self._metrics_series(num_low_freq, num_low_import, elastic_results).to_csv(
             self.metrics_path
         )
 

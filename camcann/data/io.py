@@ -47,10 +47,11 @@ def get_nist_data(
     df = pd.read_csv(Datasets.NIST_NEW.value, header=0)
     df["Molecules"] = [MolFromSmiles(smiles) for smiles in df["SMILES"]]
 
-    df["Convertable"] = ~df["SMILES"].str.contains(r"(Mn)|(Cs)|(Mg)")
-    convertable_df = df[df["Convertable"]]
+    # df["Convertable"] = ~df["SMILES"].str.contains(r"(Mn)|(Cs)|(Mg)")
+    # convertable_df = df[df["Convertable"]]
 
-    graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC (micro M)"]))
+    # graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC"]))
+    graphs = mols_to_graph(list(df["Molecules"]), mol_featuriser, list(df["log CMC"]))
     graphs = list(map(preprocess, graphs)) if preprocess is not None else graphs
 
     return DisjointLoader(GraphData(graphs), shuffle=False), df
