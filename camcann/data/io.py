@@ -114,17 +114,22 @@ class DataLoader(ABC):
 
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
-        self.df["Molecules"] = [
-            MolFromSmiles(smiles)
-            for smiles in (
-                self.df["smiles"] if "smiles" in self.df.columns else self.df["SMILES"]
-            )
-        ]
-        self.test_idxs = np.where(self.df["traintest"] == "test")[0]
-        self.train_idxs = np.where(self.df["traintest"] == "train")[0]
-        self.optim_idxs, self.val_idxs = train_test_split(
-            self.train_idxs, train_size=0.9, random_state=2022
+        smiles_col = (
+            self.df["smiles"] if "smiles" in self.df.columns else self.df["SMILES"]
         )
+        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles_col]
+        try:
+            self.test_idxs = np.where(self.df["traintest"] == "test")[0]
+            self.train_idxs = np.where(self.df["traintest"] == "train")[0]
+            self.optim_idxs, self.val_idxs = train_test_split(
+                self.train_idxs, train_size=0.9, random_state=2022
+            )
+        except (KeyError, ValueError):
+            # No train/test split
+            self.test_idxs = np.indices((len(self.df.index),))
+            self.train_idxs = np.array([])
+            self.optim_idxs = self.train_idxs
+            self.val_idxs = self.train_idxs
 
 
 class ECFPData(DataLoader):
@@ -164,9 +169,17 @@ class ECFPData(DataLoader):
         if save_hashes:
             self.featuriser.smiles_hashes.save(hash_file)
 
+    @property
+    def expected(self) -> np.ndarray:
+        """Get the expected (target) values as a numpy array."""
+        try:
+            return self.df.exp.to_numpy()
+        except AttributeError:
+            return self.df["log CMC"].to_numpy()
+
     def get_at_idxs(self, indexes: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """Get the fingerprints and target values for the given indexes."""
-        return self.fingerprints[indexes, :], self.df.exp.loc[indexes]
+        return self.fingerprints[indexes, :], self.expected[indexes]
 
     @property
     def train_data(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -181,7 +194,7 @@ class ECFPData(DataLoader):
     @property
     def all_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get numpy arrays of all data fingerprints and targets."""
-        return self.fingerprints, self.df.exp.to_numpy()
+        return self.fingerprints, self.expected
 
 
 class QinGraphData(DataLoader):
