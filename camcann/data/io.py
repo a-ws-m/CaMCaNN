@@ -2,7 +2,7 @@
 from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,7 @@ from .featurise.graph import MolNodeFeaturizer, mols_to_graph
 
 DATASET_FOLDER = Path(__file__).parent / "datasets"
 RANDOM_SEED = 2021
+
 
 class GraphData(Dataset):
     """Handle graph data subsets."""
@@ -76,7 +77,6 @@ class DataReader:
             smiles = self.df["SMILES"]
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles]
 
-
     def cv_indexes(
         self, num_folds: int = 10, random_seed: int = RANDOM_SEED
     ) -> List[Tuple[List[int], List[int]]]:
@@ -103,10 +103,10 @@ class DataReader:
         return self.df.iloc[train_idxs], self.df.iloc[test_idxs]
 
 
-class QinDataLoader(ABC):
+class DataLoader(ABC):
     """Handle reading Qin datasets from file."""
 
-    def __init__(self, dataset: QinDatasets) -> None:
+    def __init__(self, dataset: Union[QinDatasets, Datasets]) -> None:
         """Load data and find train/test indexes.
 
         Args:
@@ -114,7 +114,12 @@ class QinDataLoader(ABC):
 
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
-        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["smiles"]]
+        self.df["Molecules"] = [
+            MolFromSmiles(smiles)
+            for smiles in (
+                self.df["smiles"] if "smiles" in self.df.columns else self.df["SMILES"]
+            )
+        ]
         self.test_idxs = np.where(self.df["traintest"] == "test")[0]
         self.train_idxs = np.where(self.df["traintest"] == "train")[0]
         self.optim_idxs, self.val_idxs = train_test_split(
@@ -122,10 +127,12 @@ class QinDataLoader(ABC):
         )
 
 
-class QinECFPData(QinDataLoader):
+class ECFPData(DataLoader):
     """Handle reading Qin datasets from file and featurising with ECFP fingerprints."""
 
-    def __init__(self, dataset: QinDatasets, hash_file: Optional[Path] = None) -> None:
+    def __init__(
+        self, dataset: Union[Datasets, QinDatasets], hash_file: Optional[Path] = None
+    ) -> None:
         """Load data and initialise featuriser.
 
         Args:
@@ -177,7 +184,7 @@ class QinECFPData(QinDataLoader):
         return self.fingerprints, self.df.exp.to_numpy()
 
 
-class QinGraphData(QinDataLoader):
+class QinGraphData(DataLoader):
     """Handle reading Qin datasets from file and splitting into train and test subsets."""
 
     def __init__(
