@@ -1,8 +1,7 @@
 """Molecular featurisation utilities."""
 from collections import Counter, defaultdict
-from dataclasses import dataclass
-from enum import IntEnum
-from operator import getitem, methodcaller
+from itertools import chain
+from operator import methodcaller
 from os import PathLike
 from pathlib import Path
 from typing import (
@@ -10,10 +9,11 @@ from typing import (
     DefaultDict,
     Dict,
     FrozenSet,
+    Iterable,
     List,
     NamedTuple,
     Optional,
-    Sequence,
+    Set,
     TypeAlias,
     Tuple,
     Union,
@@ -23,10 +23,14 @@ from zlib import crc32
 import numpy as np
 import pandas as pd
 from rdkit.Chem import MolFromSmiles, MolFragmentToSmiles
+from rdkit.Chem.rdmolops import FindAtomEnvironmentOfRadiusN
 from rdkit.Chem.rdchem import Atom, Bond, Mol
 from scipy.sparse import csr_array
 
 AtomicIndex: TypeAlias = int
+BondIndex: TypeAlias = int
+AtomicHash: TypeAlias = int
+AtomicEnvHash: TypeAlias = int
 
 RDCHEM_ATOM_METH_NAMES: Dict[str, str] = {
     "number": "GetAtomicNum",
@@ -45,34 +49,82 @@ RDCHEM_ATOM_METHS: Dict[str, Callable[[Atom], Union[str, float, int]]] = {
 }
 
 
-def hash_array(arr: np.ndarray) -> float:
+def hash_array(arr: np.ndarray) -> AtomicHash:
     """Compute the CRC32 hash of an array of numbers."""
     return crc32(arr.tobytes())
 
+def get_atom_hash(atom: Atom) -> AtomicHash:
+    """Extract information from an RDKit ``Atom``."""
+    atom_feats = np.array(
+        list(atom_meth(atom) for atom_meth in RDCHEM_ATOM_METHS.values())
+    )
+    return hash_array(atom_feats)
 
-class BondType(IntEnum):
-    """Bond types."""
+def get_bonds_atoms(bond: Bond) -> Tuple[AtomicIndex, AtomicIndex]:
+    """Get the atomic indexes that a bond connects."""
+    return (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
 
-    SINGLE = 1
-    DOUBLE = 2
-    TRIPLE = 3
-    AROMATIC = 4
-    IONIC = 5
+def frag_to_smiles(mol: Mol, atoms: Union[int, Iterable[int]]) -> str:
+    """Get the SMILES string for a given fragment."""
+    if isinstance(atoms, int):
+        atoms = [atoms]
+    return MolFragmentToSmiles(mol, atomsToUse=list(atoms), allHsExplicit=True)
 
+class SimpleMolecule(NamedTuple):
+    """Contain minimalistic information about a molecule."""
 
-class SimpleBond(NamedTuple):
-    """Contain minimalistic information about bonds."""
-
-    atom_idxs: Tuple[AtomicIndex, AtomicIndex]
-    type_: BondType
+    atoms: Dict[AtomicIndex, AtomicHash]
+    bonds: Dict[BondIndex, Tuple[AtomicIndex, AtomicIndex]]
+    atom_envs: Dict[int, Set[FrozenSet[BondIndex]]]
+    atom_env_counts: Dict[AtomicEnvHash, int]
+    atom_env_smiles: Dict[AtomicEnvHash, str]
 
     @classmethod
-    def from_rdk(cls: "SimpleBond", bond: Bond) -> "SimpleBond":
-        """Extract information from an RDKit ``Bond``."""
-        return cls(
-            atom_idxs=(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()),
-            type_=getitem(BondType, str(bond.GetBondType())),
-        )
+    def from_rdk(cls, mol: Mol, max_radius: int) -> "SimpleMolecule":
+        """Extract information from an RDKit ``Mol``."""
+        rdk_atoms = list(mol.GetAtoms())
+        rdk_bonds = list(mol.GetBonds())
+
+        atoms = {idx: get_atom_hash(atom) for idx, atom in enumerate(rdk_atoms)}
+        bonds = {idx: get_bonds_atoms(bond) for idx, bond in enumerate(rdk_bonds)}
+
+        atom_envs: Dict[int, Set[FrozenSet[BondIndex]]] = dict()
+        for radius in range(1, max_radius + 1):
+            atom_env_buff: Set[FrozenSet[BondIndex]] = set()
+            for atom_idx in atoms.keys():
+                env = frozenset(FindAtomEnvironmentOfRadiusN(mol, radius, atom_idx))
+                if len(env):
+                    atom_env_buff.add(env)
+
+            atom_envs[radius] = atom_env_buff
+
+        atom_env_count_buff: DefaultDict[AtomicEnvHash, int] = defaultdict(int)
+        atom_env_smiles: Dict[AtomicEnvHash, str] = dict()
+        # * First, radius zero
+        for atom_idx, hash_ in atoms.items():
+            atom_env_count_buff[hash_] += 1
+            atom_env_smiles[hash_] = frag_to_smiles(mol, atom_idx)
+        
+        # * Then all the rest!
+        all_bond_combs: Set[FrozenSet[BondIndex]] = set()
+        for atom_env_set in atom_envs.values():
+            all_bond_combs.update(atom_env_set)
+        
+        for bond_comb in all_bond_combs:
+            atom_idxs: Set[AtomicIndex] = set(chain.from_iterable(bonds[bond_idx] for bond_idx in bond_comb))
+
+            atom_env: List[AtomicHash] = sorted(atoms[atom_idx] for atom_idx in atom_idxs)
+            atom_env_hash: AtomicEnvHash = hash_array(np.array(atom_env))
+
+            atom_env_count_buff[atom_env_hash] += 1
+            atom_env_smiles[atom_env_hash] = frag_to_smiles(mol, atom_idxs)
+
+        return cls(atoms, bonds, atom_envs, dict(atom_env_count_buff), atom_env_smiles)
+
+    @classmethod
+    def from_smiles(cls, smiles: str, max_radius: int) -> "SimpleMolecule":
+        """Extract information from a SMILES string."""
+        return cls.from_rdk(MolFromSmiles(smiles), max_radius)
 
 
 class SMILESHashes:
@@ -173,7 +225,7 @@ class SMILESHashes:
     @property
     def selected_idxs(self) -> np.ndarray:
         """Get the indexes of the feature selected subgraphs."""
-        return np.nonzero(self.hash_df.selected)
+        return np.nonzero(self.hash_df.selected)[0]
 
     def save(self, path: PathLike):
         """Save hash dataframe to path."""
@@ -183,219 +235,6 @@ class SMILESHashes:
     def load(cls, path: PathLike):
         """Load from a hash dataframe."""
         return cls(pd.read_csv(path, header=0, index_col=0))
-
-
-def frag_to_smiles(mol: Mol, atoms: Union[int, Sequence[int]]) -> str:
-    """Get the SMILES string for a given fragment."""
-    try:
-        len(atoms)
-    except TypeError:
-        atoms = [atoms]
-    return MolFragmentToSmiles(mol, atomsToUse=list(atoms), allHsExplicit=True)
-
-
-@dataclass
-class HashedMolecule:
-    """Contains atomic hashes and atomic bonds."""
-
-    atom_hashes: List[int]
-    bonds: List[SimpleBond]
-    rdk_mol: Mol
-
-    def __post_init__(self) -> None:
-        """Compute the atom interaction matrix and initialize atomic walks.
-
-        The atom interaction matrix is a list defining which atom indexes to
-        look at, and in what order, when computing a step update. An
-        interaction, in this case, is a hash function computed over a list of
-        bonded atoms' hashes.
-
-        The atomic walk dictionary indicates the set of atom indexes that are
-        visited during a walk of a given length.
-
-        """
-        bonded_atoms: DefaultDict[
-            AtomicIndex, List[Tuple[AtomicIndex, BondType]]
-        ] = defaultdict(list)
-        for bond in self.bonds:
-            for pair_idx in (0, 1):
-                # Add reference to other atom for both atoms in the bond
-                bond_tuple = (bond.atom_idxs[pair_idx], bond.type_)
-                bonded_atoms[bond.atom_idxs[1 - pair_idx]].append(bond_tuple)
-
-        # Sort atomic interactions based primarily on the type of bond and
-        # secondarily on the atomic hash magnitude.
-        self.atom_interactions: DefaultDict[
-            AtomicIndex, List[AtomicIndex]
-        ] = defaultdict(list)
-        self.atom_interactions.update(
-            {
-                atom_index: [
-                    bond_tuple[0]
-                    for bond_tuple in sorted(
-                        entry,
-                        key=lambda bond_info: (
-                            bond_info[1],
-                            self.atom_hashes[bond_info[0]],
-                        ),
-                    )
-                ]
-                for atom_index, entry in bonded_atoms.items()
-            }
-        )
-        for atom_idx, interactions in self.atom_interactions.items():
-            # Add self-interactions
-            interactions.insert(0, atom_idx)
-
-        # Initialize atomic walk dictionary
-        self.atomic_walks: Dict[int, List[FrozenSet[AtomicIndex]]] = {
-            0: [frozenset({idx}) for idx in range(len(self.atom_hashes))]
-        }
-        # Initialize cumulative atomic walks dictionary
-        self.cum_atomic_walks: Dict[int, List[FrozenSet[AtomicIndex]]] = {
-            1: self.atomic_walks[0]
-        }
-
-    @classmethod
-    def from_rdk(
-        cls: "HashedMolecule", molecule: Mol, hashes: List[int]
-    ) -> "HashedMolecule":
-        """Make a HashedMolecule from an RDKit ``Molecule`` and a list of hashes."""
-        return cls(
-            atom_hashes=hashes,
-            bonds=[SimpleBond.from_rdk(bond) for bond in molecule.GetBonds()],
-            rdk_mol=molecule,
-        )
-
-    def hash_step(self):
-        """Compute a single hash update step using bonded hashes."""
-        new_hashes = []
-        for interactions in self.atom_interactions.values():
-            new_hashes.append(
-                hash_array(np.array([self.atom_hashes[idx] for idx in interactions]))
-            )
-
-        self.atom_hashes = new_hashes
-
-    def _update_atomic_walks(self):
-        """Add another step to the :attr:`atomic_walks`.
-
-        This is used when keeping track of duplicate substructures.
-
-        """
-        # Find largest step that we've already computed
-        largest_step = max(self.atomic_walks.keys())
-
-        # Do another step
-        new_walks: List[FrozenSet[AtomicIndex]] = []
-        for walk in self.atomic_walks[largest_step]:
-            walk_buffer = set()
-            for atom_idx in walk:
-                walk_buffer.update(self.atom_interactions[atom_idx])
-
-            new_walk = walk | walk_buffer
-            new_walks.append(new_walk)
-
-        self.atomic_walks[largest_step + 1] = new_walks
-        self.cum_atomic_walks[largest_step + 2] = [
-            cum_walk | set(new_walk)
-            for cum_walk, new_walk in zip(
-                self.cum_atomic_walks[largest_step + 1], new_walks
-            )
-        ]
-
-    def check_duplicates(self, radius: int) -> List[Tuple[AtomicIndex, Optional[AtomicIndex]]]:
-        """Get a list of hash indexes that refer to same substructure at a given radius.
-
-        Update atomic walks dictionary along the way.
-
-        Returns:
-            A list of `(index_1, index_2)`. Sometimes, substructures may be
-            duplicates of a hash from a previous iteration. In this case, a
-            tuple of `(index, None)` is returned.
-
-        """
-        # Generate atom index sets for a walk of a given length
-        while radius not in self.atomic_walks:
-            self._update_atomic_walks()
-        current_lvl_walks = self.atomic_walks[radius]
-        cumulative_walks = self.cum_atomic_walks[radius]
-
-        duplicates: List[Tuple[AtomicIndex, Optional[AtomicIndex]]] = []
-        for idx, walk in enumerate(current_lvl_walks):
-            if walk in cumulative_walks:
-                duplicates.append((idx, None))
-                continue
-            try:
-                duplicates.append((idx, current_lvl_walks.index(walk, 0, idx)))
-            except ValueError:
-                try:
-                    duplicates.append((idx, current_lvl_walks.index(walk, idx + 1)))
-                except ValueError:
-                    # Set doesn't appear more than once in this level
-                    continue
-
-        return duplicates
-
-    def get_hash_list(
-        self, num_steps: int, smiles_hashes: Optional[SMILESHashes] = None
-    ) -> List[int]:
-        """Get a list of all hashes generated during a given number of steps.
-
-        Args:
-            num_steps: The total number of atomic steps to perform.
-            smiles_hashes: An optional :class:`SMILESHashes` instance to update
-                with SMILES fragments associated with each hash.
-
-        """
-        hashes = self.atom_hashes[:]
-        include_smiles = smiles_hashes is not None
-        if include_smiles:
-            while 2 not in self.atomic_walks:
-                # Need to have these calculated for figuring out SMILES fragments.
-                self._update_atomic_walks()
-            smiles = [
-                frag_to_smiles(self.rdk_mol, cum_walk)
-                for cum_walk in self.cum_atomic_walks[1]
-            ]
-
-        for steps_done in range(1, num_steps + 1):
-            self.hash_step()
-            new_hashes = self.atom_hashes[:]
-            if include_smiles:
-                new_smiles = [
-                    frag_to_smiles(self.rdk_mol, cum_walk)
-                    for cum_walk in self.cum_atomic_walks[1 + steps_done]
-                ]
-
-            if steps_done > 1:
-                # Potentially duplicate hashes in list
-                duplicates = self.check_duplicates(steps_done)
-
-                to_delete = []
-                for indexes in duplicates:
-                    if indexes[1] is None:
-                        to_delete.append(indexes[0])
-                    else:
-                        lower_hash_idx = indexes[
-                            new_hashes[indexes[1]] < new_hashes[indexes[0]]
-                        ]
-                        to_delete.append(lower_hash_idx)
-
-                # Delete values
-                for delete_idx in sorted(to_delete, reverse=True):
-                    new_hashes.pop(delete_idx)
-                    if include_smiles:
-                        new_smiles.pop(delete_idx)
-
-            hashes.extend(new_hashes)
-            if include_smiles:
-                smiles.extend(new_smiles)
-
-        if include_smiles:
-            for hash_, smile in zip(hashes, smiles):
-                smiles_hashes.setdefault(hash_, smile)
-        return hashes
 
 
 class ECFPCountFeaturiser:
@@ -417,23 +256,6 @@ class ECFPCountFeaturiser:
 
         return atom_hashes
 
-    def _initial_hash(self, molecules: Mol) -> List[HashedMolecule]:
-        """Get the initial hashes for atoms in a list of molecules.
-
-        Args:
-            molecules: The molecules to hash.
-
-        Returns:
-            A list of the molecules' hash lists, each of which containing
-            the atoms' hashes in the RDKit order.
-
-        """
-        mols_atom_hashes = [self.featurise_atoms(mol) for mol in molecules]
-        return [
-            HashedMolecule.from_rdk(mol, atom_hashes)
-            for mol, atom_hashes in zip(molecules, mols_atom_hashes)
-        ]
-
     def featurise_molecules(
         self, molecules: List[Mol], radius: int, add_new_hashes: bool = True
     ) -> np.ndarray:
@@ -452,23 +274,21 @@ class ECFPCountFeaturiser:
                 :attr:`smiles_hashes`. If ``False``, ignore newly encountered hashes.
 
         """
-        hashed_molecules = self._initial_hash(molecules)
-
-        get_hash_args = (radius, self.smiles_hashes) if add_new_hashes else (radius,)
-        hash_lists = [mol.get_hash_list(*get_hash_args) for mol in hashed_molecules]
-
-        hash_counters = [Counter(hash_list) for hash_list in hash_lists]
+        simple_mols: List[SimpleMolecule] = [SimpleMolecule.from_rdk(mol, radius) for mol in molecules]
 
         # Convert hashes to indexes and prepare csr_array; see
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_array.html
         counts = []
         idxptr = [0]
         hash_idxs = []
-        for hash_counter in hash_counters:
-            for hash_, count in hash_counter.items():
+        for simple_mol in simple_mols:
+            for hash_, count in simple_mol.atom_env_counts.items():
                 hash_idx = self.smiles_hashes.get_hash_idx(hash_)
                 if hash_idx is None:
-                    continue
+                    if add_new_hashes:
+                        hash_idx = self.smiles_hashes.setdefault(hash_, simple_mol.atom_env_smiles[hash_])
+                    else:
+                        continue
 
                 counts.append(count)
                 hash_idxs.append(hash_idx)
@@ -505,13 +325,12 @@ if __name__ == "__main__":
         Path(__file__).parents[1] / "datasets" / "qin_all_results.csv", header=0
     )
     test_smiles = all_results["smiles"]
-    test_smiles = test_smiles[test_smiles.str.contains("Br-")]
     test_molecules = [MolFromSmiles(test_smile) for test_smile in test_smiles]
 
     featuriser = ECFPCountFeaturiser()
     fingerprints = featuriser.featurise_molecules(test_molecules, 2)
 
-    # print(featuriser.label_features(fingerprints, test_smiles))
-    # print(featuriser.smiles_hashes.smiles)
-    print(featuriser.smiles_hashes.hash_df.SMILES)
-    assert featuriser.smiles_hashes.hash_df.SMILES.is_unique
+    smiles_series = featuriser.smiles_hashes.hash_df.SMILES
+    non_unique = smiles_series.value_counts() > 1
+    # We'd really like to make sure these are distinguished
+    print(non_unique[non_unique])
