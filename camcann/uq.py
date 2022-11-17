@@ -7,7 +7,7 @@ from tensorflow.keras.models import Model
 from scipy.stats import norm
 from spektral.data import Loader
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RationalQuadratic, WhiteKernel
+from sklearn.gaussian_process.kernels import ConstantKernel, Matern
 from sklearn.preprocessing import StandardScaler
 
 def nll(pred_mean: np.ndarray, pred_std: np.ndarray, true_vals: np.ndarray):
@@ -45,7 +45,7 @@ class GraphGPProcess:
         else:
             self.input_scaler = None
 
-        self.kernel = ConstantKernel() * Matern(ls_start, nu=1.5) + ConstantKernel() * RationalQuadratic()
+        self.kernel = ConstantKernel() * Matern(ls_start, nu=1.5) + ConstantKernel() * Matern(ls_start, nu=2.5)
 
         self.gpr = GaussianProcessRegressor(
             self.kernel,
