@@ -1,8 +1,8 @@
 """Test the performance of models on the Qin data."""
 from argparse import ArgumentParser
-from datetime import datetime
+import json
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 import keras_tuner
 import numpy as np
@@ -13,7 +13,7 @@ from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from tensorflow.keras.models import Model, load_model
 
-from .data.io import RANDOM_SEED, QinDatasets, QinECFPData, QinGraphData
+from .data.io import RANDOM_SEED, QinDatasets, QinECFPData, QinGraphData, get_nist_data
 from .gnn import build_gnn
 from .linear import LinearECFPModel, RidgeResults
 from .uq import GraphGPProcess
@@ -78,12 +78,17 @@ class GraphExperiment(BaseExperiment):
         self.tb_dir = results_path / "logs"
         self.tb_dir.mkdir(exist_ok=True)
 
+        self.tb_search_dir = self.tb_dir / "search-logs"
+        self.tb_train_dir = self.tb_dir / "train-best"
+
+        self.best_hp_file = self.results_path / "best_hps.json"
+
         self.tuner = keras_tuner.Hyperband(
             hypermodel=hypermodel,
             objective="val_loss",
             max_epochs=550,
             seed=2022,
-            hyperband_iterations=3,
+            hyperband_iterations=1,
             directory=str(results_path.absolute()),
             project_name="gnn_search",
         )
@@ -109,17 +114,6 @@ class GraphExperiment(BaseExperiment):
             print(f"{first_graph.x=}")
             print(f"{first_graph.a=}")
 
-    @property
-    def tb_search_dir(self) -> Path:
-        """Get a new tensorboard log directory for searching."""
-        return self.tb_dir / "search-logs"
-
-    @property
-    def tb_train_dir(self) -> Path:
-        """Get a new tensorboard log directory for final model training."""
-        return self.tb_dir / "train-best"
-
-
     def search(self):
         """Search the hyperparameter space, reporting data via tensorboard."""
         loader = self.graph_data.optim_loader
@@ -127,7 +121,7 @@ class GraphExperiment(BaseExperiment):
         callbacks = []
         es_callback = EarlyStopping(
             min_delta=0,
-            patience=150,
+            patience=100,
         )
         callbacks.append(es_callback)
         callbacks.append(TensorBoard(log_dir=self.tb_search_dir))
@@ -143,6 +137,14 @@ class GraphExperiment(BaseExperiment):
     def train_best(self, epochs: int):
         """Train the best hyperparameters on all the data."""
         best_hp = self.tuner.get_best_hyperparameters()[0]
+
+        best_hps_dict = best_hp.get_config()["values"]
+        print("Best hyperparameters:")
+        print(best_hps_dict)
+
+        with self.best_hp_file.open("w") as f:
+            json.dump(best_hps_dict, f)
+
         self.model = self.tuner.hypermodel.build(best_hp)
 
         es_callback = EarlyStopping(
@@ -150,7 +152,7 @@ class GraphExperiment(BaseExperiment):
             patience=150,
             restore_best_weights=True,
         )
-        callbacks = [TensorBoard(log_dir=self.tb_train_dir), es_callback]
+        callbacks = [TensorBoard(log_dir=self.tb_train_dir / "with-val"), es_callback]
 
         print("Fitting best model with validation...")
         self.model.fit(
@@ -164,16 +166,32 @@ class GraphExperiment(BaseExperiment):
         self.model.save(self.model_path)
 
         print("Fine tuning best model on all data...")
-        callbacks = [TensorBoard(log_dir=self.tb_train_dir)]
+        callbacks = [TensorBoard(log_dir=self.tb_train_dir / "fine-tune")]
         self.model.fit(
             self.graph_data.train_loader.load(),
             steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
-            epochs=np.floor_divide(epochs, 100),
+            epochs=np.floor_divide(epochs, 10),
             callbacks=callbacks,
         )
         self.model.save(self.model_path)
         print("Done!")
 
+    def test_nist(self) -> Dict[str, float]:
+        """Test against the NIST data."""
+        loaded_model = load_model(self.model_path)
+        nist_data, nist_df = get_nist_data(self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv))
+
+        nist_metrics = loaded_model.evaluate(nist_data.load(), steps=nist_data.steps_per_epoch, return_dict=True)
+        nist_predictions = loaded_model.predict(nist_data.load(), steps=nist_data.steps_per_epoch)
+
+        with (self.results_path / "nist-results.json").open("w") as f:
+            json.dump(nist_metrics, f)
+
+        nist_df["pred"] = None
+        nist_df["pred"][nist_df["Convertable"]] = nist_predictions.flatten()
+        nist_df.to_csv(self.results_path / "nist-predictions.csv", columns=["SMILES", "log CMC", "pred"])
+
+        return nist_metrics
 
     def train_uq(self):
         """Train and test the uncertainty quantified model."""
@@ -279,9 +297,6 @@ class ECFPExperiment(BaseExperiment):
         print("Doing elastic net feature selection...")
         num_low_import = self.model.elastic_feature_select()
         print(f"{num_low_import} subgraphs removed.")
-        print("Fitting ridge models...")
-        ridge_results = self.model.ridge_model_train_test()
-        print(ridge_results)
 
         # Write results
         self.model.smiles_hashes.save(self.hash_path)
@@ -332,6 +347,7 @@ if __name__ == "__main__":
         "--just-uq", action="store_true", help="Just train the uncertainty quantifier."
     )
     parser.add_argument("--only-best", action="store_true", help="For GNN -- don't perform search, only train the best model.")
+    parser.add_argument("--test-nist", action="store_true", help="Test saved model on NIST anionics data.")
 
     args = parser.parse_args()
 
@@ -356,10 +372,13 @@ if __name__ == "__main__":
         exp = GraphExperiment(
             build_gnn, dataset, results_path=results_path, pretrained=pretrained
         )
-        if not pretrained:
-            if not args.only_best:
-                exp.search()
-            exp.train_best(args.epochs)
-            exp.test()
-        if do_uq:
-            exp.train_uq()
+        if args.test_nist:
+            print(exp.test_nist())
+        else:
+            if not pretrained:
+                if not args.only_best:
+                    exp.search()
+                exp.train_best(args.epochs)
+                exp.test()
+            if do_uq:
+                exp.train_uq()

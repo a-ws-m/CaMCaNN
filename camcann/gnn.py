@@ -27,7 +27,7 @@ class QinGNN(Model):
     ):
         """Initialize model layers."""
         super().__init__()
-        self.graph_layers: List[GCNConv] = [GCNConv(channel) for channel in channels]
+        self.graph_layers: List[GCNConv] = [GCNConv(channel, activation="relu") for channel in channels]
         self.pool = pool_func(pooling_channels) if pooling_channels else pool_func()
         self.output_mlp = (
             self.make_mlp(pooling_channels if pooling_channels else channels[-1], mlp_hidden_dim)
