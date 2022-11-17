@@ -53,6 +53,7 @@ def hash_array(arr: np.ndarray) -> AtomicHash:
     """Compute the CRC32 hash of an array of numbers."""
     return crc32(arr.tobytes())
 
+
 def get_atom_hash(atom: Atom) -> AtomicHash:
     """Extract information from an RDKit ``Atom``."""
     atom_feats = np.array(
@@ -60,15 +61,18 @@ def get_atom_hash(atom: Atom) -> AtomicHash:
     )
     return hash_array(atom_feats)
 
+
 def get_bonds_atoms(bond: Bond) -> Tuple[AtomicIndex, AtomicIndex]:
     """Get the atomic indexes that a bond connects."""
     return (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
+
 
 def frag_to_smiles(mol: Mol, atoms: Union[int, Iterable[int]]) -> str:
     """Get the SMILES string for a given fragment."""
     if isinstance(atoms, int):
         atoms = [atoms]
     return MolFragmentToSmiles(mol, atomsToUse=list(atoms), allHsExplicit=True)
+
 
 class SimpleMolecule(NamedTuple):
     """Contain minimalistic information about a molecule."""
@@ -104,16 +108,20 @@ class SimpleMolecule(NamedTuple):
         for atom_idx, hash_ in atoms.items():
             atom_env_count_buff[hash_] += 1
             atom_env_smiles[hash_] = frag_to_smiles(mol, atom_idx)
-        
+
         # * Then all the rest!
         all_bond_combs: Set[FrozenSet[BondIndex]] = set()
         for atom_env_set in atom_envs.values():
             all_bond_combs.update(atom_env_set)
-        
-        for bond_comb in all_bond_combs:
-            atom_idxs: Set[AtomicIndex] = set(chain.from_iterable(bonds[bond_idx] for bond_idx in bond_comb))
 
-            atom_env: List[AtomicHash] = sorted(atoms[atom_idx] for atom_idx in atom_idxs)
+        for bond_comb in all_bond_combs:
+            atom_idxs: Set[AtomicIndex] = set(
+                chain.from_iterable(bonds[bond_idx] for bond_idx in bond_comb)
+            )
+
+            atom_env: List[AtomicHash] = sorted(
+                atoms[atom_idx] for atom_idx in atom_idxs
+            )
             atom_env_hash: AtomicEnvHash = hash_array(np.array(atom_env))
 
             atom_env_count_buff[atom_env_hash] += 1
@@ -274,7 +282,9 @@ class ECFPCountFeaturiser:
                 :attr:`smiles_hashes`. If ``False``, ignore newly encountered hashes.
 
         """
-        simple_mols: List[SimpleMolecule] = [SimpleMolecule.from_rdk(mol, radius) for mol in molecules]
+        simple_mols: List[SimpleMolecule] = [
+            SimpleMolecule.from_rdk(mol, radius) for mol in molecules
+        ]
 
         # Convert hashes to indexes and prepare csr_array; see
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_array.html
@@ -286,7 +296,9 @@ class ECFPCountFeaturiser:
                 hash_idx = self.smiles_hashes.get_hash_idx(hash_)
                 if hash_idx is None:
                     if add_new_hashes:
-                        hash_idx = self.smiles_hashes.setdefault(hash_, simple_mol.atom_env_smiles[hash_])
+                        hash_idx = self.smiles_hashes.setdefault(
+                            hash_, simple_mol.atom_env_smiles[hash_]
+                        )
                     else:
                         continue
 
@@ -303,7 +315,7 @@ class ECFPCountFeaturiser:
         """Pad a count array with zeroes till its features match the number of :attr:`smiles_hashes`."""
         num_padding_cols = len(self.smiles_hashes) - count_array.shape[1]
         if num_padding_cols:
-            return np.pad(count_array, (0, num_padding_cols), "constant")
+            return np.pad(count_array, ((0, 0), (0, num_padding_cols)), "constant")
         return count_array
 
     def label_features(

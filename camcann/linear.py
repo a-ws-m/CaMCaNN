@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 from sklearn.feature_selection import SelectFromModel
-from sklearn.linear_model import BayesianRidge, ElasticNetCV
+from sklearn.linear_model import BayesianRidge, ElasticNetCV, RidgeCV
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -23,14 +23,16 @@ def get_unnormed_contribs(
 
 
 @dataclass
-class ElasticResults:
+class LinearResults:
     """Hold the results of an ElasticNet regression model.
 
     Args:
         train_rmse: Root mean squared error on the training subset.
         train_r2: R^2 score on the training subset.
+        final_alpha: The best alpha for the initial feature selection model.
+        final_l1_ratio: The ratio of L1 to L2 found using CV for the initial
+            feature selection model.
         alpha: The best alpha identified during training.
-        l1_ratio: The ratio of L1 to L2 found using CV.
         coefs: The weights of each subgraph from training.
         intercept: The learned intercept of the model.
         test_rmse: The testing RMSE.
@@ -43,8 +45,9 @@ class ElasticResults:
 
     train_rmse: float
     train_r2: float
-    alpha: float
-    l1_ratio: float
+    selection_alpha: float
+    selection_l1_ratio: float
+    final_alpha: float
     coefs: np.ndarray = field(repr=False)
     intercept: float
     test_rmse: float
@@ -79,7 +82,8 @@ class LinearECFPModel:
         self.test_targets = test_targets
 
         self.scaler = StandardScaler()
-        self.encv = ElasticNetCV(l1_ratio=[0.1, 0.5, 0.7, 0.9, 0.95, 0.99, 1])
+        self.fs_encv = ElasticNetCV(l1_ratio=[0.1, 0.5, 0.7, 0.9, 0.95, 0.99, 1])
+        self.final_ridge = RidgeCV(np.linspace(0.1, 10, 100))
 
     def remove_low_freq_subgraphs(self, threshold: Union[float, int] = 1) -> int:
         """Amend the smiles hashes to remove those that only occur once in the training data.
@@ -114,19 +118,21 @@ class LinearECFPModel:
             :, self.smiles_hashes.hash_df["above_threshold_occurance"].to_numpy()
         ]
 
-    def elastic_feature_select(self) -> ElasticResults:
+    def elastic_feature_select(self) -> LinearResults:
         """Feature selection using Elastic Net CV regularisation.
 
         Returns:
             The results of the Elastic Net search.
 
         """
-        self.model = make_pipeline(self.scaler, self.encv)
+        self.selector = SelectFromModel(self.fs_encv, threshold=1e-5)
+        self.model = make_pipeline(self.scaler, self.selector, self.final_ridge)
         self.model.fit(self.train_fps_filtered, self.train_targets)
 
-        self.selector = SelectFromModel(self.encv, threshold=1e-5, prefit=True)
-
         support = self.selector.get_support()
+        end_model_selector = SelectFromModel(self.final_ridge, threshold=1e-5, prefit=True)
+        end_support = end_model_selector.get_support()
+        support[support] = end_support
         self.smiles_hashes.set_regularised_selection(support)
 
         num_non_negligible = support.sum()
@@ -136,13 +142,14 @@ class LinearECFPModel:
         ).values()
         test_rmse, test_r2 = self.evaluate(self.test_fps, self.test_targets).values()
 
-        return ElasticResults(
+        return LinearResults(
             train_rmse,
             train_r2,
-            self.encv.alpha_,
-            self.encv.l1_ratio_,
-            self.encv.coef_,
-            self.encv.intercept_,
+            self.selector.estimator_.alpha_,
+            self.selector.estimator_.l1_ratio_,
+            self.final_ridge.alpha_,
+            self.final_ridge.coef_,
+            self.final_ridge.intercept_,
             test_rmse,
             test_r2,
             num_non_negligible,

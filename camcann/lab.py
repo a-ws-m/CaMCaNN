@@ -15,9 +15,16 @@ from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from tensorflow.keras.models import Model, load_model
 
-from .data.io import Datasets, RANDOM_SEED, QinDatasets, ECFPData, QinGraphData, get_nist_data
+from .data.io import (
+    Datasets,
+    RANDOM_SEED,
+    QinDatasets,
+    ECFPData,
+    QinGraphData,
+    get_nist_data,
+)
 from .gnn import build_gnn
-from .linear import LinearECFPModel, ElasticResults
+from .linear import LinearECFPModel, LinearResults
 from .uq import GraphGPProcess
 
 RANDOM_SEED = 2022
@@ -35,7 +42,11 @@ class BaseExperiment:
     """
 
     def __init__(
-        self, model, dataset: Union[Datasets, QinDatasets], results_path: Path, debug: bool = False
+        self,
+        model,
+        dataset: Union[Datasets, QinDatasets],
+        results_path: Path,
+        debug: bool = False,
     ) -> None:
         """Initialise paths."""
         self.results_path = results_path
@@ -184,10 +195,16 @@ class GraphExperiment(BaseExperiment):
     def test_nist(self) -> Dict[str, float]:
         """Test against the NIST data."""
         loaded_model = load_model(self.model_path)
-        nist_data, nist_df = get_nist_data(self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv))
+        nist_data, nist_df = get_nist_data(
+            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+        )
 
-        nist_metrics = loaded_model.evaluate(nist_data.load(), steps=nist_data.steps_per_epoch, return_dict=True)
-        nist_predictions = loaded_model.predict(nist_data.load(), steps=nist_data.steps_per_epoch)
+        nist_metrics = loaded_model.evaluate(
+            nist_data.load(), steps=nist_data.steps_per_epoch, return_dict=True
+        )
+        nist_predictions = loaded_model.predict(
+            nist_data.load(), steps=nist_data.steps_per_epoch
+        )
 
         with (self.nist_res_path).open("w") as f:
             json.dump(nist_metrics, f)
@@ -249,7 +266,9 @@ class GraphExperiment(BaseExperiment):
 class ECFPExperiment(BaseExperiment):
     """Train and evaluate a simple, linear ECFP model."""
 
-    def __init__(self, dataset: Union[Datasets, QinDatasets], results_path: Path) -> None:
+    def __init__(
+        self, dataset: Union[Datasets, QinDatasets], results_path: Path
+    ) -> None:
         """Load dataset and initialise featuriser."""
         super().__init__(model, dataset, results_path)
 
@@ -282,7 +301,7 @@ class ECFPExperiment(BaseExperiment):
         )
 
     def _metrics_series(
-        self, num_low_freq: int, elastic_results: ElasticResults
+        self, num_low_freq: int, elastic_results: LinearResults
     ) -> pd.Series:
         """Get metrics as a pandas series for writing to disk."""
         metric_series = asdict(elastic_results)
@@ -303,26 +322,27 @@ class ECFPExperiment(BaseExperiment):
         predictions = self.model.predict(self.featuriser.all_data[0])
         results_df = self._make_pred_df(predictions)
         results_df.to_csv(self.predict_path)
-        self._metrics_series(num_low_freq, elastic_results).to_csv(
-            self.metrics_path
-        )
-    
+
+        metrics = self._metrics_series(num_low_freq, elastic_results)
+        print(metrics)
+        metrics.to_csv(self.metrics_path)
+
     def test_nist(self):
         """Test against the NIST data."""
         nist_data = ECFPData(Datasets.NIST_NEW, self.hash_path)
 
         fps, targets = nist_data.all_data
         nist_predictions = self.model.predict(fps)
-        
+
         nist_df_copy = nist_data.df.copy(deep=True)
         nist_df_copy["pred"] = nist_predictions
 
         nist_df_copy.to_csv(self.nist_pred_path)
 
         rmse = mean_squared_error(targets, nist_predictions, squared=False)
-        mse = rmse ** 2
+        mse = rmse**2
         mae = mean_absolute_error(targets, nist_predictions)
-        results = {"mse": mse, "rmse": rmse, mae: mae}
+        results = {"mse": mse, "rmse": rmse, "mae": mae}
 
         with self.nist_res_path.open("w") as f:
             json.dump(results, f)
@@ -366,8 +386,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--just-uq", action="store_true", help="Just train the uncertainty quantifier."
     )
-    parser.add_argument("--only-best", action="store_true", help="For GNN -- don't perform search, only train the best model.")
-    parser.add_argument("--test-nist", action="store_true", help="Test saved model on NIST anionics data.")
+    parser.add_argument(
+        "--only-best",
+        action="store_true",
+        help="For GNN -- don't perform search, only train the best model.",
+    )
+    parser.add_argument(
+        "--test-nist",
+        action="store_true",
+        help="Test saved model on NIST anionics data.",
+    )
 
     args = parser.parse_args()
 
