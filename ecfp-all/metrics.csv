@@ -1,6 +1,12 @@
 ,0
-num_low_freq,133.0
-num_low_import,253.0
-best_train_rmse,0.4051809580554928
-best_alpha,10.0
-test_rmse,0.29598429732008086
+train_rmse,0.44605118932651444
+train_r2,0.8668992207292795
+alpha,0.2950338043318737
+l1_ratio,0.1
+intercept,3.1245624936611116
+test_rmse,0.3715954766903474
+test_r2,0.874808545373309
+num_non_negligible,136.0
+train_nll,
+test_nll,
+num_low_freq,605.0

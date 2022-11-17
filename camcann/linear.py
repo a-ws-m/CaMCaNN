@@ -151,7 +151,7 @@ class LinearECFPModel:
     def evaluate(self, fps: np.ndarray, targets: np.ndarray) -> Dict[str, float]:
         """Get the RMSE and R^2 values for a set of fingerprints and target values."""
         predictions = self.predict(fps)
-        flat_targets = targets.flatten()
+        flat_targets = targets
         rmse = mean_squared_error(flat_targets, predictions, squared=False)
         r2 = r2_score(flat_targets, predictions)
         return {"rmse": rmse, "r2": r2}

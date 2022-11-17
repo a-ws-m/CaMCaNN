@@ -1,0 +1,161 @@
+\providecommand{\latin}[1]{#1}
+\makeatletter
+\providecommand{\doi}
+  {\begingroup\let\do\@makeother\dospecials
+  \catcode`\{=1 \catcode`\}=2 \doi@aux}
+\providecommand{\doi@aux}[1]{\endgroup\texttt{#1}}
+\makeatother
+\providecommand*\mcitethebibliography{\thebibliography}
+\csname @ifundefined\endcsname{endmcitethebibliography}
+  {\let\endmcitethebibliography\endthebibliography}{}
+\begin{mcitethebibliography}{14}
+\providecommand*\natexlab[1]{#1}
+\providecommand*\mciteSetBstSublistMode[1]{}
+\providecommand*\mciteSetBstMaxWidthForm[2]{}
+\providecommand*\mciteBstWouldAddEndPuncttrue
+  {\def\EndOfBibitem{\unskip.}}
+\providecommand*\mciteBstWouldAddEndPunctfalse
+  {\let\EndOfBibitem\relax}
+\providecommand*\mciteSetBstMidEndSepPunct[3]{}
+\providecommand*\mciteSetBstSublistLabelBeginEnd[3]{}
+\providecommand*\EndOfBibitem{}
+\mciteSetBstSublistMode{f}
+\mciteSetBstMaxWidthForm{subitem}{(\alph{mcitesubitemcount})}
+\mciteSetBstSublistLabelBeginEnd
+  {\mcitemaxwidthsubitemform\space}
+  {\relax}
+  {\relax}
+
+\bibitem[Klevens(1953)]{klevensStructureAggregationDilate1953}
+Klevens,~H.~B. Structure and Aggregation in Dilate Solution of Surface Active
+  Agents. \emph{Journal of the American Oil Chemists Society} \textbf{1953},
+  \emph{30}, 74--80\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Gaudin \latin{et~al.}(2016)Gaudin, Rotureau, Pezron, and
+  Fayet]{gaudinNewQSPRModels2016}
+Gaudin,~T.; Rotureau,~P.; Pezron,~I.; Fayet,~G. New {{QSPR Models}} to
+  {{Predict}} the {{Critical Micelle Concentration}} of {{Sugar-Based
+  Surfactants}}. \emph{Industrial \& Engineering Chemistry Research}
+  \textbf{2016}, \emph{55}, 11716--11726\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Jakobtorweihen \latin{et~al.}(2017)Jakobtorweihen, Yordanova, and
+  Smirnova]{jakobtorweihenPredictingCriticalMicelle2017}
+Jakobtorweihen,~S.; Yordanova,~D.; Smirnova,~I. Predicting {{Critical Micelle
+  Concentrations}} with {{Molecular Dynamics Simulations}} and {{COSMOmic}}.
+  \emph{Chemie Ingenieur Technik} \textbf{2017}, \emph{89}, 1288--1296\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Mattei \latin{et~al.}(2013)Mattei, Kontogeorgis, and
+  Gani]{matteiModelingCriticalMicelle2013}
+Mattei,~M.; Kontogeorgis,~G.~M.; Gani,~R. Modeling of the {{Critical Micelle
+  Concentration}} ({{CMC}}) of {{Nonionic Surfactants}} with an {{Extended
+  Group-Contribution Method}}. \emph{Industrial \& Engineering Chemistry
+  Research} \textbf{2013}, \emph{52}, 12236--12246\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Qin \latin{et~al.}(2021)Qin, Jin, Van~Lehn, and
+  Zavala]{qinPredictingCriticalMicelle2021a}
+Qin,~S.; Jin,~T.; Van~Lehn,~R.~C.; Zavala,~V.~M. Predicting {{Critical Micelle
+  Concentrations}} for {{Surfactants Using Graph Convolutional Neural
+  Networks}}. \emph{The Journal of Physical Chemistry B} \textbf{2021},
+  \emph{125}, 10610--10620\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Faber \latin{et~al.}(2015)Faber, Lindmaa, von Lilienfeld, and
+  Armiento]{faberCrystalStructureRepresentations2015}
+Faber,~F.; Lindmaa,~A.; von Lilienfeld,~O.~A.; Armiento,~R. Crystal Structure
+  Representations for Machine Learning Models of Formation Energies.
+  \emph{International Journal of Quantum Chemistry} \textbf{2015}, \emph{115},
+  1094--1101\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Himanen \latin{et~al.}(2020)Himanen, J{\"a}ger, Morooka,
+  Federici~Canova, Ranawat, Gao, Rinke, and
+  Foster]{himanenDScribeLibraryDescriptors2020}
+Himanen,~L.; J{\"a}ger,~M. O.~J.; Morooka,~E.~V.; Federici~Canova,~F.;
+  Ranawat,~Y.~S.; Gao,~D.~Z.; Rinke,~P.; Foster,~A.~S. {{DScribe}}: {{Library}}
+  of Descriptors for Machine Learning in Materials Science. \emph{Computer
+  Physics Communications} \textbf{2020}, \emph{247}, 106949\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Chen \latin{et~al.}(2019)Chen, Ye, Zuo, Zheng, and
+  Ong]{chenGraphNetworksUniversal2019}
+Chen,~C.; Ye,~W.; Zuo,~Y.; Zheng,~C.; Ong,~S.~P. Graph {{Networks}} as a
+  {{Universal Machine Learning Framework}} for {{Molecules}} and {{Crystals}}.
+  \emph{Chemistry of Materials} \textbf{2019}, \emph{31}, 3564--3572\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Rogers and Hahn(2010)Rogers, and
+  Hahn]{rogersExtendedConnectivityFingerprints2010}
+Rogers,~D.; Hahn,~M. Extended-{{Connectivity Fingerprints}}. \emph{Journal of
+  Chemical Information and Modeling} \textbf{2010}, \emph{50}, 742--754\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Li \latin{et~al.}(2017)Li, Cheng, Wang, Morstatter, Trevino, Tang, and
+  Liu]{liFeatureSelectionData2017}
+Li,~J.; Cheng,~K.; Wang,~S.; Morstatter,~F.; Trevino,~R.~P.; Tang,~J.; Liu,~H.
+  Feature {{Selection}}: {{A Data Perspective}}. \emph{ACM Computing Surveys}
+  \textbf{2017}, \emph{50}, 94:1--94:45\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Tibshirani(1996)]{tibshiraniRegressionShrinkageSelection1996}
+Tibshirani,~R. Regression {{Shrinkage}} and {{Selection}} via the {{Lasso}}.
+  \emph{Journal of the Royal Statistical Society. Series B (Methodological)}
+  \textbf{1996}, \emph{58}, 267--288\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Efron \latin{et~al.}(2004)Efron, Hastie, Johnstone, and
+  Tibshirani]{efronLeastAngleRegression2004}
+Efron,~B.; Hastie,~T.; Johnstone,~I.; Tibshirani,~R. Least Angle Regression.
+  \emph{The Annals of Statistics} \textbf{2004}, \emph{32}, 407--499\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\bibitem[Zou and Hastie(2005)Zou, and
+  Hastie]{zouRegularizationVariableSelection2005}
+Zou,~H.; Hastie,~T. Regularization and Variable Selection via the Elastic Net.
+  \emph{Journal of the Royal Statistical Society: Series B (Statistical
+  Methodology)} \textbf{2005}, \emph{67}, 301--320\relax
+\mciteBstWouldAddEndPuncttrue
+\mciteSetBstMidEndSepPunct{\mcitedefaultmidpunct}
+{\mcitedefaultendpunct}{\mcitedefaultseppunct}\relax
+\EndOfBibitem{}
+
+\end{mcitethebibliography}

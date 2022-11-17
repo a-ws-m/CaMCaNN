@@ -2,7 +2,7 @@
 from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,7 @@ from .featurise.graph import MolNodeFeaturizer, mols_to_graph
 
 DATASET_FOLDER = Path(__file__).parent / "datasets"
 RANDOM_SEED = 2021
+
 
 class GraphData(Dataset):
     """Handle graph data subsets."""
@@ -35,6 +36,7 @@ class Datasets(Enum):
 
     QIN = DATASET_FOLDER / "qin-data.csv"
     NIST_ANIONICS = DATASET_FOLDER / "nist-anionics.csv"
+    NIST_NEW = DATASET_FOLDER / "nist-new-vals.csv"
     QIN_AND_NIST_ANIONICS = DATASET_FOLDER / "merged-data.csv"
 
 
@@ -43,13 +45,14 @@ def get_nist_data(
     preprocess: Optional[LayerPreprocess] = None,
 ) -> Tuple[DisjointLoader, pd.DataFrame]:
     """Get a data loader for the NIST anionics data."""
-    df = pd.read_csv(Datasets.NIST_ANIONICS.value, header=0)
+    df = pd.read_csv(Datasets.NIST_NEW.value, header=0)
     df["Molecules"] = [MolFromSmiles(smiles) for smiles in df["SMILES"]]
 
-    df["Convertable"] = ~df["SMILES"].str.contains(r"(Mn)|(Cs)|(Mg)")
-    convertable_df = df[df["Convertable"]]
+    # df["Convertable"] = ~df["SMILES"].str.contains(r"(Mn)|(Cs)|(Mg)")
+    # convertable_df = df[df["Convertable"]]
 
-    graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC"]))
+    # graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC"]))
+    graphs = mols_to_graph(list(df["Molecules"]), mol_featuriser, list(df["log CMC"]))
     graphs = list(map(preprocess, graphs)) if preprocess is not None else graphs
 
     return DisjointLoader(GraphData(graphs), shuffle=False), df
@@ -73,7 +76,6 @@ class DataReader:
         except KeyError:
             smiles = self.df["SMILES"]
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles]
-
 
     def cv_indexes(
         self, num_folds: int = 10, random_seed: int = RANDOM_SEED
@@ -101,10 +103,10 @@ class DataReader:
         return self.df.iloc[train_idxs], self.df.iloc[test_idxs]
 
 
-class QinDataLoader(ABC):
+class DataLoader(ABC):
     """Handle reading Qin datasets from file."""
 
-    def __init__(self, dataset: QinDatasets) -> None:
+    def __init__(self, dataset: Union[QinDatasets, Datasets]) -> None:
         """Load data and find train/test indexes.
 
         Args:
@@ -112,18 +114,30 @@ class QinDataLoader(ABC):
 
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
-        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in self.df["smiles"]]
-        self.test_idxs = np.where(self.df["traintest"] == "test")[0]
-        self.train_idxs = np.where(self.df["traintest"] == "train")[0]
-        self.optim_idxs, self.val_idxs = train_test_split(
-            self.train_idxs, train_size=0.9, random_state=2022
+        smiles_col = (
+            self.df["smiles"] if "smiles" in self.df.columns else self.df["SMILES"]
         )
+        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles_col]
+        try:
+            self.test_idxs = np.where(self.df["traintest"] == "test")[0]
+            self.train_idxs = np.where(self.df["traintest"] == "train")[0]
+            self.optim_idxs, self.val_idxs = train_test_split(
+                self.train_idxs, train_size=0.9, random_state=2022
+            )
+        except (KeyError, ValueError):
+            # No train/test split
+            self.test_idxs = np.indices((len(self.df.index),))
+            self.train_idxs = np.array([])
+            self.optim_idxs = self.train_idxs
+            self.val_idxs = self.train_idxs
 
 
-class QinECFPData(QinDataLoader):
+class ECFPData(DataLoader):
     """Handle reading Qin datasets from file and featurising with ECFP fingerprints."""
 
-    def __init__(self, dataset: QinDatasets, hash_file: Optional[Path] = None) -> None:
+    def __init__(
+        self, dataset: Union[Datasets, QinDatasets], hash_file: Optional[Path] = None
+    ) -> None:
         """Load data and initialise featuriser.
 
         Args:
@@ -135,10 +149,12 @@ class QinECFPData(QinDataLoader):
 
         smiles_hashes = None
         save_hashes = False
+        add_new_hashes = True
 
         if hash_file is not None:
             if hash_file.exists():
                 smiles_hashes = SMILESHashes.load(hash_file)
+                add_new_hashes = False
             else:
                 save_hashes = True
 
@@ -150,14 +166,22 @@ class QinECFPData(QinDataLoader):
         self.featuriser = ECFPCountFeaturiser(self.smiles_hashes)
 
         self.fingerprints = self.featuriser.featurise_molecules(
-            list(self.df["Molecules"]), 2
+            list(self.df["Molecules"]), 2, add_new_hashes
         )
         if save_hashes:
             self.featuriser.smiles_hashes.save(hash_file)
 
+    @property
+    def expected(self) -> np.ndarray:
+        """Get the expected (target) values as a numpy array."""
+        try:
+            return self.df.exp.to_numpy()
+        except AttributeError:
+            return self.df["log CMC"].to_numpy()
+
     def get_at_idxs(self, indexes: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """Get the fingerprints and target values for the given indexes."""
-        return self.fingerprints[indexes, :], self.df.exp.loc[indexes]
+        return self.fingerprints[indexes, :], self.expected[indexes]
 
     @property
     def train_data(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -172,10 +196,10 @@ class QinECFPData(QinDataLoader):
     @property
     def all_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get numpy arrays of all data fingerprints and targets."""
-        return self.fingerprints, self.df.exp.to_numpy()
+        return self.fingerprints, self.expected
 
 
-class QinGraphData(QinDataLoader):
+class QinGraphData(DataLoader):
     """Handle reading Qin datasets from file and splitting into train and test subsets."""
 
     def __init__(

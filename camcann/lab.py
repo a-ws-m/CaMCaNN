@@ -1,21 +1,23 @@
 """Test the performance of models on the Qin data."""
 from argparse import ArgumentParser
 import json
+from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 import keras_tuner
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from tensorflow.keras.models import Model, load_model
 
-from .data.io import RANDOM_SEED, QinDatasets, QinECFPData, QinGraphData, get_nist_data
+from .data.io import Datasets, RANDOM_SEED, QinDatasets, ECFPData, QinGraphData, get_nist_data
 from .gnn import build_gnn
-from .linear import LinearECFPModel, RidgeResults
+from .linear import LinearECFPModel, ElasticResults
 from .uq import GraphGPProcess
 
 RANDOM_SEED = 2022
@@ -33,7 +35,7 @@ class BaseExperiment:
     """
 
     def __init__(
-        self, model, dataset: QinDatasets, results_path: Path, debug: bool = False
+        self, model, dataset: Union[Datasets, QinDatasets], results_path: Path, debug: bool = False
     ) -> None:
         """Initialise paths."""
         self.results_path = results_path
@@ -41,6 +43,9 @@ class BaseExperiment:
 
         self.predict_path = results_path / "predictions.csv"
         self.uq_predict_path = results_path / "uq_predictions.csv"
+
+        self.nist_pred_path = results_path / "nist_predictions.csv"
+        self.nist_res_path = results_path / "nist_results.csv"
 
         self.metrics_path = results_path / "metrics.csv"
         self.uq_train_metrics_path = results_path / "uq_train_metrics.csv"
@@ -184,12 +189,13 @@ class GraphExperiment(BaseExperiment):
         nist_metrics = loaded_model.evaluate(nist_data.load(), steps=nist_data.steps_per_epoch, return_dict=True)
         nist_predictions = loaded_model.predict(nist_data.load(), steps=nist_data.steps_per_epoch)
 
-        with (self.results_path / "nist-results.json").open("w") as f:
+        with (self.nist_res_path).open("w") as f:
             json.dump(nist_metrics, f)
 
-        nist_df["pred"] = None
-        nist_df["pred"][nist_df["Convertable"]] = nist_predictions.flatten()
-        nist_df.to_csv(self.results_path / "nist-predictions.csv", columns=["SMILES", "log CMC", "pred"])
+        # nist_df["pred"] = None
+        # nist_df["pred"][nist_df["Convertable"]] = nist_predictions.flatten()
+        nist_df["pred"] = nist_predictions.flatten()
+        nist_df.to_csv(self.nist_pred_path, columns=["SMILES", "log CMC", "pred"])
 
         return nist_metrics
 
@@ -243,13 +249,13 @@ class GraphExperiment(BaseExperiment):
 class ECFPExperiment(BaseExperiment):
     """Train and evaluate a simple, linear ECFP model."""
 
-    def __init__(self, dataset: QinDatasets, results_path: Path) -> None:
+    def __init__(self, dataset: Union[Datasets, QinDatasets], results_path: Path) -> None:
         """Load dataset and initialise featuriser."""
         super().__init__(model, dataset, results_path)
 
         self.hash_path = results_path / "hashes.csv"
 
-        self.featuriser = QinECFPData(dataset)
+        self.featuriser = ECFPData(dataset, self.hash_path)
 
         train_fps, train_targets = self.featuriser.train_data
         test_fps, test_targets = self.featuriser.test_data
@@ -276,18 +282,13 @@ class ECFPExperiment(BaseExperiment):
         )
 
     def _metrics_series(
-        self, num_low_freq: int, num_low_import: int, ridge_results: RidgeResults
+        self, num_low_freq: int, elastic_results: ElasticResults
     ) -> pd.Series:
         """Get metrics as a pandas series for writing to disk."""
-        return pd.Series(
-            {
-                "num_low_freq": num_low_freq,
-                "num_low_import": num_low_import,
-                "best_train_rmse": ridge_results.best_rmse,
-                "best_alpha": ridge_results.alpha,
-                "test_rmse": ridge_results.test_rmse,
-            }
-        )
+        metric_series = asdict(elastic_results)
+        metric_series.pop("coefs")
+        metric_series["num_low_freq"] = num_low_freq
+        return pd.Series(metric_series)
 
     def train_test(self):
         """Run training and testing routine."""
@@ -295,17 +296,36 @@ class ECFPExperiment(BaseExperiment):
         num_low_freq = self.model.remove_low_freq_subgraphs()
         print(f"{num_low_freq} subgraphs removed.")
         print("Doing elastic net feature selection...")
-        num_low_import = self.model.elastic_feature_select()
-        print(f"{num_low_import} subgraphs removed.")
+        elastic_results = self.model.elastic_feature_select()
 
         # Write results
         self.model.smiles_hashes.save(self.hash_path)
         predictions = self.model.predict(self.featuriser.all_data[0])
         results_df = self._make_pred_df(predictions)
         results_df.to_csv(self.predict_path)
-        self._metrics_series(num_low_freq, num_low_import, ridge_results).to_csv(
+        self._metrics_series(num_low_freq, elastic_results).to_csv(
             self.metrics_path
         )
+    
+    def test_nist(self):
+        """Test against the NIST data."""
+        nist_data = ECFPData(Datasets.NIST_NEW, self.hash_path)
+
+        fps, targets = nist_data.all_data
+        nist_predictions = self.model.predict(fps)
+        
+        nist_df_copy = nist_data.df.copy(deep=True)
+        nist_df_copy["pred"] = nist_predictions
+
+        nist_df_copy.to_csv(self.nist_pred_path)
+
+        rmse = mean_squared_error(targets, nist_predictions, squared=False)
+        mse = rmse ** 2
+        mae = mean_absolute_error(targets, nist_predictions)
+        results = {"mse": mse, "rmse": rmse, mae: mae}
+
+        with self.nist_res_path.open("w") as f:
+            json.dump(results, f)
 
 
 if __name__ == "__main__":
@@ -365,8 +385,10 @@ if __name__ == "__main__":
         if do_uq:
             raise NotImplementedError("Cannot use UQ with linear ECFP model.")
 
-        exp: BaseExperiment = ECFPExperiment(dataset, results_path=results_path)
-        exp.train_test()
+        ecfp_exp = ECFPExperiment(dataset, results_path=results_path)
+        ecfp_exp.train_test()
+        if args.test_nist:
+            ecfp_exp.test_nist()
     else:
         pretrained = args.just_uq
         exp = GraphExperiment(
