@@ -7,7 +7,7 @@ from tensorflow.keras.models import Model
 from scipy.stats import norm
 from spektral.data import Loader
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import ConstantKernel, Matern
+from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RationalQuadratic, WhiteKernel
 from sklearn.preprocessing import StandardScaler
 
 def nll(pred_mean: np.ndarray, pred_std: np.ndarray, true_vals: np.ndarray):
@@ -36,18 +36,21 @@ class GraphGPProcess:
         )
         self.latent_targets = np.array([graph.y for graph in train_data.dataset.graphs])
 
+        latent_dim = self.latent_points.shape[1]
+        ls_start = np.array([1] * latent_dim)
+
         if with_scaler:
             self.input_scaler = StandardScaler()
             self.latent_points = self.input_scaler.fit_transform(self.latent_points)
         else:
             self.input_scaler = None
 
-        self.kernel = ConstantKernel() * Matern(nu=1.5)
+        self.kernel = ConstantKernel() * Matern(ls_start, nu=1.5) + ConstantKernel() * RationalQuadratic()
 
         self.gpr = GaussianProcessRegressor(
             self.kernel,
             normalize_y=True,
-            n_restarts_optimizer=50,
+            n_restarts_optimizer=20,
             random_state=2022,
         ).fit(self.latent_points, self.latent_targets)
 

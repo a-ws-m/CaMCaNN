@@ -24,6 +24,7 @@ class QinGNN(Model):
         pool_func: Type[GlobalPool] = GlobalAvgPool,
         pooling_channels: Optional[int] = None,
         latent_model: bool = False,
+        **kwargs
     ):
         """Initialize model layers."""
         super().__init__()
@@ -63,8 +64,7 @@ class QinGNN(Model):
         out = self.pool(x)
         return self.output_mlp(out)
 
-
-def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
+def build_gnn(hp: keras_tuner.HyperParameters, latent_model: bool = False) -> Model:
     """Build a GNN using keras tuner."""
     HIDDEN_DIM_CHOICES = dict(min_value=64, max_value=320, step=64)
 
@@ -91,7 +91,7 @@ def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
         for i in range(num_mlp_layers)
     ]
 
-    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func, pool_channels)
+    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func, pool_channels, latent_model=latent_model)
     model.compile(
         optimizer="adam",
         loss="mse",
