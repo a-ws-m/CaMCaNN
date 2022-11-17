@@ -149,10 +149,12 @@ class ECFPData(DataLoader):
 
         smiles_hashes = None
         save_hashes = False
+        add_new_hashes = True
 
         if hash_file is not None:
             if hash_file.exists():
                 smiles_hashes = SMILESHashes.load(hash_file)
+                add_new_hashes = False
             else:
                 save_hashes = True
 
@@ -164,7 +166,7 @@ class ECFPData(DataLoader):
         self.featuriser = ECFPCountFeaturiser(self.smiles_hashes)
 
         self.fingerprints = self.featuriser.featurise_molecules(
-            list(self.df["Molecules"]), 2
+            list(self.df["Molecules"]), 2, add_new_hashes
         )
         if save_hashes:
             self.featuriser.smiles_hashes.save(hash_file)
