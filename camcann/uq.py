@@ -3,12 +3,15 @@ import numpy as np
 
 from typing import Dict, Tuple
 
+import tensorflow as tf
 from tensorflow.keras.models import Model
 from scipy.stats import norm
 from spektral.data import Loader
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RationalQuadratic
+# from sklearn.gaussian_process import GaussianProcessRegressor
+# from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RationalQuadratic
 from sklearn.preprocessing import StandardScaler
+
+import gpflow as gpf
 
 def nll(pred_mean: np.ndarray, pred_std: np.ndarray, true_vals: np.ndarray):
     """Get the negative log likelihood of a given set of predictions."""
@@ -33,8 +36,8 @@ class GraphGPProcess:
 
         self.latent_points = self.model.predict(
             train_data.load(), steps=train_data.steps_per_epoch
-        )
-        self.latent_targets = np.array([graph.y for graph in train_data.dataset.graphs])
+        ).astype(np.float64)
+        self.latent_targets = np.array([graph.y for graph in train_data.dataset.graphs]).reshape(-1, 1)
 
         latent_dim = self.latent_points.shape[1]
         ls_start = np.array([1] * latent_dim)
@@ -46,14 +49,18 @@ class GraphGPProcess:
         else:
             self.input_scaler = None
 
-        self.kernel = ConstantKernel() ** 2 * RationalQuadratic()
 
-        self.gpr = GaussianProcessRegressor(
-            self.kernel,
-            normalize_y=True,
-            n_restarts_optimizer=5,
-            random_state=2022,
-        ).fit(self.latent_points, self.latent_targets)
+        mlp_weights = loaded_model.layers[-1].get_weights()
+        weights, bias = mlp_weights[-2:]
+        weights = tf.cast(weights, tf.float64)
+        bias = tf.cast(bias, tf.float64)
+        self.mean_func = gpf.functions.Linear(weights, bias)
+
+        self.kernel_func = gpf.kernels.RationalQuadratic(lengthscales=ls_start)
+        self.gpr = gpf.models.GPR((self.latent_points, self.latent_targets), kernel=self.kernel_func, mean_function=self.mean_func)
+
+        self.opt = gpf.optimizers.Scipy()
+        self.opt.minimize(self.gpr.training_loss, self.gpr.trainable_variables)
 
         self.log_likelihood = self.gpr.log_marginal_likelihood()
 
@@ -71,7 +78,8 @@ class GraphGPProcess:
         )
         if self.input_scaler is not None:
             latent_points = self.input_scaler.transform(latent_points)
-        means, stddevs = self.gpr.predict(latent_points, return_std=True)
+        means, vars_ = self.gpr.predict_y(latent_points)
+        stddevs = np.sqrt(vars_)
         return means, stddevs
 
     def evaluate(self, test_data: Loader) -> Dict[str, float]:
