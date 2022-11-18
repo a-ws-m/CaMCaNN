@@ -240,6 +240,7 @@ class GraphExperiment(BaseExperiment):
         test_metrics = self.uq_model.evaluate(self.graph_data.val_loader)
 
         pd.Series(train_metrics).to_csv(self.uq_train_metrics_path)
+        # * For testing we're using the validation set until we're happy
         pd.Series(test_metrics).to_csv(self.uq_test_metrics_path)
 
         means, stddevs = self.uq_model.predict(self.graph_data.all_loader)
