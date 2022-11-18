@@ -41,9 +41,12 @@ class QinGNN(Model):
         self, input_size: int, mlp_hidden_dim: List[int], latent_model: bool = False
     ) -> Model:
         """Make MLP postprocessing layers."""
+        if latent_model:
+            # Hacky test for now
+            return lambda x: x
+
         dense_layers = [Dense(dim, activation="relu") for dim in mlp_hidden_dim]
-        if not latent_model:
-            dense_layers.append(Dense(1))
+        dense_layers.append(Dense(1))
 
         mlp_input = Input((input_size))
         mlp_prop = dense_layers[0](mlp_input)

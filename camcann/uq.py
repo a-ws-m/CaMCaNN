@@ -38,6 +38,19 @@ class ScaledLinearMeanFunc(gpf.mean_functions.Linear):
         X_orig = self.scaler.inverse_transform(X)
         return super().__call__(X_orig)
 
+class MLPScalerMeanFunc(gpf.mean_functions.MeanFunction):
+
+    def __init__(self, scaler: Optional[StandardScaler], mlp: tf.keras.Model, name=None):
+        super().__init__(name)
+        self.mlp = mlp
+        self.scaler = scaler
+    
+    def __call__(self, X: gpf.base.TensorType) -> tf.Tensor:
+        if self.scaler is not None:
+            orig_X = self.scaler.inverse_transform(X)
+        else:
+            orig_X = X
+        return tf.cast(self.mlp(X), tf.float64)
 
 class GraphGPProcess:
     def __init__(
@@ -45,7 +58,8 @@ class GraphGPProcess:
         graph_model: Model,
         graph_data: QinGraphData,
         loaded_model: Model,
-        with_scaler: bool = False,
+        with_scaler: bool = True,
+        lin_mean_func: bool = False,
     ) -> None:
         """Create the latent space model and fit it."""
         self.graph_data = graph_data
@@ -82,16 +96,20 @@ class GraphGPProcess:
             optim_latent_points = self.input_scaler.fit_transform(
                 optim_latent_points
             ).astype(np.float64)
-            self.mean_func = ScaledLinearMeanFunc(
-                self.input_scaler, mean_func_weights, mean_func_bias
-            )
+            if lin_mean_func:
+                self.mean_func = ScaledLinearMeanFunc(
+                    self.input_scaler, mean_func_weights, mean_func_bias
+                )
         else:
             self.input_scaler = None
-            self.mean_func = gpf.mean_functions.Linear(
-                mean_func_weights, mean_func_bias
-            )
+            if lin_mean_func:
+                self.mean_func = gpf.mean_functions.Linear(
+                    mean_func_weights, mean_func_bias
+                )
 
+        self.mean_func = MLPScalerMeanFunc(self.input_scaler, loaded_model.layers[-1])
         gpf.set_trainable(self.mean_func, False)
+
         self.optim_gpr = self._make_gp_model(optim_latent_points, optim_targets)
         gpf.utilities.print_summary(self.optim_gpr)
         self.final_gpr = self.train()
@@ -112,17 +130,17 @@ class GraphGPProcess:
     ) -> gpf.models.GPR:
         """Make a Gaussian Process Regression Model."""
         latent_dim = latent_points.shape[1]
-        ls_start = np.array([1e-3] * latent_dim)
+        ls_start = np.array([1] * latent_dim)
 
         kernel_func = gpf.kernels.Matern12(lengthscales=ls_start)
 
         gpr = gpf.models.GPR(
             (latent_points, targets), kernel=kernel_func, mean_function=self.mean_func, noise_variance=1e-6
         )
-        # gpf.set_trainable(gpr.likelihood, False)
+        gpf.set_trainable(gpr.likelihood, False)
         return gpr
 
-    def train(self, num_epochs: int = 10000, patience: int = 1000) -> gpf.models.GPR:
+    def train(self, num_epochs: int = 50000, patience: int = 1000) -> gpf.models.GPR:
         """Train a GP with early stopping."""
         EVAL_FREQUENCY: int = 100
         opt = tf.keras.optimizers.Adam()
