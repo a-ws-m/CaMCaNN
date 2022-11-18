@@ -60,7 +60,11 @@ class BaseExperiment:
 
         self.metrics_path = results_path / "metrics.csv"
         self.uq_train_metrics_path = results_path / "uq_train_metrics.csv"
+        self.uq_val_metrics_path = results_path / "uq_val_metrics.csv"
         self.uq_test_metrics_path = results_path / "uq_test_metrics.csv"
+
+        self.uq_nist_metrics_path = results_path / "uq_nist_metrics.csv"
+        self.uq_nist_pred_path = results_path / "uq_nist_pred.csv"
 
         self.results_path.mkdir(exist_ok=True)
 
@@ -233,18 +237,33 @@ class GraphExperiment(BaseExperiment):
 
         loaded_model = load_model(self.model_path)
         self.uq_model = GraphGPProcess(
-            latent_model, self.graph_data.optim_loader_no_shuffle, loaded_model
+            latent_model, self.graph_data, loaded_model
         )
 
         train_metrics = self.uq_model.evaluate(self.graph_data.optim_loader_no_shuffle)
-        test_metrics = self.uq_model.evaluate(self.graph_data.val_loader)
+        val_metrics = self.uq_model.evaluate(self.graph_data.val_loader)
+        test_metrics = self.uq_model.evaluate(self.graph_data.test_loader)
 
         pd.Series(train_metrics).to_csv(self.uq_train_metrics_path)
-        # * For testing we're using the validation set until we're happy
+        pd.Series(val_metrics).to_csv(self.uq_val_metrics_path)
         pd.Series(test_metrics).to_csv(self.uq_test_metrics_path)
 
         means, stddevs = self.uq_model.predict(self.graph_data.all_loader)
         self._make_pred_df(means, stddevs).to_csv(self.uq_predict_path)
+
+        nist_data, nist_df = get_nist_data(
+            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+        )
+        nist_means, nist_stddevs = self.uq_model.predict(nist_data)
+        nist_df["pred"] = nist_means.flatten()
+        nist_df["stddev"] = nist_stddevs.flatten()
+        nist_df.to_csv(self.uq_nist_pred_path)
+
+        nist_data, nist_df = get_nist_data(
+            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+        )
+        nist_metrics = self.uq_model.evaluate(nist_data)
+        pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
 
     def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
         """Make a DataFrame of predicted CMCs."""
