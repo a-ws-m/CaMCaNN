@@ -257,7 +257,7 @@ class QinGraphData(DataLoader):
     @property
     def train_loader(self):
         """Get the training data loader."""
-        return DisjointLoader(self.train_dataset, shuffle=False)
+        return DisjointLoader(self.train_dataset)
 
     @property
     def optim_loader(self):
@@ -265,14 +265,24 @@ class QinGraphData(DataLoader):
         return DisjointLoader(self.optim_dataset)
 
     @property
+    def train_loader_no_shuffle(self):
+        """Get the training data loader."""
+        return DisjointLoader(self.train_dataset, shuffle=False)
+
+    @property
+    def optim_loader_no_shuffle(self):
+        """Get the optimisation data loader."""
+        return DisjointLoader(self.optim_dataset, shuffle=False)
+
+    @property
     def val_loader(self):
         """Get the validation data loader."""
-        return DisjointLoader(self.val_dataset)
+        return DisjointLoader(self.val_dataset, shuffle=False)
 
     @property
     def test_loader(self):
         """Get the test data loader."""
-        return DisjointLoader(self.test_dataset)
+        return DisjointLoader(self.test_dataset, shuffle=False)
 
     @property
     def all_loader(self):

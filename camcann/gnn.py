@@ -27,27 +27,37 @@ class QinGNN(Model):
     ):
         """Initialize model layers."""
         super().__init__()
-        self.graph_layers: List[GCNConv] = [GCNConv(channel, activation="relu") for channel in channels]
+        self.graph_layers: List[GCNConv] = [
+            GCNConv(channel, activation="relu") for channel in channels
+        ]
         self.pool = pool_func(pooling_channels) if pooling_channels else pool_func()
-        self.output_mlp = (
-            self.make_mlp(pooling_channels if pooling_channels else channels[-1], mlp_hidden_dim)
-            if not latent_model
-            else lambda x: x
+        self.output_mlp = self.make_mlp(
+            pooling_channels if pooling_channels else channels[-1],
+            mlp_hidden_dim,
+            latent_model,
         )
 
-    def make_mlp(self, input_size: int, mlp_hidden_dim: List[int]) -> Model:
+    def make_mlp(
+        self, input_size: int, mlp_hidden_dim: List[int], latent_model: bool = False
+    ) -> Model:
         """Make MLP postprocessing layers."""
-        dense_layers = [Dense(dim, activation="relu") for dim in mlp_hidden_dim] + [
-            Dense(1)
-        ]
+        if latent_model:
+            # Hacky test for now
+            return lambda x: x
+
+        dense_layers = [Dense(dim, activation="relu") for dim in mlp_hidden_dim]
+        dense_layers.append(Dense(1))
 
         mlp_input = Input((input_size))
         mlp_prop = dense_layers[0](mlp_input)
 
-        for layer in dense_layers[1:-1]:
-            mlp_prop = layer(mlp_prop)
+        if len(dense_layers) == 1:
+            mlp_output = mlp_prop
+        else:
+            for layer in dense_layers[1:-1]:
+                mlp_prop = layer(mlp_prop)
 
-        mlp_output = dense_layers[-1](mlp_prop)
+            mlp_output = dense_layers[-1](mlp_prop)
 
         return Model(mlp_input, mlp_output)
 
@@ -64,7 +74,7 @@ class QinGNN(Model):
         return self.output_mlp(out)
 
 
-def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
+def build_gnn(hp: keras_tuner.HyperParameters, latent_model: bool = False) -> Model:
     """Build a GNN using keras tuner."""
     HIDDEN_DIM_CHOICES = dict(min_value=64, max_value=320, step=64)
 
@@ -80,18 +90,27 @@ def build_gnn(hp: keras_tuner.HyperParameters) -> Model:
     pool_func_key = hp.Choice("pooling_func", list(pool_funcs.keys()))
     pool_func = pool_funcs[pool_func_key]
 
-    pool_channels = hp.Int("pool_channels", **HIDDEN_DIM_CHOICES) if pool_func_key == "global_attn_pool" else None
+    pool_channels = (
+        hp.Int("pool_channels", **HIDDEN_DIM_CHOICES)
+        if pool_func_key == "global_attn_pool"
+        else None
+    )
 
     graph_channels = [
-        hp.Int(f"graph_channels_{i}", **HIDDEN_DIM_CHOICES)
-        for i in range(num_channels)
+        hp.Int(f"graph_channels_{i}", **HIDDEN_DIM_CHOICES) for i in range(num_channels)
     ]
     mlp_hidden_dim = [
         hp.Int(f"mlp_hidden_dim_{i}", **HIDDEN_DIM_CHOICES)
         for i in range(num_mlp_layers)
     ]
 
-    model = QinGNN(graph_channels, mlp_hidden_dim, pool_func, pool_channels)
+    model = QinGNN(
+        graph_channels,
+        mlp_hidden_dim,
+        pool_func,
+        pool_channels,
+        latent_model=latent_model,
+    )
     model.compile(
         optimizer="adam",
         loss="mse",

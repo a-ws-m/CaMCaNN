@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union, Type
 
 import keras_tuner
 import numpy as np
@@ -60,7 +60,11 @@ class BaseExperiment:
 
         self.metrics_path = results_path / "metrics.csv"
         self.uq_train_metrics_path = results_path / "uq_train_metrics.csv"
+        self.uq_val_metrics_path = results_path / "uq_val_metrics.csv"
         self.uq_test_metrics_path = results_path / "uq_test_metrics.csv"
+
+        self.uq_nist_metrics_path = results_path / "uq_nist_metrics.csv"
+        self.uq_nist_pred_path = results_path / "uq_nist_pred.csv"
 
         self.results_path.mkdir(exist_ok=True)
 
@@ -99,6 +103,7 @@ class GraphExperiment(BaseExperiment):
 
         self.best_hp_file = self.results_path / "best_hps.json"
 
+        self.hypermodel = hypermodel
         self.tuner = keras_tuner.Hyperband(
             hypermodel=hypermodel,
             objective="val_loss",
@@ -112,15 +117,22 @@ class GraphExperiment(BaseExperiment):
         self.graph_data = QinGraphData(dataset, preprocess=LayerPreprocess(GCNConv))
 
         if pretrained:
-            loaded_model = self.tuner.get_best_models()[0]
+            with self.best_hp_file.open("r") as f:
+                self.best_hps_dict = json.load(f)
+            
+            hps = keras_tuner.HyperParameters()
+            self.hypermodel(hps)
+            hps.values = self.best_hps_dict
+            self.model = self.tuner.hypermodel.build(hps)
 
-            train_data = self.graph_data.train_dataset
-            # TODO: Fix this using build
-            # self.model.predict(train_data.load(), steps=train_data.steps_per_epoch)
-            # loaded_model.predict(train_data.load(), steps=train_data.steps_per_epoch)
+            loaded_model = load_model(self.model_path)
 
-            # for latent_layer, buffer in zip(self.model.layers, loaded_model.layers):
-            #     latent_layer.set_weights(buffer.get_weights())
+            train_data = self.graph_data.train_loader_no_shuffle
+            self.model.predict(train_data.load(), steps=train_data.steps_per_epoch)
+            loaded_model.predict(train_data.load(), steps=train_data.steps_per_epoch)
+
+            for latent_layer, buffer in zip(self.model.layers, loaded_model.layers):
+                latent_layer.set_weights(buffer.get_weights())
 
         if self.debug:
             print("First 10 graphs:")
@@ -154,12 +166,12 @@ class GraphExperiment(BaseExperiment):
         """Train the best hyperparameters on all the data."""
         best_hp = self.tuner.get_best_hyperparameters()[0]
 
-        best_hps_dict = best_hp.get_config()["values"]
+        self.best_hps_dict = best_hp.values
         print("Best hyperparameters:")
-        print(best_hps_dict)
+        print(self.best_hps_dict)
 
         with self.best_hp_file.open("w") as f:
-            json.dump(best_hps_dict, f)
+            json.dump(self.best_hps_dict, f)
 
         self.model = self.tuner.hypermodel.build(best_hp)
 
@@ -218,19 +230,40 @@ class GraphExperiment(BaseExperiment):
 
     def train_uq(self):
         """Train and test the uncertainty quantified model."""
+        hps = keras_tuner.HyperParameters()
+        self.hypermodel(hps)
+        hps.values = self.best_hps_dict
+        latent_model = self.hypermodel(hps, latent_model=True)
+
         loaded_model = load_model(self.model_path)
         self.uq_model = GraphGPProcess(
-            self.model, self.graph_data.train_loader, loaded_model
+            latent_model, self.graph_data, loaded_model
         )
 
-        train_metrics = self.uq_model.evaluate(self.graph_data.train_loader)
+        train_metrics = self.uq_model.evaluate(self.graph_data.optim_loader_no_shuffle)
+        val_metrics = self.uq_model.evaluate(self.graph_data.val_loader)
         test_metrics = self.uq_model.evaluate(self.graph_data.test_loader)
 
         pd.Series(train_metrics).to_csv(self.uq_train_metrics_path)
+        pd.Series(val_metrics).to_csv(self.uq_val_metrics_path)
         pd.Series(test_metrics).to_csv(self.uq_test_metrics_path)
 
         means, stddevs = self.uq_model.predict(self.graph_data.all_loader)
         self._make_pred_df(means, stddevs).to_csv(self.uq_predict_path)
+
+        nist_data, nist_df = get_nist_data(
+            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+        )
+        nist_means, nist_stddevs = self.uq_model.predict(nist_data)
+        nist_df["pred"] = nist_means.flatten()
+        nist_df["stddev"] = nist_stddevs.flatten()
+        nist_df.to_csv(self.uq_nist_pred_path)
+
+        nist_data, nist_df = get_nist_data(
+            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+        )
+        nist_metrics = self.uq_model.evaluate(nist_data)
+        pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
 
     def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
         """Make a DataFrame of predicted CMCs."""
