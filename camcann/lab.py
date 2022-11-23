@@ -228,7 +228,7 @@ class GraphExperiment(BaseExperiment):
 
         return nist_metrics
 
-    def train_uq(self):
+    def train_uq(self, with_scaler: bool = True, linear_mean_fn: bool = False):
         """Train and test the uncertainty quantified model."""
         hps = keras_tuner.HyperParameters()
         self.hypermodel(hps)
@@ -237,7 +237,7 @@ class GraphExperiment(BaseExperiment):
 
         loaded_model = load_model(self.model_path)
         self.uq_model = GraphGPProcess(
-            latent_model, self.graph_data, loaded_model
+            latent_model, self.graph_data, loaded_model, with_scaler, linear_mean_fn
         )
 
         train_metrics = self.uq_model.evaluate(self.graph_data.optim_loader_no_shuffle)
@@ -419,6 +419,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--just-uq", action="store_true", help="Just train the uncertainty quantifier."
     )
+    parser.add_argument("--no-gp-scaler", action="store_true", help="Don't use a scaler on the latent points for the Gaussian process.")
+    parser.add_argument("--lin-mean-fn", action="store_true", help="Use a linear function for the mean of the Gaussian process. If not set, will use the trained MLP from the NN as the mean function.")
     parser.add_argument(
         "--only-best",
         action="store_true",
@@ -464,4 +466,4 @@ if __name__ == "__main__":
                 exp.train_best(args.epochs)
                 exp.test()
             if do_uq:
-                exp.train_uq()
+                exp.train_uq(with_scaler=not args.no_gp_scaler, linear_mean_fn=args.lin_mean_fn)
