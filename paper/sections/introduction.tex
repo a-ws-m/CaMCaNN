@@ -22,17 +22,21 @@ molecules with target properties, and interpret the models' results to glean
 chemical insights.
 
 To that end, there have been a wealth of investigations into making more general
-models for CMC prediction
-\cite{gaudinNewQSPRModels2016,jakobtorweihenPredictingCriticalMicelle2017,matteiModelingCriticalMicelle2013}.
-(More references to be added.) Recently, an approach based on graph neural
-networks (GNNs) has produced highly accurate predictions, whilst having the
-advantage of being applicable to nonionic, cationic, anionic and zwitterionic
-surfactants simultaneously \cite{qinPredictingCriticalMicelle2021a}. Such neural
-networks have many trainable parameters and a complex functional form. This
-ensures their versatility as general approximators, but makes them highly
-susceptible to overfitting (CITATION). By using such complex models, we also
-abandon the parsimony exhibited by Stauff-Klevens, and chemical insights can be
-much more difficult to derive. Furthermore, deep neural networks' ostensible
+models for CMC prediction, which are discussed in Section \ref{sec:background}.
+The two fundamental differences between them are the choice of molecular
+descriptors, which are the numerical features that form the basis set for the
+model inputs, and the functional form of the approximator that maps the
+descriptor to the property prediction. 
+
+Recently, an approach based on graph neural networks (GNNs) has produced highly
+accurate predictions, whilst having the advantage of being applicable to
+nonionic, cationic, anionic and zwitterionic surfactants simultaneously
+\cite{qinPredictingCriticalMicelle2021}. Such neural networks have many
+trainable parameters and a complex functional form. This ensures their
+versatility as general approximators, but makes them highly susceptible to
+overfitting (CITATION). By using such complex models, we also abandon the
+parsimony exhibited by Stauff-Klevens, and chemical insights can be much more
+difficult to derive. Furthermore, deep neural networks' ostensible
 `universality' can be misleading: extrapolating the model's results to
 out-of-domain molecules (ones that are `dissimilar' from the training data) will
 yield unreliable and potentially misleading predictions.
