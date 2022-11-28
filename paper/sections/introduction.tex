@@ -31,15 +31,15 @@ descriptor to the property prediction.
 Recently, an approach based on graph neural networks (GNNs) has produced highly
 accurate predictions, whilst having the advantage of being applicable to
 nonionic, cationic, anionic and zwitterionic surfactants simultaneously
-\cite{qinPredictingCriticalMicelle2021}. Such neural networks have many
+\cite{qinPredictingCriticalMicelle2021}. Neural networks have many
 trainable parameters and a complex functional form. This ensures their
 versatility as general approximators, but makes them highly susceptible to
-overfitting (CITATION). By using such complex models, we also abandon the
-parsimony exhibited by Stauff-Klevens, and chemical insights can be much more
-difficult to derive. Furthermore, deep neural networks' ostensible
-`universality' can be misleading: extrapolating the model's results to
-out-of-domain molecules (ones that are `dissimilar' from the training data) will
-yield unreliable and potentially misleading predictions.
+overfitting \cite{bejaniSystematicReviewOverfitting2021}. By using such complex
+models, we also abandon the parsimony exhibited by Stauff-Klevens, and chemical
+insights can be much more difficult to derive. Furthermore, deep neural
+networks' ostensible `universality' can be misleading: extrapolating the model's
+results to out-of-domain molecules (ones that are `dissimilar' from the training
+data) will yield unreliable and potentially misleading predictions.
 
 In this article, we develop two types of models of very different complexity: a
 linear model and a GNN. We evaluate the difference in performance and
