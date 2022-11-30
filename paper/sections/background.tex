@@ -19,10 +19,10 @@ micellisation in terms of a set of molecular parameters:
 \begin{itemize}
     \item The tail length, described as the number of carbon atoms.
     \item The average cross-sectional area of the headgroup, which controls the
-        steric contribution to the free energy. This must be estimated.
+          steric contribution to the free energy. This must be estimated.
     \item The Tolman length of the tail, which effectively describes the
-        thickness of an `interaction region' around the tail
-        \cite{demiguelGibbsThermodynamicsSurface2021}. This must also be estimated.
+          thickness of an `interaction region' around the tail
+          \cite{demiguelGibbsThermodynamicsSurface2021}. This must also be estimated.
 \end{itemize}
 
 A functional form to estimate the parameters was described for linear, nonionic,
@@ -43,22 +43,68 @@ not the branched case, or for heterogeneous tail groups. Estimating the average
 cross-sectional area of the head group may also not be trivial.
 
 Semi-empirical approaches are grounded in theory, but have parameters that are
-optimised based on experimental data. \citet{liStudiesUNIQUACSAFT1998} applied a
-segment-based UNIQUAC model (s-UNIQUAC) and a SAFT equation of state to predict
-CMCs of linear polyoxyethylene alcohols, by first deriving expressions for the
-activity coefficient of a surfactant in water. In the s-UNIQUAC model, a
-segment-based local-composition model was used, in which the surfactant was
-decomposed into segments and the fugacity could be approximated using the fitted
-interaction energies between the segments and water. In this case, the segments
-used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the surfactant was
-treated as a chain of soft-sphere segments in order to first derive the
-Helmholtz energy of the solution and from that to derive the fugacity. In this
-case, the segments used were \ce{CH2}/\ce{CH3} (these were treated as the same
-segment) and \ce{C2H4O}. The interaction energies of the segments were fitted,
-as well as parameters of a function describing the soft sphere diameter of a
-segment in a chain as a function of the chain length.
+optimised based on experimental data. Many semi-empirical approaches to CMC
+prediction can be described as \emph{segment-based} methods, whereby the
+surfactant is decomposed into discrete segments which correspond to groups of
+atoms and bonds.
 
-Now: Talk about \citet{chengCorrelationCriticalMicelle2005}.
+\citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model
+(s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear
+polyoxyethylene alcohols, by first deriving expressions for the activity
+coefficient of a surfactant in water. In the s-UNIQUAC model, a segment-based
+local-composition model was used and the fugacity could then be approximated
+using the fitted interaction energies between the segments and water. In this
+case, the segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the
+surfactant was treated as a chain of soft-sphere segments in order to first
+derive the Helmholtz energy of the solution and from that to derive the
+fugacity. In this case, the segments used were \ce{CH2}/\ce{CH3} (these were
+treated as the same segment) and \ce{C2H4O}. The interaction energies of the
+segments were fitted, as well as parameters of a function describing the soft
+sphere diameter of a segment in a chain in terms of the chain length.
+
+\citet{chengCorrelationCriticalMicelle2005} compared the performance of these
+models on a larger dataset, alongside three other models. Two of these were
+segment-based models: the polymer-NRTL model \cite{liStudiesUNIQUACSAFT1998} and
+a UNIFAC model \cite{voutsasPredictionCriticalMicelle2001}, both of which were
+cited as inspirations for the s-UNIQUAC model. The authors also employed their
+own modified Aranovich and Donohue (m-AD) model. The m-AD model calculates the
+CMC as a mole fraction, $x_S^L$, approximating it as the reciprocal of the
+limiting value of the surfactant's activity coefficient in aqueous solution,
+$\gamma_S^{L,\infty}$:
+
+\begin{equation}
+    \label{eq:m-AD}
+    x_S^L = \frac{1}{\gamma_S^{L,\infty}}
+\end{equation}
+
+The m-AD model considers the exchange equilibrium on a three-dimensional lattice
+of infinitely separated solvent and solute molecules in order to determine
+$\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model.
+Instead, the authors fitted an interchange energy, $\Delta$, separately for each
+molecule. Of course, if a new parameter must be fitted for every molecule, a
+model has no predictive ability. Therefore, correlations were examined between
+$\Delta$ and other, readily calculated surfactant properties, which will be
+discussed later.
+
+Where data from literature was available, the predictive performance of the
+models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n}
+and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
+\ref{tab:segment-methods}.
+
+\begin{table}
+    \caption{Comparison of the RMSEs of selected models on polyoxyethylene
+        alcohols. Data from \citet{chengCorrelationCriticalMicelle2005}.}
+    \label{tab:segment-methods}
+    \begin{tabular}{lr}
+        \toprule
+        \multicolumn{1}{c}{Model} & \multicolumn{1}{c}{RMSE (\si{\log \micro M})} \\\midrule
+        p-NRTL                    & 0.18                                          \\
+        s-UNIQUAC                 & 0.14                                          \\
+        SAFT                      & \textbf{0.06}                                 \\
+        UNIFAC                    & 0.14                                          \\
+        m-AD                      & 0.11                                          \\\bottomrule
+    \end{tabular}
+\end{table}
 
 TODO: Talk about geometric, topological and electronic descriptors, as well as
 simulation approaches.
