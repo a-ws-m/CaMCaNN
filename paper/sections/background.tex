@@ -1,6 +1,64 @@
-Broadly, CMC predictive models take three forms: empirical, theoretical and
-simulated, or some combination of the three. Here we will focus on predictive
-models for aqueous solutions containing a single surfactant and discuss some of the trade-offs
-with the different approaches with regards to speed, universality and interpretability.
+Broadly, CMC predictive models take four forms: empirical, semi-empirical,
+theoretical and simulated, or some combination of these. Here we will focus on
+predictive models for aqueous solutions containing a single surfactant and
+discuss some of the trade-offs between the different approaches with regards to
+speed, universality and interpretability.
 
-TODO: Talk about geometric, topological and electronic descriptors, as well as simulation approaches.
+Theoretical approaches have the potential to be the most useful type of
+predictive model, if they are accurate and applicable to the desired system, as
+they are directly related to scientific knowledge and their results can be
+understood in terms of well studied principles.
+\citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological
+model for studying aqueous nonionic surfactant systems that enabled CMC
+prediction, as well as modelling of other properties across a range of
+temperatures. The model they developed was the product of decomposing the
+process of micellisation into discrete steps that they could describe
+thermodynamically so as to yield an description of the free energy of
+micellisation in terms of a set of molecular parameters:
+
+\begin{itemize}
+    \item The tail length, described as the number of carbon atoms.
+    \item The average cross-sectional area of the headgroup, which controls the
+        steric contribution to the free energy. This must be estimated.
+    \item The Tolman length of the tail, which effectively describes the
+        thickness of an `interaction region' around the tail
+        \cite{demiguelGibbsThermodynamicsSurface2021}. This must also be estimated.
+\end{itemize}
+
+A functional form to estimate the parameters was described for linear, nonionic,
+polyoxyethylene alcohol surfactants. The model attained impressive accuracy for
+some predictions: a root-mean-squared error (RMSE) of approximately
+\SI{0.14}{\log \micro M} for the group \ce{C10E_i}, where $i \in [3, 6]$, and
+\SI{0.21}{\log \micro M} for the group \ce{C12E_j}, where $j \in [3, 8]$.
+However, for other systems, like \ce{C8E6}, the error is much larger. The
+authors expect that this inaccuracy is because the model overestimates the CMC
+values for systems in which the micelles do not grow.
+
+The connection that this model established between a small set of physically
+meaningful properties that can be estimated and emergent properties of
+surfactants is extremely useful, especially because it does not explicitly
+require fitting to any experimental data. However, the procedures described for
+estimating the Tolman length are only applicable for linear hydrocarbon chains;
+not the branched case, or for heterogeneous tail groups. Estimating the average
+cross-sectional area of the head group may also not be trivial.
+
+Semi-empirical approaches are grounded in theory, but have parameters that are
+optimised based on experimental data. \citet{liStudiesUNIQUACSAFT1998} applied a
+segment-based UNIQUAC model (s-UNIQUAC) and a SAFT equation of state to predict
+CMCs of linear polyoxyethylene alcohols, by first deriving expressions for the
+activity coefficient of a surfactant in water. In the s-UNIQUAC model, a
+segment-based local-composition model was used, in which the surfactant was
+decomposed into segments and the fugacity could be approximated using the fitted
+interaction energies between the segments and water. In this case, the segments
+used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the surfactant was
+treated as a chain of soft-sphere segments in order to first derive the
+Helmholtz energy of the solution and from that to derive the fugacity. In this
+case, the segments used were \ce{CH2}/\ce{CH3} (these were treated as the same
+segment) and \ce{C2H4O}. The interaction energies of the segments were fitted,
+as well as parameters of a function describing the soft sphere diameter of a
+segment in a chain as a function of the chain length.
+
+Now: Talk about \citet{chengCorrelationCriticalMicelle2005}.
+
+TODO: Talk about geometric, topological and electronic descriptors, as well as
+simulation approaches.
