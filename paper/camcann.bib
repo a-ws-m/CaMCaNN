@@ -101,6 +101,24 @@
   keywords = {62J07,boosting,coefficient paths,Lasso,Linear regression,Variable selection}
 }
 
+@article{faberCrystalStructureRepresentations2015,
+  ids = {faberCrystalStructureRepresentations2015a},
+  title = {Crystal Structure Representations for Machine Learning Models of Formation Energies},
+  author = {Faber, Felix and Lindmaa, Alexander and von Lilienfeld, O. Anatole and Armiento, Rickard},
+  year = {2015},
+  journal = {International Journal of Quantum Chemistry},
+  volume = {115},
+  number = {16},
+  pages = {1094--1101},
+  issn = {1097-461X},
+  doi = {10.1002/qua.24917},
+  abstract = {We introduce and evaluate a set of feature vector representations of crystal structures for machine learning (ML) models of formation energies of solids. ML models of atomization energies of organic molecules have been successful using a Coulomb matrix representation of the molecule. We consider three ways to generalize such representations to periodic systems: (i) a matrix where each element is related to the Ewald sum of the electrostatic interaction between two different atoms in the unit cell repeated over the lattice; (ii) an extended Coulomb-like matrix that takes into account a number of neighboring unit cells; and (iii) an ansatz that mimics the periodicity and the basic features of the elements in the Ewald sum matrix using a sine function of the crystal coordinates of the atoms. The representations are compared for a Laplacian kernel with Manhattan norm, trained to reproduce formation energies using a dataset of 3938 crystal structures obtained from the Materials Project. For training sets consisting of 3000 crystals, the generalization error in predicting formation energies of new structures corresponds to (i) 0.49, (ii) 0.64, and (iii) for the respective representations. \textcopyright{} 2015 Wiley Periodicals, Inc.},
+  copyright = {\textcopyright{} 2015 Wiley Periodicals, Inc.},
+  langid = {english},
+  keywords = {crystal structure,formation energies,machine learning,periodic systems,representations},
+  annotation = {\_eprint: https://onlinelibrary.wiley.com/doi/pdf/10.1002/qua.24917}
+}
+
 @article{gaudinNewQSPRModels2016,
   title = {New {{QSPR Models}} to {{Predict}} the {{Critical Micelle Concentration}} of {{Sugar-Based Surfactants}}},
   author = {Gaudin, Th{\'e}ophile and Rotureau, Patricia and Pezron, Isabelle and Fayet, Guillaume},
@@ -130,6 +148,22 @@
   abstract = {In this paper we present Spektral, an open-source Python library for building graph neural networks with TensorFlow and the Keras application programming interface. Spektral implements a large set of methods for deep learning on graphs, including message-passing and pooling operators, as well as utilities for processing graphs and loading popular benchmark datasets. The purpose of this library is to provide the essential building blocks for creating graph neural networks, focusing on the guiding principles of user-friendliness and quick prototyping on which Keras is based. Spektral is, therefore, suitable for absolute beginners and expert deep learning practitioners alike. In this work, we present an overview of Spektral's features and report the performance of the methods implemented by the library in scenarios of node classification, graph classification, and graph regression.},
   archiveprefix = {arXiv},
   keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
+@article{himanenDScribeLibraryDescriptors2020,
+  title = {{{DScribe}}: {{Library}} of Descriptors for Machine Learning in Materials Science},
+  shorttitle = {{{DScribe}}},
+  author = {Himanen, Lauri and J{\"a}ger, Marc O. J. and Morooka, Eiaki V. and Federici Canova, Filippo and Ranawat, Yashasvi S. and Gao, David Z. and Rinke, Patrick and Foster, Adam S.},
+  year = {2020},
+  month = feb,
+  journal = {Computer Physics Communications},
+  volume = {247},
+  pages = {106949},
+  issn = {0010-4655},
+  doi = {10.1016/j.cpc.2019.106949},
+  abstract = {DScribe is a software package for machine learning that provides popular feature transformations (``descriptors'') for atomistic materials simulations. DScribe accelerates the application of machine learning for atomistic property prediction by providing user-friendly, off-the-shelf descriptor implementations. The package currently contains implementations for Coulomb matrix, Ewald sum matrix, sine matrix, Many-body Tensor Representation (MBTR), Atom-centered Symmetry Function (ACSF) and Smooth Overlap of Atomic Positions (SOAP). Usage of the package is illustrated for two different applications: formation energy prediction for solids and ionic charge prediction for atoms in organic molecules. The package is freely available under the open-source Apache License 2.0. Program summary Program Title: DScribe Program Files doi: http://dx.doi.org/10.17632/vzrs8n8pk6.1 Licensing provisions: Apache-2.0 Programming language: Python/C/C++ Supplementary material: Supplementary Information as PDF Nature of problem: The application of machine learning for materials science is hindered by the lack of consistent software implementations for feature transformations. These feature transformations, also called descriptors, are a key step in building machine learning models for property prediction in materials science. Solution method: We have developed a library for creating common descriptors used in machine learning applied to materials science. We provide an implementation the following descriptors: Coulomb matrix, Ewald sum matrix, sine matrix, Many-body Tensor Representation (MBTR), Atom-centered Symmetry Functions (ACSF) and Smooth Overlap of Atomic Positions (SOAP). The library has a python interface with computationally intensive routines written in C or C++. The source code, tutorials and documentation are provided online. A continuous integration mechanism is set up to automatically run a series of regression tests and check code coverage when the codebase is updated.},
+  langid = {english},
+  keywords = {Descriptor,Machine learning,Materials science,Open source,Python}
 }
 
 @article{huibersPredictionCriticalMicelle1996,

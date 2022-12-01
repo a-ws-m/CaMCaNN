@@ -66,44 +66,44 @@ such as temperature and pressure \cite{chenGraphNetworksUniversal2019}, but this
 is redundant in cases where the training data spans a very limited range of
 states.
 
-In the case of the Stauff-Klevens model, the representation effectively has two
-components: the category of the headgroup, and the length of the tail group. The
-model technically distinguishes between isomers by imposing strict constraints
-on the structure of the molecules to which it can be applied: position and
-functional isomers correspond to distinctive categories, so that the model must
-learn independent parameters for each of them, and the constraint on the tail
-group means that chain isomers or the presence of non-alkyl groups in the carbon
-chain are not permitted. Mathematically, this representation can be formalised using
-a technique called \emph{one-hot encoding} and by defining the set of headgroups for which
-we have data, $\{h_i \mid 0 \leq i \leq N\}$. The encoding is a vector given by
+% In the case of the Stauff-Klevens model, the representation effectively has two
+% components: the category of the headgroup, and the length of the tail group. The
+% model technically distinguishes between isomers by imposing strict constraints
+% on the structure of the molecules to which it can be applied: position and
+% functional isomers correspond to distinctive categories, so that the model must
+% learn independent parameters for each of them, and the constraint on the tail
+% group means that chain isomers or the presence of non-alkyl groups in the carbon
+% chain are not permitted. Mathematically, this representation can be formalised using
+% a technique called \emph{one-hot encoding} and by defining the set of headgroups for which
+% we have data, $\{h_i \mid 0 \leq i \leq N\}$. The encoding is a vector given by
 
-\begin{equation}
-    \label{eq:one-hot}
-    \vec{s}_i = \begin{cases}
-        1 & \text{if headgroup is } h_i \\
-        0 & \text{otherwise.}
-    \end{cases}
-\end{equation}
+% \begin{equation}
+%     \label{eq:one-hot}
+%     \vec{s}_i = \begin{cases}
+%         1 & \text{if headgroup is } h_i \\
+%         0 & \text{otherwise.}
+%     \end{cases}
+% \end{equation}
 
-Different headgroups therefore correspond to orthogonal encodings. If we have a
-set of trained parameters $\{A_i, B_i\}$ corresponding to headgroup $h_i$,
-Equation~\ref{eq:klevens} can be rewritten as
+% Different headgroups therefore correspond to orthogonal encodings. If we have a
+% set of trained parameters $\{A_i, B_i\}$ corresponding to headgroup $h_i$,
+% Equation~\ref{eq:klevens} can be rewritten as
 
-\begin{equation}
-    \log X_{cmc} = \mathbf{W}\vec{s} \cdot \begin{bmatrix}
-        1 \\ -n_c
-    \end{bmatrix},\quad \mathbf{W} = \begin{pmatrix}
-        A_1 & A_2 & \dots & A_N \\
-        B_1 & B_2 & \dots & B_N \\
-    \end{pmatrix}.
-\end{equation}
+% \begin{equation}
+%     \log X_{cmc} = \mathbf{W}\vec{s} \cdot \begin{bmatrix}
+%         1 \\ -n_c
+%     \end{bmatrix},\quad \mathbf{W} = \begin{pmatrix}
+%         A_1 & A_2 & \dots & A_N \\
+%         B_1 & B_2 & \dots & B_N \\
+%     \end{pmatrix}.
+% \end{equation}
 
-We can try to make the approach more general by decomposing a molecule into
-smaller sets of \emph{atomic environments} and representing it by the number of
-each of these constituents. Because certain groups of atoms and bonds are common
-in organic surfactants, the resulting feature vectors are not orthogonal, and we
-can apply the model even when we have made small changes to the headgroup, or
-introduce branching and other functional groups to the tail.
+% We can try to make the approach more general by decomposing a molecule into
+% smaller sets of \emph{atomic environments} and representing it by the number of
+% each of these constituents. Because certain groups of atoms and bonds are common
+% in organic surfactants, the resulting feature vectors are not orthogonal, and we
+% can apply the model even when we have made small changes to the headgroup, or
+% introduce branching and other functional groups to the tail.
 
 \subsubsection{Extended-connectivity fingerprints}
 
@@ -127,6 +127,13 @@ rather than \ce{CH2}. This type of representation is called an
 \emph{extended-connectivity fingerprint} (ECFP)
 \cite{rogersExtendedConnectivityFingerprints2010}.
 
+ECFPs are similar to a segment-based approach; however, unlike segments or
+groups, subgraphs can overlap. As discussed above, a group contribution approach
+requires that a canonical `priority' of the groups be defined prior to
+featurising molecules. By using ECFPs, the manual identification of important
+groups and their priorities is skipped; feature importance determination is
+instead delegated to the model.
+
 However, these fingerprints do not necessarily distinguish between all
 positional isomers or chain isomers, particularly with smaller values of $r$,
 nor are stereoisomers treated differently. Another potential disadvantage is
@@ -146,11 +153,31 @@ achieves this, and it is a popular choice for cheminformatics as well as
 visualisation of molecular structure. In this approach, each atom is considered
 a \emph{node} and each bond an \emph{edge}. Rather than having a single feature
 vector to describe the molecule as a whole, each atom is assigned its own
-feature vector based on properties such as its element, hybridisation state,
-charge, etc. These feature vectors are concatenated into a node feature matrix.
-The graph's structure is then defined by a binary adjacency matrix.
+feature vector, $\vec{v}_i$, based on properties such as its element,
+hybridisation state, charge, etc. These feature vectors are concatenated into a
+node feature matrix, $\mathbf{V}$. The graph's structure is then defined by a
+binary adjacency matrix, $\mathbf{A}$:
 
-TODO: Graph representation maths and description.
+\begin{equation}
+    \label{eq:adjacency-mat}
+    \mathbf{A}_{ij} = \begin{cases}
+        1 \quad \text{if } i \text { bonded to } j \text{, or } i = j \\
+        0 \quad \text{otherwise.}
+    \end{cases}
+\end{equation}
+
+Molecular graphs are perhaps the most natural representations to visualise; see
+Figure \ref{fig:mol-graph}. This is an exact description of the molecule's
+topology that enables an atomistic machine learning approach.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=.8\linewidth]{images/molecular-graph.pdf}
+    \caption{A molecular graph of 6-\textit{O}-dodecanoyl-maltose. Atoms are
+    highlighted based on their feature vectors, $\vec{v}_i$, so that equal
+    feature vectors have the same colour.}
+    \label{fig:mol-graph}
+\end{figure}
 
 \subsection{Model selection}
 
@@ -224,6 +251,25 @@ $\alpha$ and $\rho$ combinations, and the lowest scoring combination was used.
 The hyperparameter search space is defined in the Supplementary Information.
 
 \subsubsection{Molecular graph model}
+
+The basic topology of the neural network used in this work was identical to the
+one used by \citet{qinPredictingCriticalMicelle2021}. That is, the first step of
+the model consists of a stack of graph network layers, which mutate the node
+features in a molecular graph based on those of bonded atoms. In this way, each
+node feature vector encodes not only information about the atom itself, but its
+neighbours. The next step is a pooling layer, which converts the graph to a
+vector, losing the explicit topological information. We will call this the
+latent representation vector; after training the model, it effectively acts as a
+machine-learned representation of the molecule that captures only the
+information about its topology and composition that is useful for predicting the
+CMC. The final step is a readout neural network: a multi-layer perceptron which
+acts as a nonlinear approximator to map this latent representation vector to the
+CMC property prediction. The architecture is illustrated in Figure .
+
+\begin{figure}
+    \centering
+    \input{images/model-graph.tex}
+\end{figure}
 
 TODO:
 \begin{itemize}
