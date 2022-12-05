@@ -3,7 +3,6 @@ digraph G {
     newrank=true;
 
     graph [fontname = "Fira Sans", rankdir=LR, splines=ortho, ratio=auto];
-    // graph [fontname = "Fira Sans", rankdir=LR, ratio=auto];
     node [fontname = "Fira Sans", style="filled,solid", fillcolor=white, shape="box"];
     edge [fontname = "Fira Sans"];
 
@@ -37,18 +36,18 @@ digraph G {
     subgraph cluster_2 {
         rank="same";
         style=filled;
-        margin=8;
+        margin=40;
         color="#ee99a0";
         edge[minlen=2];
-        D1 -> D2;
-        D2 -> D3[style="dotted"];
+        D1 -> D2[style="dotted"];
+        D1 -> D3[style="dotted"];
+        D2 -> D3;
         label="Multi-layer\nperceptron";
     }
     
     subgraph cluster_3_margin {
         margin=15;
         style="invis";
-        // edge[constraint="false"];
         subgraph cluster_3 {
             style="dashed";
             label="Key";
@@ -56,7 +55,6 @@ digraph G {
                 rank="same";
                 key[label="Layer name"];
                 node[shape="point", width=0, height=0];
-                // key -> dummy[dir=none, style=invis];
                 subgraph full_edge {
                     eg3 -> eg4[dir=none];
                     eg4 -> eg5[xlabel="    Connection"];
@@ -69,7 +67,6 @@ digraph G {
                 }
             }
             dummy[style=invis, label="", width=0.3];
-            // dummy[shape=point, width=11, height=0];
             key -> dummy[style=invis];
         }
     }
@@ -84,9 +81,8 @@ digraph G {
     
     subgraph to_output{
         edge[dir=none];
-        D2 -> pre_output[style="dotted"];
         D3 -> pre_output;
-        GP -> pre_output;
+        GP -> pre_output[constraint=false];
     }
 
     pre_output -> output;
@@ -102,10 +98,9 @@ digraph G {
     
     GP[
         label="Gaussian Process",
-        // fontcolor="#EA7600"
     ];
     
-    pre_output[shape="point", width=0, height=0];
+    pre_output[shape="point", width=0.001, height=0.001];
     output[label=<<b>Output</b>>]
     
 }
