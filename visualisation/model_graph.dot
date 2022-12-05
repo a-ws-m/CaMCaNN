@@ -31,12 +31,11 @@ digraph G {
     }
     
     pre_pool[shape="point", width=0, height=0];
-    pool[label="Pool\n[256]", style=solid, color=black, shape=box];
     
     subgraph cluster_2 {
         rank="same";
         style=filled;
-        margin=40;
+        margin=25;
         color="#ee99a0";
         edge[minlen=2];
         D1 -> D2[style="dotted"];
@@ -53,7 +52,7 @@ digraph G {
             label="Key";
             subgraph example_edges {
                 rank="same";
-                key[label="Layer name"];
+                key[label="Layer name\n[Output\nDimensions]"];
                 node[shape="point", width=0, height=0];
                 subgraph full_edge {
                     eg3 -> eg4[dir=none];
@@ -88,13 +87,17 @@ digraph G {
     pre_output -> output;
 
     molgraph[label="Graph\n[N × ≥8]"];
-    G1[label="G1\n[N × 256]"];
-    G2[label="G2\n[N × 256]"];
-    G3[label="G3\n[N × 256]"];
-    
-    D1[label="D1\n[64]"];
-    D2[label="D2\n[16]"];
-    D3[label="D3\n[1]"];
+    subgraph dimension_labels {
+        G1[label=<G1<br/>[N × <i>H<sub>G1</sub></i>]>, height=0.75];
+        G2[label=<G2<br/>[N × <i>H<sub>G2</sub></i>]>, height=0.75];
+        G3[label=<G3<br/>[N × <i>H<sub>G3</sub></i>]>, height=0.75];
+
+        pool[label=<Pool<br/>[N × <i>H<sub>P</sub></i>]>, shape=box, height=0.75];
+        
+        D1[label=<D1<br/>[<i>H<sub>D1</sub></i>]>, height=0.75];
+        D2[label=<D2<br/>[<i>H<sub>D2</sub></i>]>, height=0.75];
+        D3[label=<D3<br/>[<i>H<sub>D3</sub></i>]>, height=0.75];
+    }
     
     GP[
         label="Gaussian Process",
