@@ -3,7 +3,7 @@ digraph G {
     newrank=true;
 
     graph [fontname = "Fira Sans", rankdir=LR, splines=ortho, ratio=auto];
-    node [fontname = "Fira Sans", style="filled,solid", fillcolor=white, shape="box"];
+    node [fontname = "Fira Sans", style="filled,solid", fillcolor=white, shape="box", margin=0.15];
     edge [fontname = "Fira Sans"];
 
     subgraph cluster_0 {
@@ -88,22 +88,21 @@ digraph G {
 
     molgraph[label="Graph\n[N × ≥8]"];
     subgraph dimension_labels {
-        G1[label=<G1<br/>[N × <i>H<sub>G1</sub></i>]>, height=0.75];
-        G2[label=<G2<br/>[N × <i>H<sub>G2</sub></i>]>, height=0.75];
-        G3[label=<G3<br/>[N × <i>H<sub>G3</sub></i>]>, height=0.75];
+        G1[label=<G1<br/>[N × <i>H<sub>G1</sub></i>]>];
+        G2[label=<G2<br/>[N × <i>H<sub>G2</sub></i>]>];
+        G3[label=<G3<br/>[N × <i>H<sub>G3</sub></i>]>];
 
-        pool[label=<Pool<br/>[N × <i>H<sub>P</sub></i>]>, shape=box, height=0.75];
+        pool[label=<Pool<br/>  [<i>H<sub>P</sub></i>]>, shape=box];
         
-        D1[label=<D1<br/>[<i>H<sub>D1</sub></i>]>, height=0.75];
-        D2[label=<D2<br/>[<i>H<sub>D2</sub></i>]>, height=0.75];
-        D3[label=<D3<br/>[<i>H<sub>D3</sub></i>]>, height=0.75];
+        D1[label=<D1<br/>[<i>H<sub>D1</sub></i>]>];
+        D2[label=<D2<br/>[<i>H<sub>D2</sub></i>]>];
+        D3[label=<D3<br/>[1]>];
+
+        GP[ label="Gaussian Process\n[1]"];
     }
     
-    GP[
-        label="Gaussian Process",
-    ];
     
     pre_output[shape="point", width=0.001, height=0.001];
-    output[label=<<b>Output</b>>]
+    output[label=<<b>Output</b>>, shape="ellipse"]
     
 }
