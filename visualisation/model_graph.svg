@@ -1,0 +1,307 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="736pt" height="580pt" viewBox="0.00 0.00 735.54 580">
+<g id="graph0" class="graph" transform="translate(85.41524568570136,492.78404183119443) scale(0.7578582832551991)" data-name="G">
+
+<polygon fill="white" stroke="none" points="-4,4 -4,-576 731.54,-576 731.54,4 -4,4"/>
+<g id="clust4" class="cluster" data-name="cluster_3_margin">
+
+</g>
+
+<g id="clust2" class="cluster" data-name="cluster_1">
+
+<polygon fill="#91d7e3" stroke="#91d7e3" points="221.55,-73 221.55,-348 314.21,-348 314.21,-73 221.55,-73"/>
+<text text-anchor="middle" x="267.88" y="-331.4" font-family="Fira Sans" font-size="14.00">Graph layers</text>
+</g>
+<g id="clust3" class="cluster" data-name="cluster_2">
+
+<polygon fill="#ee99a0" stroke="#ee99a0" points="487.1,-238 487.1,-564 591.1,-564 591.1,-238 487.1,-238"/>
+<text text-anchor="middle" x="539.1" y="-547.4" font-family="Fira Sans" font-size="14.00">Multi-layer</text>
+<text text-anchor="middle" x="539.1" y="-530.6" font-family="Fira Sans" font-size="14.00">perceptron</text>
+</g>
+<g id="clust1" class="cluster" data-name="cluster_0">
+
+<polygon fill="#f4dbd6" stroke="#f4dbd6" points="40.31,-8 40.31,-162 123.24,-162 123.24,-8 40.31,-8"/>
+<text text-anchor="middle" x="81.78" y="-145.4" font-family="Fira Sans" font-size="14.00">Parsing</text>
+</g><g id="clust5" class="cluster" data-name="cluster_3">
+
+<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="23,-197 23,-436 198.55,-436 198.55,-197 23,-197"/>
+<text text-anchor="middle" x="110.78" y="-419.4" font-family="Fira Sans" font-size="14.00">Key</text>
+</g>
+<!-- SMILES --><g id="edge1" class="edge" data-name="SMILES-&gt;molgraph" data-comment="SMILES">
+
+<path fill="none" stroke="black" d="M82.54,-52.29C82.54,-52.29 82.54,-75.53 82.54,-75.53"/>
+<polygon fill="black" stroke="black" points="79.04,-75.53 82.54,-85.53 86.04,-75.53 79.04,-75.53"/>
+</g>
+<g id="node1" class="node" pointer-events="visible" data-name="SMILES">
+
+<polygon fill="white" stroke="black" points="114.56,-52 48.99,-52 48.99,-16 114.56,-16 114.56,-52"/>
+<text text-anchor="middle" x="81.78" y="-29.8" font-family="Fira Sans" font-size="14.00">SMILES</text>
+</g>
+<!-- molgraph -->
+<g id="node2" class="node" pointer-events="visible" data-name="molgraph">
+
+<polygon fill="white" stroke="black" points="115.21,-128.6 48.34,-128.6 48.34,-87.4 115.21,-87.4 115.21,-128.6"/>
+<text text-anchor="middle" x="81.78" y="-112.2" font-family="Fira Sans" font-size="14.00">Graph</text>
+<text text-anchor="middle" x="81.78" y="-95.4" font-family="Fira Sans" font-size="14.00">[N × ≥8]</text>
+</g>
+<!-- SMILES&#45;&gt;molgraph -->
+
+<!-- G1 -->
+<g id="node4" class="node" pointer-events="visible" data-name="G1">
+
+<polygon fill="white" stroke="black" points="306.04,-135 229.72,-135 229.72,-81 306.04,-81 306.04,-135"/>
+<text text-anchor="start" x="259.32" y="-110.4" font-family="Fira Sans" font-size="14.00">G1</text>
+<text text-anchor="start" x="237.55" y="-96.4" font-family="Fira Sans" font-size="14.00">[N × </text>
+<text text-anchor="start" x="266.32" y="-96.4" font-family="Fira Sans" font-style="italic" font-size="14.00">H</text>
+<text text-anchor="start" x="276.43" y="-96.4" font-family="Fira Sans" font-style="italic" baseline-shift="sub" font-size="14.00">G1</text>
+<text text-anchor="start" x="293.54" y="-96.4" font-family="Fira Sans" font-size="14.00">]</text>
+</g>
+<!-- molgraph&#45;&gt;G1 --><g id="edge2" class="edge" data-name="G1-&gt;G2" data-comment="molgraph-&gt;G1">
+
+<path fill="none" stroke="black" d="M268.54,-135.49C268.54,-135.49 268.54,-159.16 268.54,-159.16"/>
+<polygon fill="black" stroke="black" points="265.04,-159.16 268.54,-169.16 272.04,-159.16 265.04,-159.16"/>
+</g>
+<g id="edge13" class="edge" data-name="molgraph-&gt;pre_graph" data-comment="molgraph-&gt;G1">
+
+<path fill="none" stroke="black" d="M115.58,-108C139.77,-108 168.68,-108 172.2,-108"/>
+</g>
+<!-- G2 -->
+<g id="node5" class="node" pointer-events="visible" data-name="G2">
+
+<polygon fill="white" stroke="black" points="306.04,-225 229.72,-225 229.72,-171 306.04,-171 306.04,-225"/>
+<text text-anchor="start" x="259.32" y="-200.4" font-family="Fira Sans" font-size="14.00">G2</text>
+<text text-anchor="start" x="237.55" y="-186.4" font-family="Fira Sans" font-size="14.00">[N × </text>
+<text text-anchor="start" x="266.32" y="-186.4" font-family="Fira Sans" font-style="italic" font-size="14.00">H</text>
+<text text-anchor="start" x="276.43" y="-186.4" font-family="Fira Sans" font-style="italic" baseline-shift="sub" font-size="14.00">G2</text>
+<text text-anchor="start" x="293.54" y="-186.4" font-family="Fira Sans" font-size="14.00">]</text>
+</g>
+<!-- G1&#45;&gt;G2 --><g id="edge3" class="edge" data-name="G2-&gt;G3" data-comment="G1-&gt;G2">
+
+<path fill="none" stroke="black" d="M268.54,-225.49C268.54,-225.49 268.54,-249.16 268.54,-249.16" stroke-dasharray="1,5"/>
+<polygon fill="black" stroke="black" points="265.04,-249.16 268.54,-259.16 272.04,-249.16 265.04,-249.16"/>
+</g>
+
+<!-- G3 -->
+<g id="node6" class="node" pointer-events="visible" data-name="G3">
+
+<polygon fill="white" stroke="black" points="306.04,-315 229.72,-315 229.72,-261 306.04,-261 306.04,-315"/>
+<text text-anchor="start" x="259.32" y="-290.4" font-family="Fira Sans" font-size="14.00">G3</text>
+<text text-anchor="start" x="237.55" y="-276.4" font-family="Fira Sans" font-size="14.00">[N × </text>
+<text text-anchor="start" x="266.32" y="-276.4" font-family="Fira Sans" font-style="italic" font-size="14.00">H</text>
+<text text-anchor="start" x="276.43" y="-276.4" font-family="Fira Sans" font-style="italic" baseline-shift="sub" font-size="14.00">G3</text>
+<text text-anchor="start" x="293.54" y="-276.4" font-family="Fira Sans" font-size="14.00">]</text>
+</g>
+<!-- G2&#45;&gt;G3 --><g id="edge16" class="edge" data-name="G2-&gt;pre_pool" data-comment="G2-&gt;G3">
+
+<path fill="none" stroke="black" d="M306.52,-220.5C324.74,-220.5 342.54,-220.5 342.54,-220.5 342.54,-220.5 342.54,-240.28 342.54,-242.75" stroke-dasharray="1,5"/>
+</g>
+
+<!-- pre_pool --><g id="edge15" class="edge" data-name="G3-&gt;pre_pool" data-comment="pre_pool">
+
+<path fill="none" stroke="black" d="M306.52,-265.5C324.74,-265.5 342.54,-265.5 342.54,-265.5 342.54,-265.5 342.54,-245.72 342.54,-243.25"/>
+</g>
+<g id="node7" class="node" pointer-events="visible" data-name="pre_pool">
+
+<ellipse fill="white" stroke="black" cx="342.21" cy="-243" rx="0" ry="0"/>
+</g>
+<!-- G2&#45;&gt;pre_pool -->
+
+<!-- G3&#45;&gt;pre_pool --><g id="edge17" class="edge" data-name="pre_pool-&gt;pool" data-comment="G3-&gt;pre_pool">
+
+<path fill="none" stroke="black" d="M342.65,-243C342.65,-243 366.22,-243 366.22,-243"/>
+<polygon fill="black" stroke="black" points="366.22,-246.5 376.22,-243 366.22,-239.5 366.22,-246.5"/>
+</g>
+
+<!-- pool -->
+<g id="node20" class="node" pointer-events="visible" data-name="pool">
+
+<polygon fill="white" stroke="black" points="446.35,-270 378.16,-270 378.16,-216 446.35,-216 446.35,-270"/>
+<text text-anchor="start" x="399.42" y="-245.4" font-family="Fira Sans" font-size="14.00">Pool</text>
+<text text-anchor="start" x="386.21" y="-231.4" font-family="Fira Sans" font-size="14.00">[N × </text>
+<text text-anchor="start" x="414.98" y="-231.4" font-family="Fira Sans" font-style="italic" font-size="14.00">H</text>
+<text text-anchor="start" x="425.09" y="-231.4" font-family="Fira Sans" font-style="italic" baseline-shift="sub" font-size="14.00">P</text>
+<text text-anchor="start" x="433.64" y="-231.4" font-family="Fira Sans" font-size="14.00">]</text>
+</g>
+<!-- pre_pool&#45;&gt;pool --><g id="edge18" class="edge" data-name="pool-&gt;D1" data-comment="pre_pool-&gt;pool">
+
+<path fill="none" stroke="black" d="M446.58,-266.5C446.58,-266.5 500.47,-266.5 500.47,-266.5" stroke-dasharray="1,5"/>
+<polygon fill="black" stroke="black" points="500.47,-270 510.47,-266.5 500.47,-263 500.47,-270"/>
+</g>
+
+<!-- D1 -->
+<g id="node8" class="node" pointer-events="visible" data-name="D1">
+
+<polygon fill="white" stroke="black" points="566.1,-317 512.1,-317 512.1,-263 566.1,-263 566.1,-317"/>
+<text text-anchor="start" x="530.55" y="-292.4" font-family="Fira Sans" font-size="14.00">D1</text>
+<text text-anchor="start" x="520.83" y="-278.4" font-family="Fira Sans" font-size="14.00">[</text>
+<text text-anchor="start" x="525.49" y="-278.4" font-family="Fira Sans" font-style="italic" font-size="14.00">H</text>
+<text text-anchor="start" x="535.6" y="-278.4" font-family="Fira Sans" font-style="italic" baseline-shift="sub" font-size="14.00">D1</text>
+<text text-anchor="start" x="552.71" y="-278.4" font-family="Fira Sans" font-size="14.00">]</text>
+</g><!-- pool&#45;&gt;GP -->
+<!-- pool&#45;&gt;D1 --><g id="edge19" class="edge" data-name="pool-&gt;GP" data-comment="pool-&gt;D1">
+
+<path fill="none" stroke="black" d="M446.45,-239.5C470.18,-239.5 497.54,-239.5 497.54,-239.5 497.54,-239.5 497.54,-224.87 497.54,-224.87" stroke-dasharray="1,5"/>
+<polygon fill="black" stroke="black" points="501.04,-224.87 497.54,-214.87 494.04,-224.87 501.04,-224.87"/>
+</g>
+<!-- D2 -->
+<!-- GP -->
+<g id="node21" class="node" pointer-events="visible" data-name="GP">
+
+<polygon fill="white" stroke="black" points="595.7,-213 482.5,-213 482.5,-177 595.7,-177 595.7,-213"/>
+<text text-anchor="middle" x="539.1" y="-190.8" font-family="Fira Sans" font-size="14.00">Gaussian Process</text>
+</g><!-- D1&#45;&gt;D2 -->
+<g id="node9" class="node" pointer-events="visible" data-name="D2" data-comment="D1-&gt;D2">
+
+<polygon fill="white" stroke="black" points="566.1,-407 512.1,-407 512.1,-353 566.1,-353 566.1,-407"/>
+<text text-anchor="start" x="530.55" y="-382.4" font-family="Fira Sans" font-size="14.00">D2</text>
+<text text-anchor="start" x="520.83" y="-368.4" font-family="Fira Sans" font-size="14.00">[</text>
+<text text-anchor="start" x="525.49" y="-368.4" font-family="Fira Sans" font-style="italic" font-size="14.00">H</text>
+<text text-anchor="start" x="535.6" y="-368.4" font-family="Fira Sans" font-style="italic" baseline-shift="sub" font-size="14.00">D2</text>
+<text text-anchor="start" x="552.71" y="-368.4" font-family="Fira Sans" font-size="14.00">]</text>
+</g><g id="edge4" class="edge" data-name="D1-&gt;D2">
+
+<path fill="none" stroke="black" d="M539.54,-317.49C539.54,-317.49 539.54,-341.16 539.54,-341.16" stroke-dasharray="1,5"/>
+<polygon fill="black" stroke="black" points="536.04,-341.16 539.54,-351.16 543.04,-341.16 536.04,-341.16"/>
+</g>
+<!-- D3 -->
+<g id="node10" class="node" pointer-events="visible" data-name="D3">
+
+<polygon fill="white" stroke="black" points="566.1,-497 512.1,-497 512.1,-443 566.1,-443 566.1,-497"/>
+<text text-anchor="start" x="530.55" y="-472.4" font-family="Fira Sans" font-size="14.00">D3</text>
+<text text-anchor="start" x="520.83" y="-458.4" font-family="Fira Sans" font-size="14.00">[</text>
+<text text-anchor="start" x="525.49" y="-458.4" font-family="Fira Sans" font-style="italic" font-size="14.00">H</text>
+<text text-anchor="start" x="535.6" y="-458.4" font-family="Fira Sans" font-style="italic" baseline-shift="sub" font-size="14.00">D3</text>
+<text text-anchor="start" x="552.71" y="-458.4" font-family="Fira Sans" font-size="14.00">]</text>
+</g>
+<!-- D2&#45;&gt;D3 -->
+<g id="edge6" class="edge" data-name="D2-&gt;D3">
+
+<path fill="none" stroke="black" d="M539.54,-407.49C539.54,-407.49 539.54,-431.16 539.54,-431.16"/>
+<polygon fill="black" stroke="black" points="536.04,-431.16 539.54,-441.16 543.04,-431.16 536.04,-431.16"/>
+</g>
+<!-- pre_output -->
+<g id="node22" class="node" pointer-events="visible" data-name="pre_output">
+
+<ellipse fill="white" stroke="black" cx="631.94" cy="-470" rx="0.04" ry="0.04"/>
+</g>
+<!-- D2&#45;&gt;pre_output -->
+
+<!-- D3&#45;&gt;pre_output -->
+<g id="edge20" class="edge" data-name="D3-&gt;pre_output">
+
+<path fill="none" stroke="black" d="M566.45,-470C592.13,-470 627.22,-470 631.5,-470"/>
+</g>
+<!-- key -->
+<g id="node11" class="node" pointer-events="visible" data-name="key">
+
+<polygon fill="white" stroke="black" points="125.33,-396.4 38.22,-396.4 38.22,-337.6 125.33,-337.6 125.33,-396.4"/>
+<text text-anchor="middle" x="81.78" y="-379.6" font-family="Fira Sans" font-size="14.00">Layer name</text>
+<text text-anchor="middle" x="81.78" y="-362.8" font-family="Fira Sans" font-size="14.00">[Output</text>
+<text text-anchor="middle" x="81.78" y="-346" font-family="Fira Sans" font-size="14.00">Dimensions]</text>
+</g>
+<!-- key&#45;&gt;dummy -->
+<!-- eg1 -->
+<g id="node16" class="node" pointer-events="visible" data-name="eg1">
+
+<ellipse fill="white" stroke="black" cx="81.78" cy="-230" rx="0" ry="0"/>
+</g>
+<!-- dummy --><g id="edge5" class="edge" data-name="D1-&gt;D3" data-comment="dummy">
+
+<path fill="none" stroke="black" d="M566.22,-290C574.54,-290 581.54,-290 581.54,-290 581.54,-290 581.54,-447.5 581.54,-447.5 581.54,-447.5 577.74,-447.5 577.74,-447.5" stroke-dasharray="1,5"/>
+<polygon fill="black" stroke="black" points="577.74,-444 567.74,-447.5 577.74,-451 577.74,-444"/>
+</g>
+
+<!-- eg2 -->
+<g id="node18" class="node" pointer-events="visible" data-name="eg2">
+
+<ellipse fill="white" stroke="black" cx="81.78" cy="-266" rx="0" ry="0"/>
+</g>
+<!-- eg1&#45;&gt;eg2 -->
+
+<!-- GP&#45;&gt;pre_output -->
+<g id="edge21" class="edge" data-name="GP-&gt;pre_output">
+
+<path fill="none" stroke="black" d="M596.15,-195C615.6,-195 632.54,-195 632.54,-195 632.54,-195 632.54,-465.72 632.54,-469.95"/>
+</g><g id="node15" class="node" pointer-events="visible" data-name="eg0" data-comment="GP-&gt;pre_output">
+
+<ellipse fill="white" stroke="black" cx="81.78" cy="-212" rx="0" ry="0"/>
+</g>
+<g id="node13" class="node" pointer-events="visible" data-name="eg4" data-comment="GP-&gt;pre_output">
+
+<ellipse fill="white" stroke="black" cx="81.78" cy="-302" rx="0" ry="0"/>
+</g>
+<!-- output -->
+
+<!-- output -->
+<g id="node23" class="node" pointer-events="visible" data-name="output">
+
+<polygon fill="white" stroke="black" points="727.33,-488 668.18,-488 668.18,-452 727.33,-452 727.33,-488"/>
+<text text-anchor="start" x="675.97" y="-466.8" font-family="Fira Sans" font-size="14.00" font-weight="bold">Output</text>
+</g>
+<g id="edge7" class="edge" data-name="eg3-&gt;eg4" data-comment="output">
+
+<path fill="none" stroke="black" d="M82.54,-284.05C82.54,-285.07 82.54,-300.96 82.54,-301.95"/>
+</g>
+<!-- pre_output&#45;&gt;output --><g id="node12" class="node" pointer-events="visible" data-name="eg3" data-comment="pre_output-&gt;output">
+
+<ellipse fill="white" stroke="black" cx="81.78" cy="-284" rx="0" ry="0"/>
+</g>
+
+
+<!-- pre_output&#45;&gt;output --><g id="edge8" class="edge" data-name="eg4-&gt;eg5" data-comment="pre_output-&gt;output">
+
+<path fill="none" stroke="black" d="M82.54,-302.05C82.54,-302.05 82.54,-308.44 82.54,-308.44"/>
+<polygon fill="black" stroke="black" points="79.04,-308.44 82.54,-318.44 86.04,-308.44 79.04,-308.44"/>
+<text text-anchor="middle" x="121.82" y="-292.64" font-family="Fira Sans" font-size="14.00">    Connection</text>
+</g>
+<!-- pre_output&#45;&gt;output --><!-- output -->
+<!-- pre_output&#45;&gt;output -->
+<g id="edge9" class="edge" data-name="eg0-&gt;eg1" data-comment="pre_output-&gt;output">
+
+<path fill="none" stroke="black" stroke-dasharray="1,5" d="M82.54,-212.05C82.54,-213.07 82.54,-228.96 82.54,-229.95"/>
+</g><g id="node17" class="node" pointer-events="visible" data-name="eg11" data-comment="pre_output-&gt;output">
+
+<ellipse fill="white" stroke="black" cx="81.78" cy="-248" rx="0" ry="0"/>
+</g>
+<!-- pre_output&#45;&gt;output -->
+<!-- pre_output&#45;&gt;output -->
+<!-- pre_output&#45;&gt;output -->
+<!-- pre_output&#45;&gt;output -->
+<!-- pre_output&#45;&gt;output -->
+<g id="node3" class="node" pointer-events="visible" data-name="pre_graph" data-comment="pre_output-&gt;output">
+
+<ellipse fill="white" stroke="black" cx="172.55" cy="-108" rx="0.04" ry="0.04"/>
+</g><!-- pre_output&#45;&gt;output -->
+<g id="edge22" class="edge" data-name="pre_output-&gt;output">
+
+<path fill="none" stroke="black" d="M632.36,-470C632.36,-470 656.38,-470 656.38,-470"/>
+<polygon fill="black" stroke="black" points="656.38,-473.5 666.38,-470 656.38,-466.5 656.38,-473.5"/>
+</g>
+<g id="node14" class="node" pointer-events="visible" data-name="eg5" data-comment="pre_output-&gt;output">
+
+<ellipse fill="white" stroke="black" cx="81.78" cy="-320" rx="0" ry="0"/>
+</g>
+
+
+
+
+<g id="edge10" class="edge" data-name="eg1-&gt;eg11" data-comment="pre_output-&gt;output">
+
+<path fill="none" stroke="black" d="M82.54,-230.05C82.54,-231.07 82.54,-246.96 82.54,-247.95" stroke-dasharray="1,5"/>
+</g>
+
+<g id="edge11" class="edge" data-name="eg11-&gt;eg2" data-comment="pre_output-&gt;output">
+
+<path fill="none" stroke="black" d="M82.54,-248.05C82.54,-248.05 82.54,-254.44 82.54,-254.44" stroke-dasharray="1,5"/>
+<polygon fill="black" stroke="black" points="79.04,-254.44 82.54,-264.44 86.04,-254.44 79.04,-254.44"/>
+<text text-anchor="middle" x="121.82" y="-238.64" font-family="Fira Sans" font-size="14.00">    Connection</text>
+<text text-anchor="middle" x="121.82" y="-221.84" font-family="Fira Sans" font-size="14.00">    Choice</text>
+</g>
+
+<g id="edge14" class="edge" data-name="pre_graph-&gt;G1" data-comment="pre_output-&gt;output">
+
+<path fill="none" stroke="black" d="M172.83,-108C172.83,-108 217.92,-108 217.92,-108"/>
+<polygon fill="black" stroke="black" points="217.92,-111.5 227.92,-108 217.92,-104.5 217.92,-111.5"/>
+</g>
+</g>
+</svg>
