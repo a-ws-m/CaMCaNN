@@ -424,9 +424,9 @@ Again, $u_n$ and $s_n$ were determined from the training molecules' latent
 representations.
 
 The standardised latent representation vectors of the training data serve as
-index points for a Gaussian process (GP). The GP's predicted mean and standard
-deviation define a predicted normal distribution of a molecule's CMC, $\log
-X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
+index points for a Gaussian process (GP); see Figure \ref{fig:model-topology}.
+The GP's predicted mean and standard deviation define a predicted normal
+distribution of a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
 
 In this work, the GPs  were defined using a Mat\'ern kernel with parameter
 $1/2$. Furthermore, the multi-layer perceptron component of the GNN used to
