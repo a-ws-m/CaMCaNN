@@ -261,19 +261,17 @@ mutate the node features in a molecular graph based on those of bonded atoms.
 These layers employ the graph convolution network (GCN) architecture introduced
 by \cite{kipfSemiSupervisedClassificationGraph2017a}. Layer $l$ computes a new
 node feature matrix, $\mathbf{V}^{(l)}$, based on the adjacency matrix,
-$\mathbf{A}$. We add self-loops to the adjacency matrix so that the node's
-current feature vector is considered in the operation, $\hat{\mathbf{A}} =
-    \mathbf{A} + \mathbf{I}$. Layer $l$ then computes
+$\mathbf{A}$:
 \begin{equation}
-    \mathbf{V}^{(l)} = \hat{\mathbf{D}}^{-1/2} \hat{\mathbf{A}} \hat{\mathbf{D}}^{-1/2} \mathbf{V}^{(l-1)} \mathbf{W}^{(l)} + \mathbf{b}^{(l)}.
+    \mathbf{V}^{(l)} = \mathbf{D}^{-1/2} \mathbf{A} \mathbf{D}^{-1/2} \mathbf{V}^{(l-1)} \mathbf{W}^{(l)} + \mathbf{b}^{(l)}.
 \end{equation}
 Here, $\mathbf{W}^{(l)}$ and $\mathbf{b}^{(l)}$ are the weights and biases,
-respectively, of layer $l$ and we have also introduce the degree matrix
+respectively, of layer $l$ and we have also introduced the degree matrix,
 \begin{equation}
-    \hat{D}_{ii} = \sum_j \hat{A}_{ij},
+    D_{ii} = \sum_j A_{ij},
 \end{equation}
-so that the term $\hat{\mathbf{D}}^{-1/2} \hat{\mathbf{A}}
-    \hat{\mathbf{D}}^{-1/2}$ effectively normalises the adjacency matrix based on
+so that the term $\mathbf{D}^{-1/2} \mathbf{A}
+    \mathbf{D}^{-1/2}$ effectively normalises the adjacency matrix based on
 the degree of each atom.
 
 $\mathbf{V}^{(1)}$ therefore encodes not only information about the atom itself,
@@ -309,7 +307,7 @@ topological information. Several choices of pooling function were trialled:
               \mathbf{X} = \mathrm{softmax}(\mathbf{V}^{(L)}\vec{w}), \\
               \lrv{} = \sum_i^N \mathbf{X}_i \cdot \vec{v}^{\,(L)}_i,
           \end{align}
-          where $\vec{w}$ are the trained weights.
+          where $\vec{w}$ are trained weights.
 \end{description}
 
 After training the model, $\lrv{}$ effectively acts as a machine-learned
@@ -387,4 +385,5 @@ calculate $\lrv{}$ was employed as the GP's mean function. The kernel parameters
 were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
 The same optimisation/validation splitting was used as for the hyperparameter
 search and training was stopped after \num{1000} iterations without improvement
-in the validation predictions' RMSE.
+in the validation predictions' RMSE. This implementation was based on GPFlow
+\cite{matthewsGPflowGaussianProcess2017}.
