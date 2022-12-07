@@ -432,7 +432,7 @@ In this work, the GPs  were defined using a Mat\'ern kernel with parameter
 $1/2$. Furthermore, the multi-layer perceptron component of the GNN used to
 calculate $\lrv{}$ was employed as the GP's mean function. The kernel parameters
 were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
-The same optimisation/validation splitting was used as for the hyperparameter
-search and training was stopped after \num{1000} iterations without improvement
-in the validation predictions' RMSE. This implementation was based on GPFlow
-\cite{matthewsGPflowGaussianProcess2017}.
+The same optimisation/validation splitting was used as for the GNN
+hyperparameter search and training was stopped after \num{1000} iterations
+without improvement in the validation predictions' RMSE. This implementation was
+based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
