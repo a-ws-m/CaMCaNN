@@ -1,3 +1,5 @@
+\newcommand{\lrv}{\vec{v}^{\,(p)}}
+
 Two datasets were used for training and testing:
 
 \begin{description}
@@ -174,8 +176,8 @@ topology that enables an atomistic machine learning approach.
     \centering
     \includegraphics[width=.8\linewidth]{images/molecular-graph.pdf}
     \caption{A molecular graph of 6-\textit{O}-dodecanoyl-maltose. Atoms are
-    highlighted based on their feature vectors, $\vec{v}_i$, so that equal
-    feature vectors have the same colour.}
+        highlighted based on their feature vectors, $\vec{v}_i$, so that equal
+        feature vectors have the same colour.}
     \label{fig:mol-graph}
 \end{figure}
 
@@ -217,9 +219,9 @@ ECFP regression:
 
 \begin{itemize}
     \item The number of unique atomic environments is greater than the size of
-          the training data, but LASSO will select at most $n_\text{samples}$ features
-          \cite{efronLeastAngleRegression2004}. Therefore, some important environments
-          may still be excluded.
+          the training data, $n_\text{samples}$, but LASSO will select at most
+          $n_\text{samples}$ features \cite{efronLeastAngleRegression2004}.
+          Therefore, some important environments may still be excluded.
     \item LASSO tends to select only one of a group of highly correlated
           variables, when there is no reason why that particular one should be
           prioritised \cite{zouRegularizationVariableSelection2005}. This is
@@ -252,27 +254,137 @@ The hyperparameter search space is defined in the Supplementary Information.
 
 \subsubsection{Molecular graph model}
 
-The basic topology of the neural network used in this work was identical to the
-one used by \citet{qinPredictingCriticalMicelle2021}. That is, the first step of
-the model consists of a stack of graph network layers, which mutate the node
-features in a molecular graph based on those of bonded atoms. In this way, each
-node feature vector encodes not only information about the atom itself, but its
-neighbours. The next step is a pooling layer, which converts the graph to a
-vector, losing the explicit topological information. We will call this the
-latent representation vector; after training the model, it effectively acts as a
-machine-learned representation of the molecule that captures only the
-information about its topology and composition that is useful for predicting the
-CMC. The final step is a readout neural network: a multi-layer perceptron which
-acts as a nonlinear approximator to map this latent representation vector to the
-CMC property prediction. The architecture is illustrated in Figure .
+The basic topology of the graph neural network (GNN) used in this work was
+identical to the one used by \citet{qinPredictingCriticalMicelle2021}. That is,
+the first step of the model consists of a stack of graph network layers, which
+mutate the node features in a molecular graph based on those of bonded atoms.
+These layers employ the graph convolution network (GCN) architecture introduced
+by \cite{kipfSemiSupervisedClassificationGraph2017a}. Layer $l$ computes a new
+node feature matrix, $\mathbf{V}^{(l)}$, based on the adjacency matrix,
+$\mathbf{A}$. We add self-loops to the adjacency matrix so that the node's
+current feature vector is considered in the operation, $\hat{\mathbf{A}} =
+    \mathbf{A} + \mathbf{I}$. Layer $l$ then computes
+\begin{equation}
+    \mathbf{V}^{(l)} = \hat{\mathbf{D}}^{-1/2} \hat{\mathbf{A}} \hat{\mathbf{D}}^{-1/2} \mathbf{V}^{(l-1)} \mathbf{W}^{(l)} + \mathbf{b}^{(l)}.
+\end{equation}
+Here, $\mathbf{W}^{(l)}$ and $\mathbf{b}^{(l)}$ are the weights and biases,
+respectively, of layer $l$ and we have also introduce the degree matrix
+\begin{equation}
+    \hat{D}_{ii} = \sum_j \hat{A}_{ij},
+\end{equation}
+so that the term $\hat{\mathbf{D}}^{-1/2} \hat{\mathbf{A}}
+    \hat{\mathbf{D}}^{-1/2}$ effectively normalises the adjacency matrix based on
+the degree of each atom.
+
+$\mathbf{V}^{(1)}$ therefore encodes not only information about the atom itself,
+but its bonded neighbours. This information is used in the subsequent graph
+convolution, so that $\mathbf{V}^{(2)}$ encodes information about the
+2\textsuperscript{nd} order neighbourhood, \emph{et cetera}. The number of graph
+layers, $L$, therefore dictates the `radius' around each atom that is considered in
+computing the final feature vector, analogous to creating an ECFP, except that
+each atomic environment is characterised by a continuous, \emph{latent} vector, $\vec{v}^{\,(L)}_i$.
+
+The next step is a pooling layer, which converts the graph to a single
+\emph{latent representation vector}, $\lrv{}$, losing the explicit
+topological information. Several choices of pooling function were trialled:
+
+\begin{description}
+    \item[Mean pooling] was used in the previous work. It computes the average
+          over all atoms' feature vectors.
+    \item[Sum pooling] computes the sum of all atoms' feature vectors. This is
+          the most analogous to the ECFPs in that the contribution of an atomic environment
+          scales linearly with the number of times it occurs in the molecule.
+    \item[Gated attention pooling] applies an \emph{attention} mechanism to decide which environments
+          are relevant to the prediction \cite{liGatedGraphSequence2017}:
+          \begin{equation}
+              \lrv{} = \sum_i^N \sigma\left(\mathbf{W}_1 \vec{v}_i^{\,(L)} + \vec{b}_1 \right) \odot \left(\mathbf{W}_2 \vec{v}_i^{\,(L)} + \vec{b}_2 \right),
+          \end{equation}
+          where $\mathbf{W}_1$ and $\mathbf{W}_2$ are trained weights and $\vec{b}_1$
+          and $\vec{b}_2$ are biases, $\sigma$ is the sigmoid activation function and
+          $\odot$ represents element-wise multiplication.
+    \item[Attention sum pooling] is a simpler variation of the above. By using a
+          softmax function, it performs a weighted average of the atomic environments'
+          contributions:
+          \begin{align}
+              \mathbf{X} = \mathrm{softmax}(\mathbf{V}^{(L)}\vec{w}), \\
+              \lrv{} = \sum_i^N \mathbf{X}_i \cdot \vec{v}^{\,(L)}_i,
+          \end{align}
+          where $\vec{w}$ are the trained weights.
+\end{description}
+
+After training the model, $\lrv{}$ effectively acts as a machine-learned
+representation of the molecule that captures only the information about its
+topology and composition that is useful for predicting the CMC. This task of
+finding an optimised representation is a feature of neural networks that happens
+implicitly during training, called \emph{representation learning}
+\cite{goodfellowDeepLearning2016a}. The final step is a readout neural network:
+a multi-layer perceptron which acts as a nonlinear approximator to map this
+latent representation vector to the CMC property prediction. Each layer in this
+neural network, called a `dense' layer, outputs a new vector, $\vec{v}^{(l)}$:
+\begin{equation}
+    \vec{v}^{(l)} = \mathbf{W}^{(l)}\vec{v}^{\,(l-1)} + \vec{b}^{\,(l)},
+\end{equation}
+The full network's architecture is illustrated in Figure
+\ref{fig:model-topology}. The model was implemented using the open-source
+library Spektral \cite{grattarolaGraphNeuralNetworks2020}.
 
 \begin{figure}
     \centering
-    % \input{images/model-graph.tex}
+    \includegraphics[width=\textwidth]{images/model_graph.pdf}
+    \caption{Schematic of the neural network architecture. Here, $N$ represents the number of constituent atoms/ions in the input molecule and $H$ represents a hyperparameter.}
+    \label{fig:model-topology}
 \end{figure}
 
-TODO:
-\begin{itemize}
-    \item Graph neural network model description.
-    \item Hyperband description.
-\end{itemize}
+A neural network's topology describes the types of layers used, i.e. their
+functional form, and the connection between them. Layers that are parameterised
+by a weight matrix, $\mathbf{W}$, may have different `sizes', meaning that the
+dimensionality of their output is arbitrary and can be adjusted by changing the
+dimensions of $\mathbf{W}$. The graph layers, dense layers and the gated
+attention pool all have this property. These sizes, the type of pooling layer
+and the number of each graph and dense layers, are all hyperparameters that can
+be adjusted prior to training. To determine the best combination of
+hyperparameters for predicting CMCs, an automated searching procedure was
+employed.
+
+\subsubsection{Optimising GNN hyperparameters}
+
+The Hyperband approach \cite{liHyperbandNovelBanditBased2018}, implemented in
+Keras Tuner \cite{cholletKeras2015}, was used to to select a good combination of
+hyperparameters for the model. Hyperband provides a way to efficiently evaluate
+the performance of a large search space of hyperparameter configurations. The
+algorithm trials several combinations of hyperparameters, initially allocating
+only a small number of resources to each trial. The hyperparameters for the
+trials with the best performance are then allocated more resources, whilst the
+remainder are discarded. A reduction factor of 3 was chosen, meaning that $2/3$
+of the trials were discarded after each iteration. This procedure iterates until
+the best configuration is found.
+
+The algorithm can be executed multiple times if resources are available, to
+obtain a more reliable result; the training procedure is stochastic and
+therefore the performance of two trials with the same hyperparameters may be
+different. In this case, a single run was performed. The training data was
+partitioned into an optimisation subset and a validation subset in a ratio of
+9:1. The trials were fit to the optimisation subset and evaluated based on the
+RMSE of their predictions on the validation subset.
+
+\subsubsection{Adding uncertainty with a Gaussian process}
+
+To improve the model's reliability, a \emph{surrogate} model was employed that
+could yield uncertainty estimates alongside CMC predictions. The approach is
+based on the Convolution-Fed Gaussian Process of
+\citet{tranMethodsComparingUncertainty2020}. The model first computes the latent
+representation vector, $\lrv{}$, of an input molecule using a trained GNN.
+$\lrv{}$ is then standardised so that each feature has zero mean and unit
+variance; the means and variances are determined from the latent representation
+vectors of the training data. The scaled latent representation vectors of the
+training data serve as index points for a Gaussian process (GP). The GP's
+predicted mean and standard deviation define a predicted normal distribution of
+a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
+
+In this work, the GPs  were defined using a Mat\'ern kernel with parameter
+$1/2$. Furthermore, the multi-layer perceptron component of the GNN used to
+calculate $\lrv{}$ was employed as the GP's mean function. The kernel parameters
+were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
+The same optimisation/validation splitting was used as for the hyperparameter
+search and training was stopped after \num{1000} iterations without improvement
+in the validation predictions' RMSE.
