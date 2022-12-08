@@ -90,9 +90,19 @@ The performance on the NIST data is significantly worse than the test data
 performance of every model. This suggests that the NIST data molecules are
 outside of the applicability domain of the models.
 
-\subsubsection{ECFP interpretations}
+\subsubsection{Uncertainty quantification}
 
-TODO: find out the hybridization states of the atoms in these fingerprints:
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{images/uq-parity.pdf}
+    \caption{Parity plot of the GNN/GP model's predicted CMCs and \SI{95}{\%}
+    confidence intervals for the Qin-All and NIST datasets.}
+\end{figure}
+
+\subsection{ECFP interpretations}
+
+TODO: find out the hybridization states of the atoms in these fingerprints
+so that we can clarify the environments more:
 \begin{itemize}
     \item 4201881788
     \item 1435798937
@@ -100,38 +110,54 @@ TODO: find out the hybridization states of the atoms in these fingerprints:
     \item 3204830367
 \end{itemize}
 
+The weights of the ECFP models are coefficients corresponding to the scaled
+counts of the selected atomic environments. Referring to Equations
+\ref{eq:linear-ecfp} and \ref{eq:standard-scaling}, these coefficients indicate
+the change in a predicted CMC when the count of $\mathcal{E}_m$ increases by
+$s_m$ from its average, $u_m$. A more readily interpreted value can be achieved
+by rescaling the coefficient, $w_m$, for an environment:
+\begin{equation}
+    w_m^\prime = \frac{w_m(1 - u_m)}{s_m},
+\end{equation}
+which indicates the difference in predicted CMC between a molecule containing
+one $\mathcal{E}_m$ and a molecule without any $\mathcal{E}_m$, but which
+otherwise contain exactly the same number of all the other environments. This
+scaled weight can be interpreted as a rough indication of the relative
+importance of different environments to determining CMC; `rough' because it may
+not be physically plausible that two molecules exist that are distinguished only
+by the number of $\mathcal{E}_m$ that they contain. This is particularly true of
+larger environments that envelope smaller ones. The largest scaled weights for
+the two ECFP models are given in Table \ref{tab:env-coefs}.
+
 \begin{table}
     \centering
-    \caption{The atomic environments with the greatest contributions to CMC according to the trained ECFP models.}
+    \caption{The atomic environments with the greatest importance to CMC according to the trained ECFP models.}
     \label{tab:env-coefs}
     \begin{tabular}{@{}lSlS@{}} \toprule
-        \multicolumn{2}{c}{ECFP-All} & \multicolumn{2}{c}{ECFP-Nonionics}                                             \\\cmidrule(r){1-2}\cmidrule(l){3-4}
-        Group                        & {Scaled weight}                    & Group                   & {Scaled Weight} \\\midrule
-        \ce{(CH2)5}                  & -0.64                              & \ce{(CH2)5}             & -0.76           \\
-        \ce{(CH2)3}                  & -0.55                              & \ce{(CH2)3}             & -0.69           \\
-        \ce{Cl-}                     & 0.31                               & \ce{(CH2)2CH}            & -0.29           \\
-        \ce{Br-}                     & 0.29                               & \ce{C}                  & -0.25           \\
-        \ce{(CH2)2CH}                & -0.27                              & \ce{C(CH(OH))3CH}       & -0.19           \\
-        \ce{CH2}                     & -0.23                              & \ce{CH2(CH(OH))3CH}     & 0.14            \\
-        \ce{O}                       & 0.18                               & \ce{CH(CH(OH))2CH2OH}   & -0.12           \\
-        \ce{OH}                      & -0.17                              & \ce{CH2CH(O)CH(OH)2CH3} & 0.09            \\
-        \ce{O(CH2)2OH}               & -0.14                              & \ce{CH3}                & -0.06           \\
-        \ce{CH2O(CH2)2OH}            & -0.14                              & \ce{CH(CH(OH))3CH}      & 0.05            \\
+        \multicolumn{2}{c}{Qin-All} & \multicolumn{2}{c}{Qin-Nonionics}                                               \\\cmidrule(r){1-2}\cmidrule(l){3-4}
+        Environment                 & {Scaled weight}                   & Environment               & {Scaled Weight} \\\midrule
+        \ce{(CH2)5}                 & -0.64                             & \ce{(CH2)5}               & -0.76           \\
+        \ce{(CH2)3}                 & -0.55                             & \ce{(CH2)3}               & -0.69           \\
+        \ce{Cl-}                    & 0.31                              & \ce{(CH2)2CH}             & -0.29           \\
+        \ce{Br-}                    & 0.29                              & \ce{C}                    & -0.25           \\
+        \ce{(CH2)2CH}               & -0.27                             & \ce{C(CH(OH))3CH}         & -0.19           \\
+        \ce{CH2}                    & -0.23                             & \ce{CH2(CH(OH))3CH}       & 0.14            \\
+        \ce{O}                      & 0.18                              & \ce{CH(CH(OH))2CH2OH}     & -0.12           \\
+        \ce{OH}                     & -0.17                             & \ce{CH2CH(O)(CH(OH))2CH3} & 0.09            \\
+        \ce{O(CH2)2OH}              & -0.14                             & \ce{CH3}                  & -0.06           \\
+        \ce{CH2O(CH2)2OH}           & -0.14                             & \ce{CH(CH(OH))3CH}        & 0.05            \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-\subsubsection{GNN interpretations}
-
-\subsection{NIST datasets}
-
-The layout of this should be as follows:
-\begin{itemize}
-    \item Describe ECFP results: the number of groups after parsing, the number found during optimisation, include best params in supplementary information.
-    \item The performance of ECFP on training data.
-    \item Describe hyperband results: the number of trials, the best validation error and the resulting topology.
-    \item Describe performance of GNNs on test data.
-    \item Describe performance of UQ on test data. Show parity plot of its predictions.
-    \item Describe performance of all models on NIST data.
-    \item Show parity plot of all models on NIST data.
-\end{itemize}
+Both models agree that alkyl chain environments constitute the top two most
+important contributors to CMC, suggesting that tail length is the most important
+factor. The model trained on all surfactant classes includes two counterions in
+its most important environments: \ce{Cl-} and \ce{Br-}. This is to be expected;
+ionic surfactants typically have much larger CMCs than nonionics, and the model
+appears to distinguishes these by their counterion. The Qin-Nonionics model
+identifies environments from the headgroups of sugar-based surfactants as being
+important. These surfactant headgroups possessed relatively complex topologies
+and therefore several environments; it may have been necessary for the model to
+use many of these environments in order to accurately distinguish between their
+CMCs.

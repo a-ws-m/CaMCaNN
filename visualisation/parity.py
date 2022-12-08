@@ -15,7 +15,7 @@ HERE = Path(__file__).parent
 class ModelDataFrame(NamedTuple):
     df_path: str
     model_name: str
-    task: Literal["Nonionics", "All"]
+    task: Literal["Qin-Nonionics", "Qin-All", "NIST"]
     pred_col: str = "pred"
     obs_col: str = "exp"
     has_uq: bool = False
@@ -50,7 +50,11 @@ def joint_parity(
         df = pd.read_csv(HERE / df_tuple.df_path)
         df["Model"] = df_tuple.model_name
         df["Task"] = df_tuple.task
-        df["Subset"] = df["traintest"].str.capitalize()
+        try:
+            df["Subset"] = df["traintest"].str.capitalize()
+        except KeyError:
+            # Must be NIST
+            df["Subset"] = "Test"
         df[PREDICTED_NAME] = df[df_tuple.pred_col]
         df[OBSERVED_NAME] = df[df_tuple.obs_col]
         if df_tuple.has_uq:
@@ -78,6 +82,7 @@ def joint_parity(
                     "marker": "",
                     "linestyle": "",
                     "alpha": ALPHA,
+                    "elinewidth": 0.6,
                     # "markers": ["o"] * 2,
                 }
                 plot_kwargs["color"] = g._facet_color(hue_k, None)
@@ -119,6 +124,8 @@ def joint_parity(
             ylim=new_lims,
             aspect="equal",
         )
+        g.set_titles(col_template="{col_name}", row_template="")
+        # g.tight_layout()
 
         plt.savefig(fname, bbox_inches="tight")
 
@@ -268,37 +275,44 @@ if __name__ == "__main__":
             df_path="gnn-all-predictions.csv",
             fname="gnn-all-parity.pdf",
             model_name="GNN",
-            task="All",
+            task="Qin-All",
         ),
         ModelDataFrame(
             df_path="gnn-nonionics-predictions.csv",
             fname="gnn-nonionics-parity.pdf",
             model_name="GNN",
-            task="Nonionics",
+            task="Qin-Nonionics",
         ),
         ModelDataFrame(
             df_path="ecfp-all-predictions.csv",
             fname="ecfp-all-parity.pdf",
             model_name="ECFP",
-            task="All",
+            task="Qin-All",
         ),
         ModelDataFrame(
             df_path="ecfp-nonionics-predictions.csv",
             fname="ecfp-nonionics-parity.pdf",
             model_name="ECFP",
-            task="Nonionics",
+            task="Qin-Nonionics",
         ),
         ModelDataFrame(
             df_path="gnn-uq-pred.csv",
             model_name="GNN/GP",
-            task="All",
+            task="Qin-All",
+            has_uq=True,
+        ),
+        ModelDataFrame(
+            df_path="uq_nist_pred.csv",
+            model_name="GNN/GP",
+            task="NIST",
+            obs_col="log CMC",
             has_uq=True,
         ),
         ModelDataFrame(
             df_path="gnn-uq-nonionics-pred.csv",
             model_name="GNN/GP",
-            task="Nonionics",
+            task="Qin-Nonionics",
             has_uq=True,
         ),
     ]
-    joint_parity(PER_FILE_TUPLES, "joint-parity.pdf")
+    joint_parity([PER_FILE_TUPLES[x] for x in (-3, -2)], "paper/images/uq-parity.pdf")
