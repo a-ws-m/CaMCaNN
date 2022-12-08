@@ -18,20 +18,21 @@ Two datasets were used for training and testing:
           assess whether sampling bias affects the evaluated performance.
 \end{description}
 
-The Qin data were split into training and test subsets, to simulate the real-world
-scenario of using a model to make inferences about molecules for which no data
-is available. The training data were used to fit the models, whilst test data
-were `locked away' until it had been decided that the model was optimised, and
-the performance metrics on the test data were used for comparison. For some
-models, the training data were further split into optimisation and validation
-subsets; the optimisation data were used when calculating the loss function
-during model fitting and the validation data were used for on-the-fly evaluation
-of model performance during training.
+The Qin data were split into training and test subsets, to simulate the
+real-world scenario of using a model to make inferences about molecules for
+which no data is available. The training data were used to fit the models,
+whilst test data were `locked away' until it had been decided that the model was
+optimised, and the performance metrics on the test data were used for
+evaluation. For some models, the training data were further split into
+optimisation and validation subsets; the optimisation data were used when
+calculating the loss function during model fitting and the validation data were
+used for on-the-fly evaluation of model performance during training.
 
 To provide a consistent benchmark of model performance, the same data splits
 were used as \citet{qinPredictingCriticalMicelle2021}. The number of each class
 of surfactant in the train and test subsets of the data are shown in
-Table~\ref{tab:data-split}.
+Table~\ref{tab:data-split}. Only the models that were trained on the Qin-All
+dataset were evaluated on the NIST dataset, as it contained ionic compounds.
 
 \begin{table}
     \centering
@@ -330,10 +331,11 @@ topological information. Several choices of pooling function were trialled:
 
 \begin{description}
     \item[Mean pooling] was used in the previous work. It computes the average
-          over all atoms' feature vectors.
-    \item[Sum pooling] computes the sum of all atoms' feature vectors. This is
-          the most analogous to the ECFPs in that the contribution of an atomic environment
-          scales linearly with the number of times it occurs in the molecule.
+          over all atoms' latent feature vectors.
+    \item[Sum pooling] computes the sum of all atoms' latent feature vectors.
+          This is the most analogous to the ECFPs in that the contribution of an
+          atomic environment scales linearly with the number of times it occurs
+          in the molecule.
     \item[Gated attention pooling] applies an \emph{attention} mechanism to decide which environments
           are relevant to the prediction \cite{liGatedGraphSequence2017}:
           \begin{equation}
@@ -372,7 +374,12 @@ library Spektral \cite{grattarolaGraphNeuralNetworks2020}.
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{images/model_graph.pdf}
-    \caption{Schematic of the neural network architecture. Here, $N$ represents the number of constituent atoms/ions in the input molecule and $H$ represents a hyperparameter.}
+    \caption{Schematic of the neural network architecture. Here, $N$ represents
+    the number of constituent atoms/ions in the input molecule and $H$
+    represents a hyperparameter. The size of the pooling layer output, $H_P$, is
+    only independent in the case of a gated attention pooling layer. Otherwise,
+    it is equal to the number of columns of the graph layer that feeds into it
+    ($H_{G2}$ or $H_{G3}$).}
     \label{fig:model-topology}
 \end{figure}
 
