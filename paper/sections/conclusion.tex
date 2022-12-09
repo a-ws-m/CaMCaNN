@@ -1,0 +1,23 @@
+Empirical models were applied to predict CMCs from two datasets. One dataset was
+partitioned into training and test data (Qin-All), and a subset of the nonionic
+surfactants within this data were also used as a separate prediction task
+(Qin-Nonionics). The NIST dataset was collected from a different source and
+contained some molecules with very different chemistries than the above.
+
+A linear model based on ECFPs demonstrated remarkably good performance,
+improving on a previous work \cite{qinPredictingCriticalMicelle2021} that
+applied a more complex GNN model, despite using a smaller number of parameters
+and having a much faster optimisation time. A new model was presented that
+improved the architecture of previous work's GNN and was capable of obtaining a
+better performance than the ECFP model on the Qin-Nonionics task and
+demonstrated a better ability to generalise to the NIST dataset.
+
+Finally, a surrogate model was developed by feeding the latent space
+representation of a molecule, learned by the GNN model, to a Gaussian process.
+This yielded uncertainty estimates alongside CMC predictions. Although this
+model appeared to fail when applied to the Qin-Nonionics task, it yielded the
+best predictive performance of all of the models for the Qin-All task as well as
+providing a good quality of uncertainty estimates, which allow researchers to
+gauge their confidence in the model's predicitons.
+
+TODO: Write about applicability domain.

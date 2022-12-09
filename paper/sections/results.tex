@@ -55,7 +55,7 @@ hyperparameters discovered on each set are described in Table \ref{tab:hb-hps}.
 The performance of all of the trained models on the test datasets is reported in
 Table \ref{tab:evaluation}. All of the models outperformed those of the previous
 work. For every task, the most accurate model was either the GNN or the combined
-GNN with the GP. However, the linear model's performance is surprisingly good,
+GNN with the GP (GNN/GP). However, the linear model's performance is surprisingly good,
 considering its relative simplicity, its faster optimisation and the far smaller
 number of parameters it constitutes.
 
@@ -73,12 +73,71 @@ number of parameters it constitutes.
     \end{tabular}
 \end{table}
 
-The GNN/GP model demonstrates excellent results on the Qin-All task, but a very
-poor result on the Qin-Nonionics task. This poor performance was reflected in
-the validation metrics, as well. This suggests that $\lrv{}$ may not indicate
-the similarity of molecules' CMC values in the case of the Qin-Nonionics GNN
-GNN. Future efforts to improve this type of model may consider incorporating
-another term in the loss function for the GNN that biases the model towards
+The performance on the NIST data is significantly worse than the test data
+performance of every model. This suggests that the NIST data molecules are
+outside of the applicability domain of the models.
+
+Finally, the GNN/GP model's predictive performance on the Qin-Nonionics task was
+very poor. This indicates that the spacing between the molecules' latent
+representation vectors, determined from the corresponding GNN, was not a good
+indicator of similarity with respect to CMC prediction.
+
+\subsubsection{Uncertainty quantification}
+
+However, the RMSE does not capture the quality of the predicted standard
+deviations. One metric that captures these is the negative log likelihood (NLL)
+of observing the true CMCs, given the model's predicted normal distributions:
+\begin{equation}
+    \text{NLL} = -\sum_n \log p_n(\hat{y}_n),
+\end{equation}
+where subscript $n$ is the index of the data, $\hat{y}_n$ is the true CMC value
+and $p_n$ is the probability density function of the normal distribution
+$\mathcal{N}(\mu_n, \sigma_n)$, where $\mu_n$ and $\sigma_n$ are the predicted
+mean and standard deviation. This metric indicates the relative performance of
+different models on the same data. (Note that its value scales with the size of
+the data.) It does not give a good indication of the quality of any individual
+model in isolation, however. The NLL values are included in the supplementary
+information for comparison against future work.
+
+To assess the models' quality individually, the predictions can be visualised
+against the true CMCs in a parity plot; see Figure \ref{fig:uq-parity}.
+Alternatively, a calibration plot can be used, which compares the distribution
+of the residuals against the expected distribution given the models' predicted
+normal distributions. The expected distribution simulates what would be observed
+if the residuals were drawn from the distributions predicted by the models.
+Deviations from this distribution indicate whether the model was over- or
+underconfident (c.f. \citet{tranMethodsComparingUncertainty2020}). These
+calibration plots are shown in Figure \ref{fig:uq-calibration}.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{images/uq-parity.pdf}
+        \caption{}
+        \label{fig:uq-parity}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{images/uq-calibration.pdf}
+        \caption{}
+        \label{fig:uq-calibration}
+    \end{subfigure}
+    \caption{(a) Parity plots of the GNN/GP model's predicted CMCs and \SI{95}{\%}
+    confidence intervals for the Qin-All and NIST datasets and (b) corresponding
+    calibration plots for the test data predictions.}
+\end{figure}
+
+The S-shaped calibration curve for the Qin-All test data indicates that the
+model was underconfident in its predictions: there is a spike in the number of
+observed residuals that are close to the centre of the distribution. The
+corresponding parity plot shows that nevertheless the predicted uncertainties
+were relatively small. The NIST data calibration curve shows remarkably good
+agreement with the ideal distribution, except at the top-end, which reflects the
+tendency of the model to underestimate the CMCs of some of the molecules. The
+relatively poor RMSE on the NIST data is somewhat ameliorated by the quality of
+the uncertainty estimates.
+
+Future efforts to improve this type of model may consider incorporating another
+term in the loss function for the GNN that explicitly biases the model towards
 learning a form of $\lrv{}$ that captures this similarity. Alternatively, a
 variational Gaussian process could be used, which approximates the Gaussian
 process using a fixed size set of `pseudo-points'
@@ -86,18 +145,6 @@ process using a fixed size set of `pseudo-points'
 model to be trained at once using backpropagation
 \cite{moriartyUnlockNNUncertaintyQuantification2022}.
 
-The performance on the NIST data is significantly worse than the test data
-performance of every model. This suggests that the NIST data molecules are
-outside of the applicability domain of the models.
-
-\subsubsection{Uncertainty quantification}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{images/uq-parity.pdf}
-    \caption{Parity plot of the GNN/GP model's predicted CMCs and \SI{95}{\%}
-    confidence intervals for the Qin-All and NIST datasets.}
-\end{figure}
 
 \subsection{ECFP interpretations}
 
@@ -161,3 +208,5 @@ important. These surfactant headgroups possessed relatively complex topologies
 and therefore several environments; it may have been necessary for the model to
 use many of these environments in order to accurately distinguish between their
 CMCs.
+
+TODO: Discuss NIST data and applicability domain.

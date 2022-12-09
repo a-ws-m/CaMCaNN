@@ -213,38 +213,66 @@ def parity_plot(
 
 
 def plot_calibration(
-    prob_df: pd.DataFrame,
+    prob_dfs: List[ModelDataFrame],
     fname,
-    pred_col: str = "pred",
-    obs_col: str = "exp",
-    stddev_col: str = "stddev",
 ):
     """Plot a calibration curve for a given dataset."""
     PREDICTED_NAME = "Predicted cumulative distribution"
     OBSERVED_NAME = "Observed cumulative distribution"
 
-    LINE_COLOUR = sns.color_palette()[0]
-    FILL_COLOUR = tuple(np.array(LINE_COLOUR) * 1.5)
+    LINE_COLOUR = sns.color_palette()[1]
 
-    residuals = prob_df[obs_col] - prob_df[pred_col]
+    plot_df = pd.DataFrame()
+    for df_tuple in prob_dfs:
+        df = pd.read_csv(HERE / df_tuple.df_path)
+        try:
+            df = df[df["traintest"] == "test"]
+        except KeyError:
+            ...
 
-    predicted_pi, observed_pi = calc_pis(residuals, prob_df[stddev_col])
-    data = pd.DataFrame({PREDICTED_NAME: predicted_pi, OBSERVED_NAME: observed_pi})
-    ax = sns.lineplot(
-        data=data, x=PREDICTED_NAME, y=OBSERVED_NAME, color=LINE_COLOUR, label="Actual"
+        residuals = df[df_tuple.obs_col] - df[df_tuple.pred_col]
+        predicted_pi, observed_pi = calc_pis(residuals, df["stddev"])
+        task = [df_tuple.task] * len(predicted_pi)
+
+        this_df = pd.DataFrame({"Task": task, PREDICTED_NAME: predicted_pi, OBSERVED_NAME: observed_pi})
+
+        plot_df = pd.concat([plot_df, this_df], ignore_index=True)
+
+
+    g = sns.FacetGrid(plot_df, col="Task", margin_titles=True)
+    g.map_dataframe(
+        sns.lineplot, x=PREDICTED_NAME, y=OBSERVED_NAME, color=LINE_COLOUR, label="Actual"
     )
-    sns.lineplot(
-        ax=ax,
-        x=(0, 1),
-        y=(0, 1),
-        color="black",
-        linestyle="--",
-        marker="",
-        label="Ideal",
-    )
-    ax.set(xlim=(0, 1), ylim=(0, 1), aspect="equal")
-    ax.fill_between(predicted_pi, predicted_pi, observed_pi, color=FILL_COLOUR)
-    plt.savefig(fname, transparent=True, bbox_inches="tight")
+    g.set(xlim=(0, 1), ylim=(0, 1), aspect="equal")
+
+    for (row_i, col_j, hue_k), data_ijk in g.facet_data():
+        ax = g.facet_axis(row_i, col_j)
+        line_plot_args = [
+            (0, 1),
+            (0, 1),
+        ]
+        line_plot_kwargs = dict(
+            color="black",
+            linestyle="--",
+            marker="",
+            zorder=0.5,
+            label="Ideal",
+            alpha=0.5,
+        )
+        g._facet_plot(plt.plot, ax, line_plot_args, line_plot_kwargs)
+
+        fill_between_args = [
+            data_ijk[PREDICTED_NAME],
+            data_ijk[PREDICTED_NAME],
+            data_ijk[OBSERVED_NAME],
+        ]
+        fill_between_kwargs = dict(color=LINE_COLOUR, alpha=0.5, zorder=0.4)
+        g._facet_plot(plt.fill_between, ax, fill_between_args, fill_between_kwargs)
+
+    g.set_titles(col_template="{col_name}")
+    g.add_legend()
+    g.legend.set_title("Distribution")
+    plt.savefig(fname, bbox_inches="tight")
 
 
 if __name__ == "__main__":
@@ -315,4 +343,5 @@ if __name__ == "__main__":
             has_uq=True,
         ),
     ]
-    joint_parity([PER_FILE_TUPLES[x] for x in (-3, -2)], "paper/images/uq-parity.pdf")
+    # joint_parity([PER_FILE_TUPLES[x] for x in (-3, -2)], "paper/images/uq-parity.pdf")
+    plot_calibration([PER_FILE_TUPLES[x] for x in (-3, -2)], "paper/images/uq-calibration.pdf")

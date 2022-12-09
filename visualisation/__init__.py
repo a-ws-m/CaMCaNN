@@ -2,8 +2,6 @@
 import matplotlib as mpl
 import seaborn as sns
 
-from .parity import *
-
 LATEX_PREAMBLE = "\n".join([
     r"\usepackage{siunitx}",
     r"\usepackage[sfdefault,lining]{FiraSans} %% option 'sfdefault' activates Fira Sans as the default text font",
