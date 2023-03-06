@@ -7,7 +7,7 @@ Two datasets were used for training and testing:
           previous work \cite{qinPredictingCriticalMicelle2021} by accumulating
           results from several publications. To the authors' knowledge, it is
           currently the largest public dataset of CMCs for several classes of
-          surfactant collected at standard conditions, in an aqueous environment
+          surfactant collected at standard conditions in an aqueous environment
           between \SIrange{20}{25}{\celsius}.
     \item[The NIST dataset] is a dataset of 43 unique surfactants and their
           aqueous CMCs, extracted from the work of
@@ -18,21 +18,10 @@ Two datasets were used for training and testing:
           assess whether sampling bias affects the evaluated performance.
 \end{description}
 
-The Qin data were split into training and test subsets, to simulate the
-real-world scenario of using a model to make inferences about molecules for
-which no data is available. The training data were used to fit the models,
-whilst test data were `locked away' until it had been decided that the model was
-optimised, and the performance metrics on the test data were used for
-evaluation. For some models, the training data were further split into
-optimisation and validation subsets; the optimisation data were used when
-calculating the loss function during model fitting and the validation data were
-used for on-the-fly evaluation of model performance during training.
+The Qin data were split into training and test subsets to simulate the real-world scenario of using a model to make inferences about molecules for which no data is available. The training data were used to fit the models,
+whilst test data were `locked away' until it had been decided that the model was optimised, and the performance metrics on the test data were used for evaluation. For some models, the training data were further split into optimisation and validation subsets; the optimisation data were used when calculating the loss function during model fitting. The validation data were used for on-the-fly evaluation of model performance during training.
 
-To provide a consistent benchmark of model performance, the same data splits
-were used as \citet{qinPredictingCriticalMicelle2021}. The number of each class
-of surfactant in the train and test subsets of the data are shown in
-Table~\ref{tab:data-split}. Only the models that were trained on the Qin-All
-dataset were evaluated on the NIST dataset, as it contained ionic compounds.
+To provide a consistent benchmark of model performance, the same data splits were used as \citet{qinPredictingCriticalMicelle2021}. The number of each class of surfactant in the train and test subsets of the data are shown in Table~\ref{tab:data-split}. Only the models trained on the Qin-All dataset were evaluated on the NIST dataset, as it contained ionic compounds.
 
 \begin{table}
     \centering
@@ -49,25 +38,12 @@ dataset were evaluated on the NIST dataset, as it contained ionic compounds.
     \end{tabular}
 \end{table}
 
-A QSPR pipeline requires choosing two essential functions: a representation
-function, whose parameters are defined before training the model, and a
-mathematical form that maps this representation to a prediction. The processes
-by which these functions are developed are called \emph{feature engineering} and
-\emph{model selection}, respectively.
+A QSPR pipeline requires choosing two essential functions: a representation function, whose parameters are defined before training the model, and a mathematical form that maps this representation to a prediction. The processes
+by which these functions are developed are called \emph{feature engineering} and \emph{model selection}, respectively.
 
 \subsection{Feature engineering}
 
-The ideal molecular representation depends on the task at hand. Ideally, it
-should be compact, but complete
-\cite{faberCrystalStructureRepresentations2015,himanenDScribeLibraryDescriptors2020};
-`as simple as possible, but not simpler.' To that end, the representation should
-contain enough information to distinguish between isomers that with distinct
-properties, though concessions can be made if we restrict the model's domain and
-self-impose limits on the type of isomers we expose the model to, both during
-training and in use. Representations may also include descriptions of state,
-such as temperature and pressure \cite{chenGraphNetworksUniversal2019}, but this
-is redundant in cases where the training data spans a very limited range of
-states.
+The ideal molecular representation depends on the task at hand. Ideally, it should be compact but complete \cite{faberCrystalStructureRepresentations2015,himanenDScribeLibraryDescriptors2020}; `as simple as possible, but not simpler.' To that end, the representation should contain enough information to distinguish between isomers that with distinct properties. However, concessions can be made if we restrict the model's domain and self-imposed limits on the type of isomers we expose the model to, both during training and in use. Representations may also include descriptions of state, such as temperature and pressure \cite{chenGraphNetworksUniversal2019}, but this is redundant in cases where the training data spans a very limited range of states.
 
 % In the case of the Stauff-Klevens model, the representation effectively has two
 % components: the category of the headgroup, and the length of the tail group. The
@@ -110,55 +86,28 @@ states.
 
 \subsubsection{Extended-connectivity fingerprints}
 
-In this approach, the molecule is split into atomic environments up to a given
-radius, $r$: each environment is centred on an atom and extends $r$ steps along
-connecting bonds. Effectively, we discard the categorical encoding in favour of
-introducing more continuous, count-based features, like $n_c$. The set of all
-environments in the training data up to radius $r$ is extracted. The resulting
-feature vector, $\vec{c}$ for a molecule is described by
+In this approach, the molecule is split into atomic environments up to a given radius, $r$: each environment is centred on an atom and extends $r$ steps along connecting bonds. Effectively, we discard the categorical encoding in favour of
+introducing more continuous, count-based features, like $n_c$. The set of all environments in the training data up to radius $r$ is extracted. The resulting feature vector, $\vec{c}$ for a molecule is described by
 \begin{equation}
     \label{eq:ecfp}
     c_m = \text{Count}(\mathcal{E}_m),
 \end{equation}
 where $\mathcal{E}_m$ represents the $m^\text{th}$ atomic environment.
 
-Now, a change in headgroup composition is reflected in a change in subgraph
-counts, and provided the new subgraph exists in our training data, the model can
-adjust its prediction accordingly. Branch points in a carbon chain are
-distinguished from main-chain groups, as they terminate in a \ce{CH} group,
-rather than \ce{CH2}. This type of representation is called an
-\emph{extended-connectivity fingerprint} (ECFP)
-\cite{rogersExtendedConnectivityFingerprints2010}.
+Now, a change in headgroup composition is reflected in a change in subgraph counts, and provided the new subgraph exists in our training data. The model can adjust its prediction accordingly. Branch points in a carbon chain are
+distinguished from main-chain groups, as they terminate in a \ce{CH} group rather than \ce{CH2}. This type of representation is called an \emph{extended-connectivity fingerprint} (ECFP) \cite{rogersExtendedConnectivityFingerprints2010}.
 
-ECFPs are similar to a segment-based approach; however, unlike segments or
-groups, subgraphs can overlap. As discussed above, a group contribution approach
-requires that a canonical `priority' of the groups be defined prior to
-featurising molecules. By using ECFPs, the manual identification of important
-groups and their priorities is skipped; feature importance determination is
-instead delegated to the model.
+ECFPs are similar to a segment-based approach; however, unlike segments or groups, subgraphs can overlap. As discussed above, a group contribution approach requires that a canonical `priority' of the groups be defined prior to
+featurising molecules. By using ECFPs, the manual identification of important groups and their priorities are skipped; feature importance determination is instead delegated to the model.
 
-However, these fingerprints do not necessarily distinguish between all
-positional isomers or chain isomers, particularly with smaller values of $r$,
-nor are stereoisomers treated differently. Another potential disadvantage is
-that the number of unique atomic environments is potentially very large relative
-to the size of the data available, which poses a risk of overfitting.
-Furthermore, larger environments necessarily envelop smaller ones, which means
-that there is some duplicate information in the representation: the presence of
-a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
-so that there is multicollinearity. This redundancy can impede model fitting and
-interpretation.
+However, these fingerprints do not necessarily distinguish between all positional or chain isomers, particularly with smaller values of $r$, nor are stereoisomers treated differently. Another potential disadvantage is that the number of unique atomic environments is potentially very large relative to the size of the data available, which poses a risk of overfitting.
+Furthermore, larger environments necessarily envelop smaller ones, which means that there is some duplicate information in the representation: the presence of a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
+so that there is multicollinearity. This redundancy can impede model fitting and interpretation.
 
 \subsubsection{Molecular graph representation}
 
-Both of the approaches described so far rely on molecular feature vectors that
-cannot describe the molecule's topology. A molecular graph is a structure that
-achieves this, and it is a popular choice for cheminformatics as well as
-visualisation of molecular structure. In this approach, each atom is considered
-a \emph{node} and each bond an \emph{edge}. Rather than having a single feature
-vector to describe the molecule as a whole, each atom is assigned its own
-feature vector, $\vec{v}_i$, based on properties such as its element,
-hybridisation state, charge, etc. These feature vectors are concatenated into a
-node feature matrix, $\mathbf{V}$. The graph's structure is then defined by a
+Both of the approaches described so far rely on molecular feature vectors that cannot describe the molecule's topology. A molecular graph is a structure that achieves this, and it is a popular choice for cheminformatics as well as
+visualisation of molecular structure. In this approach, each atom is considered a \emph{node} and each bond an \emph{edge}. Rather than having a single feature vector to describe the molecule as a whole, each atom is assigned its own feature vector, $\vec{v}_i$, based on properties such as its element, hybridisation state, charge, etc. These feature vectors are concatenated into a node feature matrix, $\mathbf{V}$. The graph's structure is then defined by a
 binary adjacency matrix, $\mathbf{A}$:
 
 \begin{equation}
@@ -169,9 +118,7 @@ binary adjacency matrix, $\mathbf{A}$:
     \end{cases}
 \end{equation}
 
-Molecular graphs are perhaps the most natural representations to visualise; see
-Figure \ref{fig:mol-graph}. This is an exact description of the molecule's
-topology that enables an atomistic machine learning approach.
+Molecular graphs are perhaps the most natural representations to visualise; see Figure \ref{fig:mol-graph}. This is an exact description of the molecule's topology that enables an atomistic machine learning approach.
 
 \begin{figure}
     \centering
@@ -187,66 +134,41 @@ topology that enables an atomistic machine learning approach.
 \subsubsection{ECFP model}
 
 Based on the prior knowledge encoded in Equation~\ref{eq:klevens}, it is
-reasonable to assume that certain atomic environments have a linear relationship
-to $\log X_{cmc}$. It therefore seems justified to apply a linear model to the
-ECFP fingerprints described in Equation~\ref{eq:ecfp}:
+reasonable to assume that certain atomic environments have a linear relationship to $\log X_{cmc}$. It, therefore, seems justified to apply a linear model to the ECFP fingerprints described in Equation~\ref{eq:ecfp}:
 \begin{equation}
     \label{eq:linear-ecfp}
     \log X_{cmc} = \vec{w} \cdot \vec{c} + b,
 \end{equation}
-where $\vec{w}$ is a trained weights vector, the elements of which correspond to
-the contribution of an atomic environment to the CMC, and $b$ is an intercept
-(or \emph{bias} term).
+where $\vec{w}$ is a trained weights vector, the elements of which correspond to the contribution of an atomic environment to the CMC, and $b$ is an intercept (or \emph{bias} term).
 
-However, the issues of the large feature vector size and multicollinearity must
-be addressed; a na\"ive fit using ordinary least squares (OLS) would likely
-produce poor results. To that end, a process of \emph{feature selection} was
-applied, whereby a subset of the atomic environments were selected for use in
-the model. There are several approaches to feature
-selection\cite{liFeatureSelectionData2017}; here, we chose an approach based on
-\emph{regularisation}.
+However, the issues of the large feature vector size and multicollinearity must be addressed; a na\"ive fit using ordinary least squares (OLS) would likely produce poor results. To that end, a process of \emph{feature selection} was
+applied, whereby a subset of the atomic environments were selected for use in the model. There are several approaches to feature selection\cite{liFeatureSelectionData2017}; here, we chose an approach based on \emph{regularisation}.
 
-In this approach, we include a term in the loss function that depends on the
-norm of $\vec{w}$. The two types of constraints considered in this paper are
-$\ell_1$ and $\ell_2$ regularisation, which correspond to the inclusion of
-$\ell_1$ and $\ell_2$ norms, respectively. By combining $\ell_1$ regularisation
-with the least squares regressor, we obtain the least absolute shrinkage and
-selection operator (LASSO)\cite{tibshiraniRegressionShrinkageSelection1996}:
+In this approach, we include a term in the loss function that depends on the norm of $\vec{w}$. The two types of constraints considered in this paper are $\ell_1$ and $\ell_2$ regularisation, which correspond to the inclusion of
+$\ell_1$ and $\ell_2$ norms, respectively. By combining $\ell_1$ regularisation with the least squares regressor, we obtain the least absolute shrinkage and selection operator (LASSO)\cite{tibshiraniRegressionShrinkageSelection1996}:
 
 \begin{equation}
     \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} \left \Vert \mathbf{C}\vec{w} + \vec{b} - \vec{y} \right \Vert_2 ^ 2 + \alpha \left \Vert \vec{w} \right \Vert_1},
 \end{equation}
-where $n_{\text{samples}}$ is the number of training samples; $\vec{y}$ are the
-training data's true values of $\log X_{cmc}$; $\vec{b}$ is a vector with
-elements all equal to $b$; and $\alpha$ is a user-defined hyperparameter
-describing the degree of regularisation ($\alpha \geq 0$). $\mathbf{C}$ are the
-standardised training data feature vectors, $\{\vec{c}^{\,\prime}_n \,|\, 1 \leq
-n \leq n_\text{samples}\}$, stacked row-wise into a matrix. Standardising the
-environment counts ensures that they have zero mean and unit variance:
+
+where $n_{\text{samples}}$ is the number of training samples; $\vec{y}$ are the training data's true values of $\log X_{cmc}$; $\vec{b}$ is a vector with elements all equal to $b$; and $\alpha$ is a user-defined hyperparameter
+describing the degree of regularisation ($\alpha \geq 0$). $\mathbf{C}$ are the standardised training data feature vectors, $\{\vec{c}^{\,\prime}_n \,|\, 1 \leq n \leq n_\text{samples}\}$, stacked row-wise into a matrix. Standardising the environment counts ensures that they have zero mean and unit variance:
 \begin{equation}
     \label{eq:standard-scaling}
     {c}^{\,\prime}_m = \frac{c_m - u_m}{s_m},
 \end{equation}
-where $u_m$ and $s_m$ are the mean and standard deviation of the number of
-$\mathcal{E}_m$ in each molecule in the training data. This standardisation is
-necessary to ensure that the regularisation term is not dominated by
-environments with high variance and that it accounts for common and uncommon
-environments alike.
+where $u_m$ and $s_m$ are the mean and standard deviation of the number of $\mathcal{E}_m$ in each molecule in the training data. This standardisation is necessary to ensure that the regularisation term is not dominated by
+environments with high variance and that it accounts for common and uncommon environments alike.
 
-By imposing the $\ell_1$ penalty, the model is biased towards learning a
-\emph{sparse} weight vector: many of its elements will be negligible. The
-corresponding features can be removed from the representation.
+By imposing the $\ell_1$ penalty, the model is biased towards learning a \emph{sparse} weight vector: many of its elements will be negligible. The corresponding features can be removed from the representation.
 
-However, LASSO has two major flaws that make it inappropriate for the task of
-ECFP regression:
+However, LASSO has two major flaws that make it inappropriate for the task of ECFP regression:
 
 \begin{itemize}
-    \item The number of unique atomic environments is greater than the size of
-          the training data, $n_\text{samples}$, but LASSO will select at most
-          $n_\text{samples}$ features \cite{efronLeastAngleRegression2004}.
+    \item The number of unique atomic environments is greater than the size of the training data, $n_\text{samples}$, but LASSO will select at most $n_\text{samples}$ features \cite{efronLeastAngleRegression2004}.
           Therefore, some important environments may still be excluded.
-    \item LASSO tends to select only one of a group of highly correlated
-          variables, when there is no reason why that particular one should be
+          \item LASSO tends to select only one of a group of highly correlated
+          variables when there is no reason why that particular one should be
           prioritised \cite{zouRegularizationVariableSelection2005}. This is
           undesirable because we want to include both large and small atomic
           environments, despite their large correlation, and we might be misled into
@@ -260,51 +182,28 @@ ElasticNet addresses these issues by imposing an additional $\ell_2$ penalty
     \label{eq:elastic}
     \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} \left \Vert \mathbf{C}\vec{w} + \vec{b}- \vec{y} \right \Vert_2 ^ 2 + \alpha\rho \left \Vert \vec{w} \right \Vert_1} + \frac{\alpha(1 - \rho)}{2} \left \Vert \vec{w} \right \Vert_2^2,
 \end{equation}
-where $\rho$ is a user-defined hyperparameter controlling the proportions of the
-regularisation terms, $0 < \rho < 1$. This removes the hard limit on the number
-of features that can be selected and also exhibits the `grouping effect',
+where $\rho$ is a user-defined hyperparameter controlling the proportions of the regularisation terms, $0 < \rho < 1$. This removes the hard limit on the number of features that can be selected and also exhibits the `grouping effect',
 whereby features with high correlation tend to be assigned similar weights.
 
-Because of these advantages, an ElasticNet linear regression model was applied
-to select the most important ECFP features for predicting $\log X_{cmc}$. Both
-hyperparameters, $\alpha$ and $\rho$, must be defined when training the model.
-In order to select the best values, $k$-fold cross-validation was employed: the
-training data were partitioned into $k$ subsets of roughly equal size. $k$
-models were trained using $k-1$ subsets, and the final subset was used for
-validation. The average mean-squared error of the $k$ models, evaluated on their
-respective validation subsets, is the model's final score. This routine, with
-$k=5$, was applied for a range of $\alpha$ and $\rho$ combinations, and the
-lowest scoring combination was used. The hyperparameter search space is defined
-in the Supplementary Information.
+Because of these advantages, an ElasticNet linear regression model was applied to select the most important ECFP features for predicting $\log X_{cmc}$. Both hyperparameters, $\alpha$ and $\rho$ must be defined when training the model.
+In order to select the best values, $k$-fold cross-validation was employed: the training data were partitioned into $k$ subsets of roughly equal size. $k$ models were trained using $k-1$ subsets, and the final subset was used for
+validation. The average mean-squared error of the $k$ models, evaluated on their respective validation subsets, is the model's final score. This routine, with $k=5$, was applied for a range of $\alpha$ and $\rho$ combinations, and the
+lowest-scoring combination was used. The hyperparameter search space is defined in the Supplementary Information.
 
-The features with non-neglible fitted weights from ElasticNet were then selected
-for use in the final linear model. This model, ridge regression, uses just
-$\ell_2$ regularisation, so that all of the weights are non-negligible but we
+The features with non-negligible fitted weights from ElasticNet were then selected for use in the final linear model. This model, ridge regression, uses just $\ell_2$ regularisation so that all of the weights are non-negligible, but we
 still address the issue of multicollinearity \cite{mcdonaldRidgeRegression2009}:
 \begin{equation}
     \min_{\vec{w}} \left \Vert \mathbf{C} \vec{w} + \vec{b} - \vec{y} \right \Vert_2^2 + \alpha \left \Vert \vec{w}\right \Vert_2^2.
 \end{equation}
-A similar cross-validation method to the one described above was used to
-determine the best $\alpha$ parameter, but using $k=n_\text{samples}-1$. Because
-only one hyperparameter needs to be determined, there are far fewer trials per
-fold and therefore a greater number of folds can be used.
+A similar cross-validation method to the one described above was used to determine the best $\alpha$ parameter, but using $k=n_\text{samples}-1$. Because only one hyperparameter needs to be determined. There are far fewer trials per
+fold, and therefore a greater number of folds can be used.
 
-It was empirically observed that the combination of ElasticNet feature selection
-and a final regression with the simpler ridge regression model yielded better
-results, likely due to using a larger number of folds when determining the best
-value for $\alpha$. Both models were implemented using scikit-learn
-\cite{pedregosaScikitlearnMachineLearning2011}.
+It was empirically observed that the combination of ElasticNet feature selection and a final regression with the simpler ridge regression model yielded better results, likely due to using a larger number of folds when determining the best value for $\alpha$. Both models were implemented using scikit-learn \cite{pedregosaScikitlearnMachineLearning2011}.
 
 \subsubsection{Molecular graph model}
 
-The basic topology of the graph neural network (GNN) used in this work was
-identical to the one used by \citet{qinPredictingCriticalMicelle2021}. That is,
-the first step of the model consists of a stack of graph network layers, which
-mutate the node features in a molecular graph based on those of bonded atoms.
-These layers employ the graph convolution network (GCN) architecture introduced
-by \cite{kipfSemiSupervisedClassificationGraph2017a}. Layer $l$ computes a new
-node feature matrix, $\mathbf{V}^{(l)}$, based on the adjacency matrix,
-$\mathbf{A}$:
+The basic topology of the graph neural network (GNN) used in this work was identical to the one used by \citet{qinPredictingCriticalMicelle2021}. That is, the first step of the model consists of a stack of graph network layers, which mutate the node features in a molecular graph based on those of bonded atoms.
+These layers employ the graph convolution network (GCN) architecture introduced by \cite{kipfSemiSupervisedClassificationGraph2017a}. Layer $l$ computes a new node feature matrix, $\mathbf{V}^{(l)}$, based on the adjacency matrix, $\mathbf{A}$:
 \begin{equation}
     \mathbf{V}^{(l)} = \mathbf{D}^{-1/2} \mathbf{A} \mathbf{D}^{-1/2} \mathbf{V}^{(l-1)} \mathbf{W}^{(l)} + \mathbf{b}^{(l)}.
 \end{equation}
@@ -317,25 +216,16 @@ so that the term $\mathbf{D}^{-1/2} \mathbf{A}
     \mathbf{D}^{-1/2}$ effectively normalises the adjacency matrix based on
 the degree of each atom.
 
-$\mathbf{V}^{(1)}$ therefore encodes not only information about the atom itself,
-but its bonded neighbours. This information is used in the subsequent graph
-convolution, so that $\mathbf{V}^{(2)}$ encodes information about the
-2\textsuperscript{nd} order neighbourhood, \emph{et cetera}. The number of graph
-layers, $L$, therefore dictates the `radius' around each atom that is considered
-in computing the final feature vector, analogous to creating an ECFP, except
-that the $i^\text{th}$ atomic environment is characterised by a continuous,
-\emph{latent} vector, $\vec{v}^{\,(L)}_i$.
+$\mathbf{V}^{(1)}$, therefore, encodes not only information about the atom itself but its bonded neighbours. This information is used in the subsequent graph convolution so that $\mathbf{V}^{(2)}$ encodes information about the
+2\textsuperscript{nd} order neighbourhood, \emph{et cetera}. The number of graphs layers, $L$, therefore dictates the `radius' around each atom that is considered in computing the final feature vector, analogous to creating an ECFP, except that the $i^\text{th}$ atomic environment is characterised by a continuous, \emph{latent} vector, $\vec{v}^{\,(L)}_i$.
 
-The next step is a pooling layer, which converts the graph to a single
-\emph{latent representation vector}, $\lrv{}$, losing the explicit
-topological information. Several choices of pooling function were trialled:
+The next step is a pooling layer, which converts the graph to a single \emph{latent representation vector}, $\lrv{}$, losing the explicit topological information. Several choices of pooling function were trialled:
 
 \begin{description}
     \item[Mean pooling] was used in the previous work. It computes the average
           over all atoms' latent feature vectors.
     \item[Sum pooling] computes the sum of all atoms' latent feature vectors.
-          This is the most analogous to the ECFPs in that the contribution of an
-          atomic environment scales linearly with the number of times it occurs
+          This is the most analogous to the ECFPs in that the contribution of an atomic environment scales linearly with the number of times it occurs
           in the molecule.
     \item[Gated attention pooling] applies an \emph{attention} mechanism to decide which environments
           are relevant to the prediction \cite{liGatedGraphSequence2017}:
@@ -356,21 +246,13 @@ topological information. Several choices of pooling function were trialled:
           where $\vec{w}$ are trained weights.
 \end{description}
 
-After training the model, $\lrv{}$ effectively acts as a machine-learned
-representation of the molecule that captures only the information about its
-topology and composition that is useful for predicting the CMC. This task of
-finding an optimised representation is a feature of neural networks that happens
-implicitly during training, called \emph{representation learning}
-\cite{goodfellowDeepLearning2016a}. The final step is a readout neural network:
-a multi-layer perceptron which acts as a nonlinear approximator to map this
-latent representation vector to the CMC property prediction. Each layer in this
-neural network, called a `dense' layer, outputs a new vector, $\vec{v}^{(l)}$:
+After training the model, $\lrv{}$ effectively acts as a machine-learned representation of the molecule that captures only the information about its topology and composition that is useful for predicting the CMC. Finding an optimised representation is a feature of neural networks that happens implicitly during training, called \emph{representation learning} \cite{goodfellowDeepLearning2016a}. 
+The final step is a readout neural network: a multi-layer perceptron which acts as a nonlinear approximator to map this
+latent representation vector to the CMC property prediction. Each layer in this neural network, called a `dense' layer, outputs a new vector, $\vec{v}^{(l)}$:
 \begin{equation}
     \vec{v}^{(l)} = \mathbf{W}^{(l)}\vec{v}^{\,(l-1)} + \vec{b}^{\,(l)},
 \end{equation}
-The full network's architecture is illustrated in Figure
-\ref{fig:model-topology}. The model was implemented using the open-source
-library Spektral \cite{grattarolaGraphNeuralNetworks2020}.
+The full network's architecture is illustrated in Figure \ref{fig:model-topology}. The model was implemented using the open-source library Spektral\cite{grattarolaGraphNeuralNetworks2020}.
 
 \begin{figure}
     \centering
@@ -378,69 +260,37 @@ library Spektral \cite{grattarolaGraphNeuralNetworks2020}.
     \caption{Schematic of the neural network architecture. Here, $N$ represents
     the number of constituent atoms/ions in the input molecule and $H$
     represents a hyperparameter. The size of the pooling layer output, $H_P$, is
-    only independent in the case of a gated attention pooling layer. Otherwise,
+    only independent in the case of a gated attention-pooling layer. Otherwise,
     it is equal to the number of columns of the graph layer that feeds into it
     ($H_{G2}$ or $H_{G3}$).}
     \label{fig:model-topology}
 \end{figure}
 
-A neural network's topology describes the types of layers used, i.e. their
-functional form, and the connection between them. Layers that are parameterised
-by a weight matrix, $\mathbf{W}$, may have different `sizes', meaning that the
-dimensionality of their output is arbitrary and can be adjusted by changing the
-dimensions of $\mathbf{W}$. The graph layers, dense layers and the gated
-attention pool all have this property. These sizes, the type of pooling layer
-and the number of each graph and dense layers, are all hyperparameters that can
-be adjusted prior to training. To determine the best combination of
-hyperparameters for predicting CMCs, an automated searching procedure was
+A neural network's topology describes the types of layers used, i.e. their functional form and the connection between them. Layers that are parameterised by a weight matrix, $\mathbf{W}$, may have different `sizes', meaning that the
+dimensionality of their output is arbitrary and can be adjusted by changing the dimensions of $\mathbf{W}$. The graph layers, dense layers and the gated attention pool all have this property. These sizes, the type of pooling layer
+and the number of each graph and dense layer, are all hyperparameters that can be adjusted prior to training. To determine the best combination of hyperparameters for predicting CMCs, an automated searching procedure was
 employed.
 
 \subsubsection{Optimising GNN hyperparameters}
 
-The Hyperband approach \cite{liHyperbandNovelBanditBased2018}, implemented in
-Keras Tuner \cite{cholletKeras2015}, was used to to select a good combination of
-hyperparameters for the model. Hyperband provides a way to efficiently evaluate
-the performance of a large search space of hyperparameter configurations. The
-algorithm trials several combinations of hyperparameters, initially allocating
-only a small number of resources to each trial. The hyperparameters for the
-trials with the best performance are then allocated more resources, whilst the
-remainder are discarded. A reduction factor of 3 was chosen, meaning that $2/3$
-of the trials were discarded after each iteration. This procedure iterates until
-the best configuration is found.
+The Hyperband approach \cite{liHyperbandNovelBanditBased2018}, implemented in Keras Tuner \cite{cholletKeras2015}, was used to select a good combination of hyperparameters for the model. Hyperband provides a way to efficiently evaluate
+the performance of a large search space of hyperparameter configurations. The algorithm trials several combinations of hyperparameters, initially allocating only a small number of resources to each trial. The hyperparameters for the
+trials with the best performance are then allocated more resources, whilst the remainder is discarded. A reduction factor of 3 was chosen, meaning that $2/3$ of the trials were discarded after each iteration. This procedure iterates until the best configuration is found.
 
-The algorithm can be executed multiple times if resources are available, to
-obtain a more reliable result; the training procedure is stochastic and
-therefore the performance of two trials with the same hyperparameters may be
-different. In this case, a single run was performed. The training data was
-partitioned into an optimisation subset and a validation subset in a ratio of
-9:1. The trials were fit to the optimisation subset and evaluated based on the
-RMSE of their predictions on the validation subset.
+The algorithm can be executed multiple times if resources are available to obtain a more reliable result; the training procedure is stochastic, and therefore the performance of two trials with the same hyperparameters may be different. In this case, a single run was performed. The training data was partitioned into an optimisation subset and a validation subset in a ratio of 9:1. The trials were fit to the optimisation subset and evaluated based on the RMSE of their predictions on the validation subset.
 
 \subsubsection{Adding uncertainty with a Gaussian process}
 
-To improve the model's reliability, a \emph{surrogate} model was employed that
-could yield uncertainty estimates alongside CMC predictions. The approach is
-based on the Convolution-Fed Gaussian Process of
-\citet{tranMethodsComparingUncertainty2020}. The model first computes the latent
-representation vector, $\lrv{}$, of an input molecule using a trained GNN.
-$\lrv{}$ is then standardised, similar to Equation \ref{eq:standard-scaling}:
+To improve the model's reliability, a \emph{surrogate} model was employed that could yield uncertainty estimates alongside CMC predictions. The approach is based on the Convolution-Fed Gaussian Process of \citet{tranMethodsComparingUncertainty2020}. The model first computes the latent representation vector, $\lrv{}$, of an input molecule using a trained GNN. $\lrv{}$ is then standardised, similar to Equation \ref{eq:standard-scaling}:
 \begin{equation}
     v^{(p)\,\prime}_n = \frac{v^{(p)}_n - u_n}{s_n},
 \end{equation}
-but in this case the standardisation applies across each latent feature, $n$.
-Again, $u_n$ and $s_n$ were determined from the training molecules' latent
-representations.
+but in this case, the standardisation applies across each latent feature, $n$.
+Again, $u_n$ and $s_n$ were determined from the training molecules' latent representations.
 
-The standardised latent representation vectors of the training data serve as
-index points for a Gaussian process (GP); see Figure \ref{fig:model-topology}.
-The GP's predicted mean and standard deviation define a predicted normal
-distribution of a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
+The standardised latent representation vectors of the training data serve as index points for a Gaussian process (GP); see Figure \ref{fig:model-topology}.
+The GP's predicted mean and standard deviation define a predicted normal distribution of a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
 
-In this work, the GPs  were defined using a Mat\'ern kernel with parameter
-$1/2$. Furthermore, the multi-layer perceptron component of the GNN used to
-calculate $\lrv{}$ was employed as the GP's mean function. The kernel parameters
-were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
-The same optimisation/validation splitting was used as for the GNN
-hyperparameter search and training was stopped after \num{1000} iterations
-without improvement in the validation predictions' RMSE. This implementation was
-based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
+In this work, the GPs  were defined using a Mat\'ern kernel with parameter $1/2$. Furthermore, the multi-layer perceptron component of the GNN used to calculate $\lrv{}$ was employed as the GP's mean function. 
+The kernel parameters were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
+The same optimisation/validation splitting was used as for the GNN hyperparameter search and training was stopped after \num{1000} iterations without improvement in the validation predictions' RMSE. This implementation was based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.

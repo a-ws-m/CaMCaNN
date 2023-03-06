@@ -1,23 +1,11 @@
-Broadly, CMC predictive models take four forms: empirical, semi-empirical,
-theoretical and simulated, or some combination of these. Here we will focus on
-predictive models for aqueous solutions containing a single surfactant and
-discuss some of the trade-offs between the different approaches with regards to
-speed, universality and interpretability.
+Broadly, CMC predictive models take four forms: empirical, semi-empirical, theoretical and simulated, or some combination of these. Here we will focus on predictive models for aqueous solutions containing a single surfactant and discuss some of the trade-offs between the different approaches with regard to speed, universality and interpretability.
 
 Theoretical approaches have the potential to be the most useful type of
-predictive model, if they are accurate and applicable to the desired system, as
-they are directly related to scientific knowledge and their results can be
-understood in terms of well studied principles.
-\citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological
-model for studying aqueous nonionic surfactant systems that enabled CMC
-prediction, as well as modelling of other properties across a range of
-temperatures. The model they developed was the product of decomposing the
-process of micellisation into discrete steps that they could describe
-thermodynamically so as to yield an description of the free energy of
-micellisation in terms of a set of molecular parameters:
+predictive model if they are accurate and applicable to the desired system, as they are directly related to scientific knowledge, and their results can be understood in terms of well-studied principles.
+\citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological model for studying aqueous nonionic surfactant systems that enabled CMC prediction and modelling other properties across a range of temperatures. The model they developed was the product of decomposing the process of micellisation into discrete steps that they could describe thermodynamically so as to yield a description of the free energy of micellisation in terms of a set of molecular parameters:
 
 \begin{itemize}
-    \item The tail length, described as the number of carbon atoms.
+    \item The tail length, defined as the number of carbon atoms.
     \item The average cross-sectional area of the headgroup, which controls the
           steric contribution to the free energy. This must be estimated.
     \item The Tolman length of the tail, which effectively describes the
@@ -25,51 +13,19 @@ micellisation in terms of a set of molecular parameters:
           \cite{demiguelGibbsThermodynamicsSurface2021}. This must also be estimated.
 \end{itemize}
 
-A functional form to estimate the parameters was described for linear, nonionic,
-polyoxyethylene alcohol surfactants. The model attained impressive accuracy for
-some predictions: a root-mean-squared error (RMSE) of approximately
-\SI{0.14}{\log \micro M} for the group \ce{C10E_i}, where $i \in [3, 6]$, and
-\SI{0.21}{\log \micro M} for the group \ce{C12E_j}, where $j \in [3, 8]$.
-However, for other systems, like \ce{C8E6}, the error is much larger. The
-authors expect that this inaccuracy is because the model overestimates the CMC
-values for systems in which the micelles do not grow.
+A functional form to estimate the parameters was described for linear, nonionic, polyoxyethylene alcohol surfactants. The model attained impressive accuracy for some predictions: a root-mean-squared error (RMSE) of approximately \SI{0.14}{\log \micro M} for the group \ce{C10E_i}, where $i \in [3, 6]$, and \SI{0.21}{\log \micro M} for the group \ce{C12E_j}, where $j \in [3, 8]$.
+However, the error is much larger for other systems, like \ce{C8E6}. The
+authors expect that this inaccuracy is because the model overestimates the CMC values for systems in which the micelles do not grow.
 
-The connection that this model established between a small set of physically
-meaningful properties that can be estimated and emergent properties of
-surfactants is extremely useful, especially because it does not explicitly
-require fitting to any experimental data. However, the procedures described for
-estimating the Tolman length are only applicable for linear hydrocarbon chains;
-not the branched case, or for heterogeneous tail groups. Estimating the average
-cross-sectional area of the head group may also not be trivial.
+The connection this model established between a small set of physically meaningful properties that can be estimated and emergent properties of surfactants is extremely useful, especially because it does not explicitly require fitting to any experimental data. However, the procedures described for estimating the Tolman length are only applicable to linear hydrocarbon chains, not the branched case or heterogeneous tail groups. Estimating the average cross-sectional area of the head group may also not be trivial.
 
-Semi-empirical approaches are grounded in theory, but have parameters that are
-optimised based on experimental data. Many semi-empirical approaches to CMC
-prediction can be described as \emph{segment-based} methods, whereby the
-surfactant is decomposed into discrete segments which correspond to groups of
-atoms and bonds.
+Semi-empirical approaches are grounded in theory but have parameters optimised based on experimental data. Many semi-empirical approaches to CMC prediction can be described as \emph{segment-based} methods, whereby the surfactant is decomposed into discrete segments, which correspond to groups of atoms and bonds.
 
-\citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model
-(s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear
-polyoxyethylene alcohols, by first deriving expressions for the activity
-coefficient of a surfactant in water. In the s-UNIQUAC model, a segment-based
-local-composition model was used and the fugacity could then be approximated
-using the fitted interaction energies between the segments and water. In this
-case, the segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the
-surfactant was treated as a chain of soft-sphere segments in order to first
-derive the Helmholtz energy of the solution and from that to derive the
-fugacity. In this case, the segments used were \ce{CH2}/\ce{CH3} (these were
-treated as the same segment) and \ce{C2H4O}. The interaction energies of the
-segments were fitted, as well as parameters of a function describing the soft
-sphere diameter of a segment in a chain in terms of the chain length.
+\citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model (s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear polyoxyethylene alcohols by first deriving expressions for the activity coefficient of a surfactant in water. In the s-UNIQUAC model, a segment-based local-composition model was used, and the fugacity could then be approximated using the fitted interaction energies between the segments and water. In this case, the segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the surfactant was treated as a chain of soft-sphere segments in order to first derive the Helmholtz energy of the solution and, from that, derive the fugacity. In this case, the segments used were \ce{CH2}/\ce{CH3} (these were treated as the same segment) and \ce{C2H4O}. The interaction energies of the segments were fitted, as well as parameters of a function describing the soft sphere diameter of a segment in a chain in terms of the chain length.
 
-\citet{chengCorrelationCriticalMicelle2005} compared the performance of these
-models on a larger dataset, alongside three other models. Two of these were
-segment-based models: the polymer-NRTL model \cite{liStudiesUNIQUACSAFT1998} and
-a UNIFAC model \cite{voutsasPredictionCriticalMicelle2001}, both of which were
-cited as inspirations for the s-UNIQUAC model. The authors also employed their
-own modified Aranovich and Donohue (m-AD) model. The m-AD model calculates the
-CMC as a mole fraction, $x_S^L$, approximating it as the reciprocal of the
-limiting value of the surfactant's activity coefficient in aqueous solution,
+\citet{chengCorrelationCriticalMicelle2005} compared the performance of these models on a larger dataset alongside three other models. Two of these were segment-based models: the polymer-NRTL model \cite{liStudiesUNIQUACSAFT1998} and
+a UNIFAC model \cite{voutsasPredictionCriticalMicelle2001}, both of which were cited as inspirations for the s-UNIQUAC model. The authors also employed their own modified Aranovich and Donohue (m-AD) model. The m-AD model calculates the
+CMC as a mole fraction, $x_S^L$, approximating it as the reciprocal of the limiting value of the surfactant's activity coefficient in an aqueous solution,
 $\gamma_S^{L,\infty}$:
 
 \begin{equation}
@@ -77,18 +33,11 @@ $\gamma_S^{L,\infty}$:
     x_S^L = \frac{1}{\gamma_S^{L,\infty}}
 \end{equation}
 
-The m-AD model considers the exchange equilibrium on a three-dimensional lattice
-of infinitely separated solvent and solute molecules in order to determine
-$\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model.
-Instead, the authors fitted an interchange energy, $\Delta$, separately for each
-molecule. Of course, if a new parameter must be fitted for every molecule, a
-model has no predictive ability. Therefore, correlations were examined between
-$\Delta$ and other, readily calculated surfactant properties, which will be
-discussed later.
+The m-AD model considers the exchange equilibrium on a three-dimensional lattice of infinitely separated solvent and solute molecules in order to determine $\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model.
+Instead, the authors fitted an interchange energy, $\Delta$, separately for each molecule. Of course, if a new parameter must be fitted for every molecule, a model has no predictive ability. Therefore, correlations were examined between
+$\Delta$ and other, readily calculated surfactant properties, which will be discussed later.
 
-Where data from literature was available, the predictive performance of the
-models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n}
-and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
+Where data from the literature was available, the predictive performance of the models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n} and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
 \ref{tab:segment-methods}.
 
 \begin{table}
