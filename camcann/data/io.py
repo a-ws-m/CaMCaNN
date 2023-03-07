@@ -17,6 +17,11 @@ from .featurise.graph import MolNodeFeaturizer, mols_to_graph
 DATASET_FOLDER = Path(__file__).parent / "datasets"
 RANDOM_SEED = 2021
 
+def get_polyoxyethylene_smiles(num_head: int, num_tail: int) -> str:
+    """Get a SMILES string for a polyoxyethylene alcohol."""
+    head = "C" * num_head
+    tail = "CCO" * num_tail
+    return head + "O" + tail
 
 class GraphData(Dataset):
     """Handle graph data subsets."""

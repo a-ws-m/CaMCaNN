@@ -105,7 +105,7 @@ class LinearECFPModel:
         include_group = has_group.sum(axis=0) > threshold
 
         self.smiles_hashes.hash_df["selected"] = list(include_group)
-        self.smiles_hashes.hash_df["above_threshold_occurance"] = list(include_group)
+        self.smiles_hashes.hash_df["above_threshold_occurrence"] = list(include_group)
 
         self.train_fps_filtered = self._apply_low_freq_filter(self.train_fps)
         self.test_fps_filtered = self._apply_low_freq_filter(self.test_fps)
@@ -115,7 +115,7 @@ class LinearECFPModel:
     def _apply_low_freq_filter(self, fps: np.ndarray) -> np.ndarray:
         """Apply the low frequency subgraph filter to given fingerprints."""
         return fps[
-            :, self.smiles_hashes.hash_df["above_threshold_occurance"].to_numpy()
+            :, self.smiles_hashes.hash_df["above_threshold_occurrence"].to_numpy()
         ]
 
     def elastic_feature_select(self) -> LinearResults:
@@ -142,7 +142,7 @@ class LinearECFPModel:
         ).values()
         test_rmse, test_r2 = self.evaluate(self.test_fps, self.test_targets).values()
 
-        return LinearResults(
+        results = LinearResults(
             train_rmse,
             train_r2,
             self.selector.estimator_.alpha_,
@@ -154,6 +154,13 @@ class LinearECFPModel:
             test_r2,
             num_non_negligible,
         )
+
+        self.smiles_hashes.set_weights(
+            results.coefs,
+            results.get_unnormed_contribs(self.scaler, self.selector),
+        )
+
+        return results
 
     def evaluate(self, fps: np.ndarray, targets: np.ndarray) -> Dict[str, float]:
         """Get the RMSE and R^2 values for a set of fingerprints and target values."""

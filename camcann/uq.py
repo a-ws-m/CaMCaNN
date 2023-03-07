@@ -228,3 +228,11 @@ class GraphGPProcess:
     ) -> Union[float, Dict[str, float]]:
         """Evaluate performance on test data."""
         return self._evaluate_gpr(self.final_gpr, test_data, just_nll)
+    
+    def pairwise_matrix(self, test_data: Loader) -> np.ndarray:
+        """Compute the pairwise kernel values for all of the data in the loader."""
+        latent_points = self.model.predict(test_data.load(), steps=test_data.steps_per_epoch, verbose=0).astype(np.float64)
+        if self.input_scaler is not None:
+            latent_points = self.input_scaler.transform(latent_points)
+        
+        return self.final_gpr.kernel.K(latent_points).numpy()

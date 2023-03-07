@@ -155,7 +155,7 @@ class SMILESHashes:
                     "SMILES": [],
                     "weight": [],
                     "selected": [],
-                    "above_threshold_occurence": [],
+                    "above_threshold_occurrence": [],
                     "norm_weight": [],
                 }
             )
@@ -173,7 +173,7 @@ class SMILESHashes:
                 "SMILES": smiles,
                 "weight": pd.NA,
                 "selected": pd.NA,
-                "above_threshold_occurence": pd.NA,
+                "above_threshold_occurrence": pd.NA,
                 "norm_weight": pd.NA,
             }
             return new_index
@@ -191,16 +191,16 @@ class SMILESHashes:
         The support array can be acquired using a scikit-learn
         ``SelectFromModel`` selector. This must be used after the initial
         removal of features below the threshold occurance. This function
-        determines the binary ``AND`` of ``above_threshold_occurance`` and
+        determines the binary ``AND`` of ``above_threshold_occurrence`` and
         ``support``, filling in the missing values.
 
         """
-        if self.hash_df["above_threshold_occurance"].isnull().any():
+        if self.hash_df["above_threshold_occurrence"].isnull().any():
             raise ValueError(
-                "One or more subgraphs have not been checked for being above threshold occurance."
+                "One or more subgraphs have not been checked for being above threshold occurrence."
             )
 
-        selected = self.hash_df["above_threshold_occurance"].to_numpy(copy=True)
+        selected = self.hash_df["above_threshold_occurrence"].to_numpy(copy=True)
         selected[selected] = support
         self.hash_df["selected"] = selected
 

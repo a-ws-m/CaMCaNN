@@ -1,47 +1,19 @@
-Perhaps the most well established predictor for critical micelle concentration
-(CMC), $X_{cmc}$, is the Stauff-Klevens relationship, first published in
-\citeyear{klevensStructureAggregationDilate1953}
-\cite{klevensStructureAggregationDilate1953}. It formalised the observation that
-CMC decreases exponentially with an increase in the number of carbons in the
-hydrocarbon tail, $n_c$:
+Perhaps the most well-established predictor for critical micelle concentration (CMC), $X_{cmc}$, is the Stauff-Klevens relationship, first published in \citeyear{klevensStructureAggregationDilate1953} \cite{klevensStructureAggregationDilate1953}. It formalised the observation that CMC decreases exponentially with an increase in the number of carbons in the hydrocarbon tail, $n_c$:
 
 \begin{equation}
     \label{eq:klevens}
     \log X_{cmc} = A - Bn_c, \quad B > 0
 \end{equation}
 
-where $A$ and $B$ are empirical constants that depend on the temperature and the
-homologous series, i.e. the headgroup. The model is simple, yet accurate, and it
-is easily interpretable: to reduce CMC, extend the surfactant's hydrocarbon
-tail. Its only drawback as a predictive model is its very limited applicability
-domain; each set of parameters is only applicable to surfactants with a specific
-headgroup and a linear carbon tail. One of the goals of quantitative
-structure-property relationship (QSPR) development is to produce models that are
-general, so that we can apply them to a diverse range of compounds, design novel
-molecules with target properties, and interpret the models' results to glean
-chemical insights.
+where $A$ and $B$ are empirical constants that depend on the temperature and the homologous series, i.e. the headgroup. The model is simple yet accurate, and it is easily interpretable: to reduce CMC, it is sufficient to extend the surfactant's hydrocarbon tail thus defining an easy-to-apply qualitative heuristic. Its drawback as a predictive model is its very limited applicability domain; each set of parameters is only applicable to surfactants with a specific headgroup and a linear carbon tail.
+One of the goals of the quantitative structure-property relationship (QSPR) development is to produce models that are general so that we can apply them to a diverse range of compounds, design novel molecules with target properties, and
+interpret the models' results to glean chemical insights.
 
-To that end, there have been a wealth of investigations into making more general
-models for CMC prediction
-\cite{gaudinNewQSPRModels2016,jakobtorweihenPredictingCriticalMicelle2017,matteiModelingCriticalMicelle2013}.
-(More references to be added.) Recently, an approach based on graph neural
-networks (GNNs) has produced highly accurate predictions, whilst having the
-advantage of being applicable to nonionic, cationic, anionic and zwitterionic
-surfactants simultaneously \cite{qinPredictingCriticalMicelle2021a}. Such neural
-networks have many trainable parameters and a complex functional form. This
-ensures their versatility as general approximators, but makes them highly
-susceptible to overfitting (CITATION). By using such complex models, we also
-abandon the parsimony exhibited by Stauff-Klevens, and chemical insights can be
-much more difficult to derive. Furthermore, deep neural networks' ostensible
-`universality' can be misleading: extrapolating the model's results to
-out-of-domain molecules (ones that are `dissimilar' from the training data) will
-yield unreliable and potentially misleading predictions.
+To that end, there have been a wealth of investigations into making more general models for CMC prediction, which are discussed in Section \ref{sec:background}. The two fundamental differences between them are the choice of molecular
+descriptors, the numerical features that form the basis set for the model inputs, and the functional form of the approximator that maps the descriptor to the property prediction. 
 
-In this article, we assess a spectrum of empirical models for CMC prediction,
-with the intent of finding the optimum trade-off between accuracy, generality
-and interpretability for this task, by correlating our models' interpretations
-with published research. We also apply a technique for adding uncertainty
-quantification to GNNs, which can indicate whether a molecule is within the
-model's applicability domain and therefore whether a given prediction is
-reliable. We aim to demonstrate a best-practices approach to applying machine
-learning to QSPR tasks on small datasets.
+Recently, an approach based on graph neural networks (GNNs) has produced highly accurate predictions whilst being applicable to nonionic, cationic, anionic and zwitterionic surfactants simultaneously
+\cite{qinPredictingCriticalMicelle2021}. Neural networks have many trainable parameters and a complex functional form. This ensures their versatility as universal approximators but makes them highly susceptible to overfitting \cite{bejaniSystematicReviewOverfitting2021}. Using such complex models, we also abandon the parsimony exhibited by Stauff-Klevens, and chemical insights can be much more difficult to derive. Furthermore, deep neural networks' ostensible `universality' can be misleading: extrapolating the model's results to out-of-domain molecules (ones that are `dissimilar' from the training data) will yield unreliable and potentially misleading predictions.
+
+In this article, we develop two families of models of very different complexity: a linear model and a GNN. We evaluate the difference in performance and interpretability of the models. We also apply a technique for adding uncertainty
+quantification to the GNN, which can indicate whether a molecule is within the model's applicability domain and, therefore, whether a given prediction is reliable.

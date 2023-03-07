@@ -1,0 +1,108 @@
+digraph G {
+    margin=0;
+    newrank=true;
+
+    graph [fontname = "Fira Sans", rankdir=LR, splines=ortho, ratio=auto];
+    node [fontname = "Fira Sans", style="filled,solid", fillcolor=white, shape="box", margin=0.15];
+    edge [fontname = "Fira Sans"];
+
+    subgraph cluster_0 {
+        rank="same";
+        style=filled;
+        margin=8;
+        color="#f4dbd6";
+        node [style=filled];
+        edge[minlen=2];
+        SMILES -> molgraph;
+        label = "Parsing";
+    }
+
+    pre_graph[shape="point", width=0.001, height=0.001];
+    
+    subgraph cluster_1 {
+        rank="same";
+        style=filled;
+        margin=8;
+        color="#91d7e3";
+        edge[minlen=2];
+        G1 -> G2;
+        G2 -> G3[style="dotted"];
+        label = "Graph layers";
+    }
+    
+    pre_pool[shape="point", width=0, height=0];
+    
+    subgraph cluster_2 {
+        rank="same";
+        style=filled;
+        margin=25;
+        color="#ee99a0";
+        edge[minlen=2];
+        D1 -> D2[style="dotted"];
+        D1 -> D3[style="dotted"];
+        D2 -> D3;
+        label="Multi-layer\nperceptron";
+    }
+    
+    subgraph cluster_3_margin {
+        margin=15;
+        style="invis";
+        subgraph cluster_3 {
+            style="dashed";
+            label="Key";
+            subgraph example_edges {
+                rank="same";
+                key[label="Layer name\n[Output\nDimensions]"];
+                node[shape="point", width=0, height=0];
+                subgraph full_edge {
+                    eg3 -> eg4[dir=none];
+                    eg4 -> eg5[xlabel="    Connection"];
+                }
+                subgraph dotted_edge {
+                    edge[style="dotted"];
+                    eg0 -> eg1[dir=none];
+                    eg1 -> eg11[dir=none];
+                    eg11 -> eg2[xlabel="    Connection\n    Choice"];
+                }
+            }
+            dummy[style=invis, label="", width=0.3];
+            key -> dummy[style=invis];
+        }
+    }
+    
+    molgraph -> pre_graph[dir=none];
+    pre_graph -> G1;
+    G3 -> pre_pool[dir=none];
+    G2 -> pre_pool[style="dotted", dir=none];
+    pre_pool -> pool;
+    pool -> D1[style="dotted"];
+    pool -> GP[style="dotted"];
+    
+    subgraph to_output{
+        edge[dir=none];
+        D3 -> pre_output;
+        GP -> pre_output[constraint=false];
+    }
+
+    pre_output -> output;
+
+    molgraph[label="Graph\n[N × ≥8]"];
+    subgraph dimension_labels {
+        G1[label=<G1<br/>[N × <i>H<sub>G1</sub></i>]>];
+        G2[label=<G2<br/>[N × <i>H<sub>G2</sub></i>]>];
+        G3[label=<G3<br/>[N × <i>H<sub>G3</sub></i>]>];
+
+        pool[label=<Pool<br/>  [<i>H<sub>P</sub></i>]>, shape=box];
+        
+        D1[label=<D1<br/>[<i>H<sub>D1</sub></i>]>];
+        D2[label=<D2<br/>[<i>H<sub>D2</sub></i>]>];
+        D3[label=<D3<br/>[1]>];
+
+        GP[ label="Gaussian Process\n[1]"];
+    }
+    
+    
+    pre_output[shape="point", width=0.001, height=0.001];
+    output[label=<<b>Output</b>>, shape="ellipse"]
+    
+}
