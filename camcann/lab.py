@@ -9,6 +9,7 @@ import keras_tuner
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from sklearn.decomposition import KernelPCA
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
@@ -22,6 +23,7 @@ from .data.io import (
     ECFPData,
     QinGraphData,
     get_nist_data,
+    get_nist_and_qin
 )
 from .gnn import build_gnn
 from .linear import LinearECFPModel, LinearResults
@@ -102,6 +104,10 @@ class GraphExperiment(BaseExperiment):
         self.tb_train_dir = self.tb_dir / "train-best"
 
         self.best_hp_file = self.results_path / "best_hps.json"
+
+        self.kpca_file = self.results_path / "kernel_components.csv"
+
+        self.gp_param_file = self.model_path / "gp_params.json"
 
         self.hypermodel = hypermodel
         self.tuner = keras_tuner.Hyperband(
@@ -228,7 +234,7 @@ class GraphExperiment(BaseExperiment):
 
         return nist_metrics
 
-    def train_uq(self, with_scaler: bool = True, linear_mean_fn: bool = False):
+    def train_uq(self, with_scaler: bool = True, linear_mean_fn: bool = False, retrain: bool = False):
         """Train and test the uncertainty quantified model."""
         hps = keras_tuner.HyperParameters()
         self.hypermodel(hps)
@@ -236,9 +242,14 @@ class GraphExperiment(BaseExperiment):
         latent_model = self.hypermodel(hps, latent_model=True)
 
         loaded_model = load_model(self.model_path)
+
+        load_gp_params = self.gp_param_file.exists() and not retrain
+        param_path = self.gp_param_file if load_gp_params else None
+
         self.uq_model = GraphGPProcess(
-            latent_model, self.graph_data, loaded_model, with_scaler, linear_mean_fn
+            latent_model, self.graph_data, loaded_model, with_scaler, linear_mean_fn, param_path
         )
+        self.uq_model.save_model(self.gp_param_file)
 
         train_metrics = self.uq_model.evaluate(self.graph_data.optim_loader_no_shuffle)
         val_metrics = self.uq_model.evaluate(self.graph_data.val_loader)
@@ -264,6 +275,19 @@ class GraphExperiment(BaseExperiment):
         )
         nist_metrics = self.uq_model.evaluate(nist_data)
         pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
+    
+    def kpca(self):
+        """Perform KPCA on NIST and Qin data."""
+        combined_loader, combined_data = get_nist_and_qin(self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv))
+        kernel_matrix = self.uq_model.pairwise_matrix(combined_loader)
+
+        components = KernelPCA(2, kernel="precomputed").fit_transform(kernel_matrix)
+
+        combined_data["Component 1"] = components[:, 0]
+        combined_data["Component 2"] = components[:, 1]
+
+        combined_data.to_csv(self.kpca_file)
+
 
     def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
         """Make a DataFrame of predicted CMCs."""
@@ -431,11 +455,18 @@ if __name__ == "__main__":
         action="store_true",
         help="Test saved model on NIST anionics data.",
     )
+    parser.add_argument(
+        "--kpca",
+        action="store_true",
+        help="Compute kernel matrix on Qin and NIST data after training UQ."
+    )
 
     args = parser.parse_args()
 
     if args.and_uq and args.just_uq:
         raise ValueError("Cannot set both `--and-uq` and `--just-uq` flags.")
+    if args.kpca and not (args.and_uq or args.just_uq):
+        raise ValueError("Must train UQ using `--and-uq` or `--just-uq` to compute kernel matrix.")
 
     dataset = dataset_map[args.dataset]
     model = model_map[args.model]
@@ -467,3 +498,5 @@ if __name__ == "__main__":
                 exp.test()
             if do_uq:
                 exp.train_uq(with_scaler=not args.no_gp_scaler, linear_mean_fn=args.lin_mean_fn)
+                if args.kpca:
+                    exp.kpca()
