@@ -293,3 +293,29 @@ class QinGraphData(DataLoader):
     def all_loader(self):
         """Get the full data loader."""
         return DisjointLoader(self.all_dataset, shuffle=False)
+
+def get_nist_and_qin(
+    mol_featuriser: MolNodeFeaturizer,
+    preprocess: Optional[LayerPreprocess] = None,
+) -> Tuple[DisjointLoader, pd.DataFrame]:
+    """Get a loader for all of the NIST and Qin data, for visualisation."""
+    nist_df = pd.read_csv(Datasets.NIST_NEW.value, header=0)
+    nist_df["Molecules"] = [MolFromSmiles(smiles) for smiles in nist_df["SMILES"]]
+
+    # These elements don't appear in the Qin dataset, so they don't have a one-hot encoding.
+    nist_df["Convertable"] = ~nist_df["SMILES"].str.contains(r"(Mn)|(Cs)|(Mg)")
+    convertable_df = nist_df[nist_df["Convertable"]]
+
+    nist_graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC"]))
+    nist_graphs = mols_to_graph(list(nist_df["Molecules"]), mol_featuriser, list(nist_df["log CMC"]))
+    nist_graphs = list(map(preprocess, nist_graphs)) if preprocess is not None else nist_graphs
+
+    qin_loader = QinGraphData(QinDatasets.QIN_ALL_RESULTS, mol_featuriser, preprocess)
+    qin_df = qin_loader.df
+    qin_df.rename(columns={"smiles": "SMILES", "exp": "log CMC"}, inplace=True)
+    qin_graphs = qin_loader.all_dataset.read()
+
+    combined_df = pd.concat([qin_df, convertable_df], ignore_index=True)
+    combined_graphs = qin_graphs + nist_graphs
+
+    return DisjointLoader(GraphData(combined_graphs), shuffle=False), combined_df

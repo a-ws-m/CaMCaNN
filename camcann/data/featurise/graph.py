@@ -157,7 +157,7 @@ class MolNodeFeaturizer:
             raise NotTrainedError()
         return self.one_hot.get_params()
 
-def mols_to_graph(mols: List[Mol], featuriser: MolNodeFeaturizer, targets: List[float]) -> Graph:
+def mols_to_graph(mols: List[Mol], featuriser: MolNodeFeaturizer, targets: List[float]) -> List[Graph]:
     """Convert a molecule to a graph using a featuriser."""
     adj_mats = [get_mol_adj_mat(mol) for mol in mols]
     features = featuriser.featurize_all_molecules(mols)
