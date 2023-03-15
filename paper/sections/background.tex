@@ -33,12 +33,15 @@ $\gamma_S^{L,\infty}$:
     x_S^L = \frac{1}{\gamma_S^{L,\infty}}
 \end{equation}
 
-The m-AD model considers the exchange equilibrium on a three-dimensional lattice of infinitely separated solvent and solute molecules in order to determine $\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model.
-Instead, the authors fitted an interchange energy, $\Delta$, separately for each molecule. Of course, if a new parameter must be fitted for every molecule, a model has no predictive ability. Therefore, correlations were examined between
-$\Delta$ and other, readily calculated surfactant properties, which will be discussed later.
+The m-AD model considers the exchange equilibrium on a three-dimensional lattice of infinitely separated solvent and solute molecules in order to determine $\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model;
+instead, the authors fitted an interchange energy, $\Delta$, separately for each molecule. Of course, if a new parameter must be fitted for every molecule, a model has no predictive ability. Therefore, correlations were examined between
+$\Delta$ and other, readily calculated surfactant values: the Kier-Hall zero-order index (KH0) of the tail groups, which indicates  and the total molecular energy of the surfactant.
 
-Where data from the literature was available, the predictive performance of the models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n} and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
-\ref{tab:segment-methods}.
+Where data from the literature was available, the predictive performance of the
+models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n}
+and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
+\ref{tab:segment-methods}. The models all have a reasonably good accuracy, but
+the SAFT model in particular is excellent.
 
 \begin{table}
     \caption{Comparison of the RMSEs of selected models on polyoxyethylene
@@ -55,6 +58,34 @@ Where data from the literature was available, the predictive performance of the 
     \end{tabular}
 \end{table}
 
-NOTE: I could talk about simulation approaches and other, purely empirical ones,
-but at this point I decided this section was getting long and moved on. Suggestions
-about what to focus on would be appreciated!
+Segment-based semi-empirical methods are therefore very promising for predicting
+CMCs within a class of surfactants. Their major drawback is that they are only
+applicable to molecules that can be decomposed into segments that have trained
+parameters. In addition, they must respect the limitations of the theories they
+are based upon. For example, it was described earlier how the SAFT model needs
+special treatment to be applied to this class of surfactants, requiring a
+function to describe a segment's soft sphere diameter with respect to the chain
+length. A more complex function would be required when branching is introduced,
+or when chains can be made up of combinations of different units, and it is
+difficult to make these adaptations.
+
+\subsubsection{Some quick notes}
+
+The distinction between theory, simulation and semi-empirical methods is very
+fuzzy; maybe don't try to draw a strict line here. Simulation approaches can
+offer numerical solutions to CMC prediction by explicitly considering the
+transfer of molecules from an aqueous phase to a micelle. Broadly, there have
+been two approaches: dissipative particle dynamics (DPD), which considers
+molecules as constituting particles in a box and simulates their movement
+according to the forces acting upon them; and approaches based on the conductor-like
+screening model for realistic solvation (COSMO-RS), which describes the chemical potential
+of introducing a molecule to a phase by considering the local charge densities in its
+immediate environment.
+
+Purely empirical methods have a very heavy reliance on data abundance. Empirical
+methods offer a way of making predictions even when a unified theory that ties
+in the behaviour of several classes of molecules is not readily apparent, or
+else when the theory requires computationally expensive procedures to put into
+practice. However, without an underlying theory, the assumptions and therefore
+the limitations of the model are not well defined and it is possible for the
+model to `learn' trends that contradict established scientific intuition.
