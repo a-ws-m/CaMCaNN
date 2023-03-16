@@ -246,7 +246,7 @@ The next step is a pooling layer, which converts the graph to a single \emph{lat
           where $\vec{w}$ are trained weights.
 \end{description}
 
-After training the model, $\lrv{}$ effectively acts as a machine-learned representation of the molecule that captures only the information about its topology and composition that is useful for predicting the CMC. Finding an optimised representation is a feature of neural networks that happens implicitly during training, called \emph{representation learning} \cite{goodfellowDeepLearning2016a}. 
+After training the model, $\lrv{}$ effectively acts as a machine-learned representation of the molecule that captures only the information about its topology and composition that is useful for predicting the CMC. Finding an optimised representation is a feature of neural networks that happens implicitly during training, called \emph{representation learning} \cite{goodfellowRepresentationLearning2016}. 
 The final step is a readout neural network: a multi-layer perceptron which acts as a nonlinear approximator to map this
 latent representation vector to the CMC property prediction. Each layer in this neural network, called a `dense' layer, outputs a new vector, $\vec{v}^{(l)}$:
 \begin{equation}
