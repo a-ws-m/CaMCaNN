@@ -130,7 +130,13 @@ The authors recommended applying both strategies and using the lower result as
 the CMC prediction. With the combined strategies, they attained an RMSE of
 \SI{0.81}{\log \micro M} on a dataset of 24 surfactants, containing a mix of
 ionic, nonionic and zwitterionic. Excluding the two worst predictions gives a
-much more favourable RMSE of \SI{0.55}{\log \micro M}.
+much more favourable RMSE of \SI{0.55}{\log \micro M}. These results are
+relatively inaccurate, but it is impressive that the technique can be applied
+across all classes of surfactant, whilst requiring significantly lower
+computational cost than MD. Furthermore, the authors were able to determine
+which of the nonionic surfactants had a low propensity to form micelles by
+whether the predicted IFT between water and surfactant phases was large at
+equilibrium, which is a testament to the model's interpretability.
 
 Other approaches have extended COSMO-RS to explicitly account for the internal
 structure of micelles, such as COSMOmic, which treats a micelle as being made of
@@ -148,15 +154,49 @@ partition coefficient of inserting a surfactant molecule into the micelle.
 COSMOmic by first performing MD simulations to attain the layer-wise atomic
 distributions. As discussed above, MD by itself can calculate the CMC of a
 system, which might suggest that the COSMOmic step is redundant. However, one
-expects the atomic distribution to converge much more rapidly than equilibrium
-concentrations, if the micelle is pre-assembled, which means that the initial
-configuration for the simulation constitutes a guess for the micelle's
-structure: its shape and aggregation number.
+can expect the layer-wise atomic distributions to converge much more rapidly
+than equilibrium concentrations if the micelle is \emph{pre-assembled}, meaning
+that the initial configuration for the simulation constitutes a guess for the
+micelle's structure. The authors then predicted the CMCs of several
+polyoxyethylene alcohols by determining the partition coefficients of inserting
+the respective surfactant monomer into a micelle.
 
-TODO: Give metrics for this model, talk about the issues with molecular
-conformations and the problem of pre-assembling micelles in this way. Discuss
-COSMOplex metrics as well as the difficulty of local minima with respect to the
-iterative procedure; the initial guess is very important.
+Another consideration with this technique is that molecules may adopt several
+conformations, each with a unique COSMO-surface. Although it was found that the
+choice of conformer used to describe the micellar layer-wise charge density
+profiles has a negligible effect on the results
+\cite{jakobtorweihenCombinationCOSMOmicMolecular2013}, the conformer used for
+the partitioning surfactant is important. With the best choice of conformer, the
+authors achieved an RMSE of $\sim \SI{0.36}{\log \micro M}$ on predictions for
+\ce{C_$i$E6} surfactants, where $i \in \{6, 8, 10, 12, 14, 16\}$. However, when
+considering surfactants with fixed tail length but varying head group size,
+\ce{C10E_$j$}, $j \in {4, 6, 8}$, the authors could not identify a consistent
+conformer selection that would not yield significant outliers.
+
+The technique is a promising compromise the accuracy of the full-MD approach
+and the lower computational cost of COSMO-RS. However, to improve the reliability,
+a method for accurately identifying a good choice of conformer must be realised,
+as well as the shape of the pre-assembled micelle.
+
+Finally, COSMOplex is a recent extension of COSMOmic that removes the need to
+perform and initial MD simulation to determine the micellar structure
+\cite{klamtCOSMOplexSelfconsistentSimulation2019}. Instead, it optimises a guess
+of the initial structure using a self-consistent approach by considering
+COSMOmic's predicted probability distribution of the partitioning surfactant's
+configuration within the micelle to iteratively yield new estimates for the
+layer-wise charge distributions. In this way, the authors predicted the CMCs of
+10 nonionic surfactants with varied head and tail group chemistries, achieving
+an RMSE of \SI{0.86}{\log \micro M}. The authors note that these results are
+preliminary and stand to be improved.
+
+The advantage of this technique is both a decrease in computational cost and
+improved parsimony; by eliminating the MD step, there is reduced complexity and
+the aforementioned difficulties with force field considerations are irrelevant.
+One of the difficulties with the technique is its sensitivity to the original
+guess for the atomic distributions
+\cite{klamtCOSMOplexSelfconsistentSimulation2019}. Improving the guess or the
+optimisation technique to be less sensitive to local minima would therefore lead
+to more accurate predictions.
 
 \citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model (s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear polyoxyethylene alcohols by first deriving expressions for the activity coefficient of a surfactant in water. In the s-UNIQUAC model, a segment-based local-composition model was used, and the fugacity could then be approximated using the fitted interaction energies between the segments and water. In this case, the segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the surfactant was treated as a chain of soft-sphere segments in order to first derive the Helmholtz energy of the solution and, from that, derive the fugacity. In this case, the segments used were \ce{CH2}/\ce{CH3} (these were treated as the same segment) and \ce{C2H4O}. The interaction energies of the segments were fitted, as well as parameters of a function describing the soft sphere diameter of a segment in a chain in terms of the chain length.
 
