@@ -173,10 +173,10 @@ considering surfactants with fixed tail length but varying head group size,
 \ce{C10E_$j$}, $j \in {4, 6, 8}$, the authors could not identify a consistent
 conformer selection that would not yield significant outliers.
 
-The technique is a promising compromise the accuracy of the full-MD approach
-and the lower computational cost of COSMO-RS. However, to improve the reliability,
-a method for accurately identifying a good choice of conformer must be realised,
-as well as the shape of the pre-assembled micelle.
+The technique is a promising compromise between the accuracy of the full-MD
+approach and the lower computational cost of COSMO-RS. However, to improve the
+reliability, a method for accurately identifying a good choice of conformer and
+the shape of the pre-assembled micelle must be realised.
 
 Finally, COSMOplex is a recent extension of COSMOmic that removes the need to
 perform and initial MD simulation to determine the micellar structure
@@ -197,6 +197,18 @@ guess for the atomic distributions
 \cite{klamtCOSMOplexSelfconsistentSimulation2019}. Improving the guess or the
 optimisation technique to be less sensitive to local minima would therefore lead
 to more accurate predictions.
+
+COSMO techniques are an interesting method to reduce the dimensionality of
+self-assembly structure studies whilst maintaining a solid grounding in theory,
+which allows a researcher to directly relate the results to scientific
+principles whilst understanding the limits of the approximations \emph{a
+priori}. However, \citet{herbertDielectricContinuumMethods2021} have argued that
+the discussion around COSMO-RS indicates that there is not enough detail in the
+literature to allow for an open source implementation, meaning that many modern
+extensions are only available in the proprietary software package
+\textsc{COSMOTHERM} \cite{eckertFastSolventScreening2002}. The closed-source
+nature of the technology is a barrier to scientific scrutiny and, crucially,
+improvement of the model.
 
 \citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model (s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear polyoxyethylene alcohols by first deriving expressions for the activity coefficient of a surfactant in water. In the s-UNIQUAC model, a segment-based local-composition model was used, and the fugacity could then be approximated using the fitted interaction energies between the segments and water. In this case, the segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the surfactant was treated as a chain of soft-sphere segments in order to first derive the Helmholtz energy of the solution and, from that, derive the fugacity. In this case, the segments used were \ce{CH2}/\ce{CH3} (these were treated as the same segment) and \ce{C2H4O}. The interaction energies of the segments were fitted, as well as parameters of a function describing the soft sphere diameter of a segment in a chain in terms of the chain length.
 
@@ -246,23 +258,11 @@ length. A more complex function would be required when branching is introduced,
 or when chains can be made up of combinations of different units, and it is
 difficult to make these adaptations.
 
-\subsubsection{Some quick notes}
-
-The distinction between theory, simulation and semi-empirical methods is very
-fuzzy; maybe don't try to draw a strict line here. Simulation approaches can
-offer numerical solutions to CMC prediction by explicitly considering the
-transfer of molecules from an aqueous phase to a micelle. Broadly, there have
-been two approaches: dissipative particle dynamics (DPD), which considers
-molecules as constituting particles in a box and simulates their movement
-according to the forces acting upon them; and approaches based on the conductor-like
-screening model for realistic solvation (COSMO-RS), which describes the chemical potential
-of introducing a molecule to a phase by considering the local charge densities in its
-immediate environment.
-
-Purely empirical methods have a very heavy reliance on data abundance. Empirical
-methods offer a way of making predictions even when a unified theory that ties
-in the behaviour of several classes of molecules is not readily apparent, or
-else when the theory requires computationally expensive procedures to put into
-practice. However, without an underlying theory, the assumptions and therefore
-the limitations of the model are not well defined and it is possible for the
-model to `learn' trends that contradict established scientific intuition.
+Finally, purely empirical methods have a very heavy reliance on data abundance.
+Empirical methods offer a way of making predictions even when a unified theory
+that ties in the behaviour of several classes of molecules is not readily
+apparent, or else when the theory requires computationally expensive procedures
+to put into practice. However, without an underlying theory, the assumptions and
+therefore the limitations of the model are not well defined and it is possible
+for the model to `learn' trends that contradict established scientific
+intuition.
