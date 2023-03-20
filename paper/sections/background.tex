@@ -275,16 +275,16 @@ the SAFT model in particular is excellent.
     \end{tabular}
 \end{table}
 
-Segment-based semi-empirical methods are therefore very promising for predicting
-CMCs within a class of surfactants. Their major drawback is that they are only
+Segment-based semi-empirical methods are very promising for predicting CMCs
+within a class of surfactants. Their major drawback is that they are only
 applicable to molecules that can be decomposed into segments that have trained
 parameters. In addition, they must respect the limitations of the theories they
 are based upon. For example, it was described earlier how the SAFT model needs
-special treatment to be applied to this class of surfactants, requiring a
-function to describe a segment's soft sphere diameter with respect to the chain
-length. A more complex function would be required when branching is introduced,
-or when chains can be made up of combinations of different units, and it is
-difficult to make these adaptations.
+special treatment to be applied to these polyoxyethylene alcohol surfactants,
+requiring a function to describe a segment's soft sphere diameter with respect
+to the chain length. A more complex function would be required when branching is
+introduced, or when chains can be made up of combinations of different units,
+and it is difficult to make these adaptations.
 
 Finally, purely empirical methods have a very heavy reliance on data abundance.
 Empirical methods offer a way of making predictions even when a unified theory
@@ -295,7 +295,46 @@ therefore the limitations of the model are not well defined and it is possible
 for the model to `learn' trends that contradict established scientific
 intuition.
 
+Empirical QSPR methods require validation to determine their reliability and
+applicability domain
+\cite{veerasamyValidationQSARModelsstrategies2011,tropshaBestPracticesQSAR2010,leonardSelectionTrainingTest2006},
+which is often achieved by partitioning the available data into \emph{training}
+and \emph{test} subsets; the former is used for optimising the model's
+parameters, but the latter is `hidden' from the model until training is
+complete, and the prediction metrics on the test data indicate how the model can
+be expected to perform in general. The test set should span the chemical space
+in which the model is intended to be applied
+\cite{leonardSelectionTrainingTest2006}. At a high level, this means that all
+classes of surfactant that are `advertised' as being within the applicability
+domain of the model should be represented in both the test and train data
+subsets.
 
+Every empirical QSPR method is characterised by two features: the choice of
+molecular descriptors, which are the numerical features that make up the model
+inputs, and the functional form of the approximator that maps the descriptors to
+the property prediction. This functional form includes the parameters that are
+optimised based upon the training data.
 
-TODO: Discuss pure group contribution method and other generic QSPR approaches:
-identify lots of descriptors, do feature selection then generate a model.
+\citet{matteiModelingCriticalMicelle2013} extended the Marrero and Gani
+group-contribution method \cite{ganiAutomaticCreationMissing2005} to predict the
+CMCs of 161 nonionic surfactants. This is another segment-based method, but here
+the pretence of describing the problem in terms of the effect of interacting
+segments is abandoned. Instead, each segment is treated as an independent
+\emph{group} that contributes to the prediction in an additive, linear fashion.
+
+The descriptors in this case are the number of each group present in a molecule,
+which are identified using the constraint that some groups are not allowed to
+overlap with one another to avoid redundant information in the descriptor. In
+the original method \cite{ganiAutomaticCreationMissing2005}, different `orders'
+of groups were identified; the first-order groups are forbidden from overlapping
+with one another and they are formulated so that any molecule of interest can be
+described using these groups exclusively. Higher order groups serve to
+distinguish polyfunctional molecules and isomers
+\cite{ganiAutomaticCreationMissing2005}.
+
+\citet{matteiModelingCriticalMicelle2013} introduced third-order groups to
+improve their model's accuracy by analysing the molecules with the highest
+prediction errors after training an initial model with just the default set of
+first- and second-order groups.
+
+TODO: Discuss feature selection analogy and metrics. Tie-in with GNN approach by Qin et al.

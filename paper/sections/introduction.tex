@@ -17,11 +17,6 @@ for predicting CMCs of aqueous, single-surfactant systems will be given.
 
 \input{sections/background.tex}
 
-The two fundamental differences between them are the choice of molecular
-descriptors, the numerical features that form the basis set for the model
-inputs, and the functional form of the approximator that maps the descriptor to
-the property prediction. 
-
 Recently, an approach based on graph neural networks (GNNs) has produced highly accurate predictions whilst being applicable to nonionic, cationic, anionic and zwitterionic surfactants simultaneously
 \cite{qinPredictingCriticalMicelle2021}. Neural networks have many trainable parameters and a complex functional form. This ensures their versatility as universal approximators but makes them highly susceptible to overfitting \cite{bejaniSystematicReviewOverfitting2021}. Using such complex models, we also abandon the parsimony exhibited by Stauff-Klevens, and chemical insights can be much more difficult to derive. Furthermore, deep neural networks' ostensible `universality' can be misleading: extrapolating the model's results to out-of-domain molecules (ones that are `dissimilar' from the training data) will yield unreliable and potentially misleading predictions.
 
