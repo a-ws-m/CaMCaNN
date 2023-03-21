@@ -17,8 +17,16 @@ for predicting CMCs of aqueous, single-surfactant systems will be given.
 
 \input{sections/background.tex}
 
-Recently, an approach based on graph neural networks (GNNs) has produced highly accurate predictions whilst being applicable to nonionic, cationic, anionic and zwitterionic surfactants simultaneously
-\cite{qinPredictingCriticalMicelle2021}. Neural networks have many trainable parameters and a complex functional form. This ensures their versatility as universal approximators but makes them highly susceptible to overfitting \cite{bejaniSystematicReviewOverfitting2021}. Using such complex models, we also abandon the parsimony exhibited by Stauff-Klevens, and chemical insights can be much more difficult to derive. Furthermore, deep neural networks' ostensible `universality' can be misleading: extrapolating the model's results to out-of-domain molecules (ones that are `dissimilar' from the training data) will yield unreliable and potentially misleading predictions.
-
-In this article, we develop two families of models of very different complexity: a linear model and a GNN. We evaluate the difference in performance and interpretability of the models. We also apply a technique for adding uncertainty
-quantification to the GNN, which can indicate whether a molecule is within the model's applicability domain and, therefore, whether a given prediction is reliable.
+Here, we build upon this previously published GNN model in two ways: we apply a
+hyperparameter search algorithm to further optimise the model's architecture and
+improve its accuracy, and we implement an \emph{uncertainty quantification}
+technique that yields confidence intervals alongside CMC predictions. This
+improved model is compared against an adaptation of the group contribution
+approach that determines the entire set of groups to consider using a feature
+selection routine. In addition, a separate dataset is introduced so as to
+perform external validation and to probe the limits of the applicability domain
+of the models, as well as to analyse the uncertainty quantification. Finally, we
+discuss methods to interpret both models, and demonstrate a technique that
+allows one to visualise chemical space through the `eyes' of the trained GNN. We
+show that this technique can help to probe the limits of the model's
+applicability domain.

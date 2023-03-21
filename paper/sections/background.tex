@@ -262,7 +262,7 @@ the SAFT model in particular is excellent.
 
 \begin{table}
     \caption{Comparison of the RMSEs of selected models on polyoxyethylene
-        alcohols. Data from \citet{chengCorrelationCriticalMicelle2005}.}
+        alcohols' CMCs. Data from \citet{chengCorrelationCriticalMicelle2005}.}
     \label{tab:segment-methods}
     \begin{tabular}{lr}
         \toprule
@@ -317,24 +317,67 @@ optimised based upon the training data.
 
 \citet{matteiModelingCriticalMicelle2013} extended the Marrero and Gani
 group-contribution method \cite{ganiAutomaticCreationMissing2005} to predict the
-CMCs of 161 nonionic surfactants. This is another segment-based method, but here
+CMCs of 150 nonionic surfactants. This is another segment-based method, but here
 the pretence of describing the problem in terms of the effect of interacting
 segments is abandoned. Instead, each segment is treated as an independent
 \emph{group} that contributes to the prediction in an additive, linear fashion.
 
-The descriptors in this case are the number of each group present in a molecule,
-which are identified using the constraint that some groups are not allowed to
-overlap with one another to avoid redundant information in the descriptor. In
-the original method \cite{ganiAutomaticCreationMissing2005}, different `orders'
-of groups were identified; the first-order groups are forbidden from overlapping
-with one another and they are formulated so that any molecule of interest can be
-described using these groups exclusively. Higher order groups serve to
-distinguish polyfunctional molecules and isomers
+The descriptors in this case are the number of each group present in a molecule.
+In the original method \cite{ganiAutomaticCreationMissing2005}, different
+`orders' of groups were identified; the first-order groups are forbidden from
+overlapping with one another and they are formulated so that any molecule of
+interest can be described using these groups exclusively. Higher order groups
+serve to distinguish polyfunctional molecules and isomers
 \cite{ganiAutomaticCreationMissing2005}.
 
 \citet{matteiModelingCriticalMicelle2013} introduced third-order groups to
 improve their model's accuracy by analysing the molecules with the highest
-prediction errors after training an initial model with just the default set of
-first- and second-order groups.
+prediction errors after training an initial model with just the prior work's set
+of first- and second-order groups \cite{ganiAutomaticCreationMissing2005}. This
+is an example of \emph{feature selection}, whereby the set of descriptors is
+expanded or contracted to adapt to the problem
+\cite{liFeatureSelectionData2017,guyonIntroductionVariableFeature2003}.
 
-TODO: Discuss feature selection analogy and metrics. Tie-in with GNN approach by Qin et al.
+The authors randomly selected 30 compounds to use as a test dataset, achieving a
+RMSE of \SI{0.13}{\log \micro M}. The model is therefore remarkably accurate and
+boasts high interpretability: the fitted contributions of each group describe
+their effect on the CMC quantitatively, and the existence of higher order
+polyfunctional groups with large contributions implies that their constituent
+functional groups have a significant interaction with each other that affects
+the CMC. However, it may be difficult to determine whether a new molecule is
+within the applicability domain of the model, particularly because positional
+isomers are not necessarily distinguished from each another using the group
+representation.
+
+Recently, an approach based on graph neural networks (GNNs) has produced highly
+accurate predictions whilst being applicable to nonionic, cationic, anionic and
+zwitterionic surfactants simultaneously \cite{qinPredictingCriticalMicelle2021}.
+Neural networks have many trainable parameters and a complex functional form.
+This ensures their versatility as universal approximators but makes them highly
+susceptible to overfitting \cite{bejaniSystematicReviewOverfitting2021}. This
+approach boasts potentially the largest applicability domain (for a single set
+of trained parameters) of any model discussed previously, except for MD
+simulations, though simulations spanning so many classes of molecule may require
+different forcefields.
+
+GNN approaches, like the one of \citet{qinPredictingCriticalMicelle2021},
+operate on molecular graphs, which are characterised by atomic nodes whose edges
+represent bonds. Each operation on this graph considers just the local
+environment of an atom, i.e. the atoms that can be reached by traversing a
+single bond, but by stacking these operations in sequence, the size of the
+environment that is considered increases. In this sense the model is similar to
+a group contribution approach, but the groups are determined by walking $r$
+steps along bonds from every atom in the molecule, where $r$ is equal to the
+number of subsequent graph operations, so that every group overlaps.
+Furthermore, each `contribution' is non-linear, and the number of contributions
+is always equal to the number of atoms in a molecule. A more detailed discussion
+of GNNs will be given in the Method.
+
+The abstract operations that neural networks perform make deriving chemical
+insights as to the functioning of the model quite difficult. Furthermore, deep
+neural networks' ostensible `universality' can be misleading: extrapolating the
+model's results to out-of-domain molecules (ones that are `dissimilar' from the
+training data) will yield unreliable and potentially misleading predictions. It
+is also not readily apparent which molecules are in-domain without having an
+intimate knowledge of the training data; this becomes very difficult, as we wish
+to use the largest possible size of training dataset.
