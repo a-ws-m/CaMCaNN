@@ -20,12 +20,17 @@ Two datasets were used for training and testing:
           work was developed by taking the mean of the suggested CMC
           measurements between \SIrange{20}{25}{\degreeCelsius}, and with no
           additives, for each surfactant. These data were used exclusively for
-          testing, to assess whether sampling bias affects the evaluated
-          performance.
+          testing, as another layer of external validation.
 \end{description}
 
-The Qin data \cite{qinPredictingCriticalMicelle2021} were split into training and test subsets to simulate the real-world scenario of using a model to make inferences about molecules for which no data is available. The training data were used to fit the models,
-whilst test data were `locked away' until it had been decided that the model was optimised, and the performance metrics on the test data were used for evaluation. For some models, the training data were further split into optimisation and validation subsets; the optimisation data were used when calculating the loss function during model fitting. The validation data were used for on-the-fly evaluation of model performance during training.
+The Qin data \cite{qinPredictingCriticalMicelle2021} were split into training
+and test subsets; the training data were used to fit the models, whilst test
+data were `locked away' until it had been decided that the model was optimised,
+and the performance metrics on the test data were used for evaluation. For some
+models, the training data were further split into optimisation and validation
+subsets; the optimisation data were used when calculating the loss function
+during model fitting. The validation data were used for on-the-fly evaluation of
+model performance during training.
 
 To provide a consistent benchmark of model performance, the same data splits were used as \citet{qinPredictingCriticalMicelle2021}. The number of each class of surfactant in the train and test subsets of the data are shown in Table~\ref{tab:data-split}. Only the models trained on the Qin-All dataset were evaluated on the NIST dataset, as it contained ionic compounds.
 
