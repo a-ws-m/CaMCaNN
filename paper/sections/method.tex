@@ -11,11 +11,17 @@ Two datasets were used for training and testing:
           between \SIrange{20}{25}{\celsius}.
     \item[The NIST dataset] is a dataset of 43 unique surfactants and their
           aqueous CMCs, extracted from the work of
-          \citet{mukerjeeCriticalMicelleConcentrations1971}. For each
-          surfactant, the mean of the experimental measurements between
-          \SIrange{20}{25}{\degreeCelsius} and with no additives was used as the
-          target CMC value. These data were used exclusively for testing, to
-          assess whether sampling bias affects the evaluated performance.
+          \citet{mukerjeeCriticalMicelleConcentrations1971}. The original
+          document compiles CMC measurements for each molecule across several
+          temperatures and with various additives. Each measurement was given a
+          quality rating depending on the authors' assessment of the
+          experimental method; measurements with a sufficiently good rating were
+          categorised as `suggested' measurements. The dataset used for this
+          work was developed by taking the mean of the suggested CMC
+          measurements between \SIrange{20}{25}{\degreeCelsius}, and with no
+          additives, for each surfactant. These data were used exclusively for
+          testing, to assess whether sampling bias affects the evaluated
+          performance.
 \end{description}
 
 The Qin data \cite{qinPredictingCriticalMicelle2021} were split into training and test subsets to simulate the real-world scenario of using a model to make inferences about molecules for which no data is available. The training data were used to fit the models,
