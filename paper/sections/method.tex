@@ -190,15 +190,27 @@ where $\vec{w}$ is a trained weights vector, the elements of which correspond to
 However, the issues of the large feature vector size and multicollinearity must be addressed; a na\"ive fit using ordinary least squares (OLS) would likely produce poor results. To that end, a process of \emph{feature selection} was
 applied, whereby a subset of the atomic environments were selected for use in the model. There are several approaches to feature selection\cite{liFeatureSelectionData2017}; here, we chose an approach based on \emph{regularisation}.
 
-In this approach, we include a term in the loss function that depends on the norm of $\vec{w}$. The two types of constraints considered in this paper are $\ell_1$ and $\ell_2$ regularisation, which correspond to the inclusion of
-$\ell_1$ and $\ell_2$ norms, respectively. By combining $\ell_1$ regularisation with the least squares regressor, we obtain the least absolute shrinkage and selection operator (LASSO)\cite{tibshiraniRegressionShrinkageSelection1996}:
+In this approach, we include a term in the loss function that depends on the
+norm of $\vec{w}$. The two types of constraints considered in this paper are
+$\ell_1$ and $\ell_2$ regularisation, which correspond to the inclusion of
+$\ell_1$ and $\ell_2$ norms, respectively. Concretely the ElasticNet
+\cite{zouRegularizationVariableSelection2005} loss function was employed:
 
 \begin{equation}
-    \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} \left \Vert \mathbf{C}\vec{w} + \vec{b} - \vec{y} \right \Vert_2 ^ 2 + \alpha \left \Vert \vec{w} \right \Vert_1},
+    \label{eq:elastic}
+    \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} \left \Vert \mathbf{C}\vec{w} + \vec{b}- \vec{y} \right \Vert_2 ^ 2 + \alpha\rho \left \Vert \vec{w} \right \Vert_1} + \frac{\alpha(1 - \rho)}{2} \left \Vert \vec{w} \right \Vert_2^2,
 \end{equation}
 
-where $n_{\text{samples}}$ is the number of training samples; $\vec{y}$ are the training data's true values of $\log X_{cmc}$; $\vec{b}$ is a vector with elements all equal to $b$; and $\alpha$ is a user-defined hyperparameter
-describing the degree of regularisation ($\alpha \geq 0$). $\mathbf{C}$ are the standardised training data feature vectors, $\{\vec{c}^{\,\prime}_n \,|\, 1 \leq n \leq n_\text{samples}\}$, stacked row-wise into a matrix. Standardising the environment counts ensures that they have zero mean and unit variance:
+where $n_{\text{samples}}$ is the number of training samples; $\vec{y}$ are the
+training data's true values of $\log X_{cmc}$; $\vec{b}$ is a vector with
+elements all equal to $b$; and $\alpha$ and $\rho$ are user-defined
+hyperparameters describing the degree of regularisation ($\alpha \geq 0$), and
+the proportions of the regularisation terms ($0 < \rho < 1$), respectively.
+$\mathbf{C}$ are the standardised training data feature vectors,
+$\{\vec{c}^{\,\prime}_n \,|\, 1 \leq n \leq n_\text{samples}\}$, stacked
+row-wise into a matrix..
+
+Standardising the environment counts ensures that they have zero mean and unit variance:
 \begin{equation}
     \label{eq:standard-scaling}
     {c}^{\,\prime}_m = \frac{c_m - u_m}{s_m},
@@ -206,34 +218,19 @@ describing the degree of regularisation ($\alpha \geq 0$). $\mathbf{C}$ are the 
 where $u_m$ and $s_m$ are the mean and standard deviation of the number of $\mathcal{E}_m$ in each molecule in the training data. This standardisation is necessary to ensure that the regularisation term is not dominated by
 environments with high variance and that it accounts for common and uncommon environments alike.
 
-By imposing the $\ell_1$ penalty, the model is biased towards learning a \emph{sparse} weight vector: many of its elements will be negligible. The corresponding features can be removed from the representation.
+By imposing the $\ell_1$ penalty, the model is biased towards learning a
+\emph{sparse} weight vector: many of its elements will be negligible. The
+corresponding features can be removed from the representation. Meanwhile, the
+$\ell_2$ penalty means that a `grouping' effect is achieved, ensuring that
+highly correlated groups all get given similar weights, rather than discarding
+some of them, and it also ensures that there is no upper bound on the number of
+groups that the model includes. Both of these are potential issues when using
+only an $\ell_1$ norm in the loss function
+\cite{efronLeastAngleRegression2004,zouRegularizationVariableSelection2005}.
 
-However, LASSO has two major flaws that make it inappropriate for the task of ECFP regression:
 
-\begin{itemize}
-    \item The number of unique atomic environments is greater than the size of the training data, $n_\text{samples}$, but LASSO will select at most $n_\text{samples}$ features \cite{efronLeastAngleRegression2004}.
-          Therefore, some important environments may still be excluded.
-    \item LASSO tends to select only one of a group of highly correlated
-          variables when there is no reason why that particular one should be
-          prioritised \cite{zouRegularizationVariableSelection2005}. This is
-          undesirable because we want to include both large and small atomic
-          environments, despite their large correlation, and we might be misled into
-          thinking that some highly correlated environments have no effect on CMC.
-\end{itemize}
-
-ElasticNet addresses these issues by imposing an additional $\ell_2$ penalty
-\cite{zouRegularizationVariableSelection2005}:
-
-\begin{equation}
-    \label{eq:elastic}
-    \min_{\vec{w}} { \frac{1}{2n_{\text{samples}}} \left \Vert \mathbf{C}\vec{w} + \vec{b}- \vec{y} \right \Vert_2 ^ 2 + \alpha\rho \left \Vert \vec{w} \right \Vert_1} + \frac{\alpha(1 - \rho)}{2} \left \Vert \vec{w} \right \Vert_2^2,
-\end{equation}
-where $\rho$ is a user-defined hyperparameter controlling the proportions of the regularisation terms, $0 < \rho < 1$. This removes the hard limit on the number of features that can be selected and also exhibits the `grouping effect',
-whereby features with high correlation tend to be assigned similar weights.
-
-Because of these advantages, an ElasticNet linear regression model was applied to select the most important ECFP features for predicting $\log X_{cmc}$. Both hyperparameters, $\alpha$ and $\rho$ must be defined when training the model.
-In order to select the best values, $k$-fold cross-validation was employed: the training data were partitioned into $k$ subsets of roughly equal size. $k$ models were trained using $k-1$ subsets, and the final subset was used for
-validation. The average mean-squared error of the $k$ models, evaluated on their respective validation subsets, is the model's final score. This routine, with $k=5$, was applied for a range of $\alpha$ and $\rho$ combinations, and the
+To determine the best values for $\alpha$ and $\rho$, $k$-fold cross-validation was employed: the training data were partitioned into $k$ subsets of roughly equal size. $k$ models were trained using $k-1$ optimisation subsets, and the final subset was used for
+validation. The average mean-squared error of the $k$ models, evaluated on their respective validation subsets, is the overall final score. This routine, with $k=5$, was applied for a range of $\alpha$ and $\rho$ combinations, and the
 lowest-scoring combination was used. The hyperparameter search space is defined in the Supplementary Information.
 
 The features with non-negligible fitted weights from ElasticNet were then selected for use in the final linear model. This model, ridge regression, uses just $\ell_2$ regularisation so that all of the weights are non-negligible, but we
@@ -241,7 +238,7 @@ still address the issue of multicollinearity \cite{mcdonaldRidgeRegression2009}:
 \begin{equation}
     \min_{\vec{w}} \left \Vert \mathbf{C} \vec{w} + \vec{b} - \vec{y} \right \Vert_2^2 + \alpha \left \Vert \vec{w}\right \Vert_2^2.
 \end{equation}
-A similar cross-validation method to the one described above was used to determine the best $\alpha$ parameter, but using $k=n_\text{samples}-1$. Because only one hyperparameter needs to be determined. There are far fewer trials per
+A similar cross-validation method to the one described above was used to determine the best $\alpha$ parameter, but using leave-one-out cross-validation, whereby $k=n_\text{samples}-1$. Because only one hyperparameter needs to be determined. There are far fewer trials per
 fold, and therefore a greater number of folds can be used.
 
 It was empirically observed that the combination of ElasticNet feature selection and a final regression with the simpler ridge regression model yielded better results, likely due to using a larger number of folds when determining the best value for $\alpha$. Both models were implemented using scikit-learn \cite{pedregosaScikitlearnMachineLearning2011}.
