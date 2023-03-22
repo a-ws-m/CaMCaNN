@@ -60,7 +60,50 @@ engineering} and \emph{model selection}, respectively.
 
 \subsection{Feature engineering}
 
-The ideal molecular representation depends on the task at hand. Ideally, it should be compact but complete \cite{faberCrystalStructureRepresentations2015,himanenDScribeLibraryDescriptors2020}; `as simple as possible, but not simpler.' To that end, the representation should contain enough information to distinguish between isomers that with distinct properties. However, concessions can be made if we restrict the model's domain and self-imposed limits on the type of isomers we expose the model to, both during training and in use. Representations may also include descriptions of state, such as temperature and pressure \cite{chenGraphNetworksUniversal2019}, but this is redundant in cases where the training data spans a very limited range of states.
+In this work, two types of molecular descriptor are employed: extended
+connectivity fingerprints (ECFPs)
+\cite{rogersExtendedConnectivityFingerprints2010} and molecular graphs. 
+
+In the ECFP approach, the molecule is split into atomic environments up to a
+given radius, $r$: each environment is centred on an atom and extends $r$ steps
+along connecting bonds. Effectively, we discard the categorical encoding in
+favour of introducing more continuous, count-based features, like $n_c$. The set
+of all environments in the training data up to radius $r$ is extracted. The
+resulting feature vector, $\vec{c}$ for a molecule is described by
+\begin{equation}
+    \label{eq:ecfp}
+    c_m = \text{Count}(\mathcal{E}_m),
+\end{equation}
+where $\mathcal{E}_m$ represents the $m^\text{th}$ atomic environment.
+
+Now, a change in headgroup composition is reflected in a change in subgraph
+counts, and provided the new subgraph exists in our training data. The model can
+adjust its prediction accordingly. Branch points in a carbon chain are
+distinguished from main-chain groups, as they terminate in a \ce{CH} group
+rather than \ce{CH2}.
+
+ECFPs are similar to a segment-based approach; however, unlike segments or
+groups, subgraphs can overlap. As discussed above, a group contribution approach
+requires that a canonical `priority' of the groups be defined prior to
+featurising molecules. By using ECFPs, the manual identification of important
+groups and their priorities are skipped; feature importance determination is
+instead delegated to the model.
+
+Much like a group contribution approach, these fingerprints do not necessarily
+distinguish between all positional or chain isomers, particularly with smaller
+values of $r$, nor are stereoisomers treated differently.
+
+A potential disadvantage with this approach, compared to group contributions, is
+that the number of unique atomic environments is potentially very large relative
+to the size of the data available, which poses a risk of overfitting.
+Furthermore, larger environments necessarily envelop smaller ones, which means
+that there is some duplicate information in the representation: the presence of
+a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
+so that there is multicollinearity. This redundancy can impede model fitting and
+interpretation. However, these issues can be ameliorated using a process of
+\emph{feature selection}, which will be discussed below.
+
+
 
 % In the case of the Stauff-Klevens model, the representation effectively has two
 % components: the category of the headgroup, and the length of the tail group. The
@@ -101,31 +144,17 @@ The ideal molecular representation depends on the task at hand. Ideally, it shou
 % can apply the model even when we have made small changes to the headgroup, or
 % introduce branching and other functional groups to the tail.
 
-\subsubsection{Extended-connectivity fingerprints}
 
-In this approach, the molecule is split into atomic environments up to a given radius, $r$: each environment is centred on an atom and extends $r$ steps along connecting bonds. Effectively, we discard the categorical encoding in favour of
-introducing more continuous, count-based features, like $n_c$. The set of all environments in the training data up to radius $r$ is extracted. The resulting feature vector, $\vec{c}$ for a molecule is described by
-\begin{equation}
-    \label{eq:ecfp}
-    c_m = \text{Count}(\mathcal{E}_m),
-\end{equation}
-where $\mathcal{E}_m$ represents the $m^\text{th}$ atomic environment.
-
-Now, a change in headgroup composition is reflected in a change in subgraph counts, and provided the new subgraph exists in our training data. The model can adjust its prediction accordingly. Branch points in a carbon chain are
-distinguished from main-chain groups, as they terminate in a \ce{CH} group rather than \ce{CH2}. This type of representation is called an \emph{extended-connectivity fingerprint} (ECFP) \cite{rogersExtendedConnectivityFingerprints2010}.
-
-ECFPs are similar to a segment-based approach; however, unlike segments or groups, subgraphs can overlap. As discussed above, a group contribution approach requires that a canonical `priority' of the groups be defined prior to
-featurising molecules. By using ECFPs, the manual identification of important groups and their priorities are skipped; feature importance determination is instead delegated to the model.
-
-However, these fingerprints do not necessarily distinguish between all positional or chain isomers, particularly with smaller values of $r$, nor are stereoisomers treated differently. Another potential disadvantage is that the number of unique atomic environments is potentially very large relative to the size of the data available, which poses a risk of overfitting.
-Furthermore, larger environments necessarily envelop smaller ones, which means that there is some duplicate information in the representation: the presence of a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
-so that there is multicollinearity. This redundancy can impede model fitting and interpretation.
-
-\subsubsection{Molecular graph representation}
-
-Both of the approaches described so far rely on molecular feature vectors that cannot describe the molecule's topology. A molecular graph is a structure that achieves this, and it is a popular choice for cheminformatics as well as
-visualisation of molecular structure. In this approach, each atom is considered a \emph{node} and each bond an \emph{edge}. Rather than having a single feature vector to describe the molecule as a whole, each atom is assigned its own feature vector, $\vec{v}_i$, based on properties such as its element, hybridisation state, charge, etc. These feature vectors are concatenated into a node feature matrix, $\mathbf{V}$. The graph's structure is then defined by a
-binary adjacency matrix, $\mathbf{A}$:
+A molecular graph is a structure that describes the entire topology of a
+molecule and it is a popular choice for cheminformatics as well as visualisation
+of molecular structure. Each atom is considered a \emph{node} and each bond an
+\emph{edge}. Rather than having a single feature vector to describe the molecule
+as a whole, each atom is assigned its own feature vector, $\vec{v}_i$, based on
+properties such as its element, hybridisation state, charge, etc. The same set
+of atomic features were used here as in the work by
+\citet{qinPredictingCriticalMicelle2021}. These feature vectors are concatenated
+into a node feature matrix, $\mathbf{V}$. The graph's structure is then defined
+by a binary adjacency matrix, $\mathbf{A}$:
 
 \begin{equation}
     \label{eq:adjacency-mat}
@@ -135,7 +164,7 @@ binary adjacency matrix, $\mathbf{A}$:
     \end{cases}
 \end{equation}
 
-Molecular graphs are perhaps the most natural representations to visualise; see Figure \ref{fig:mol-graph}. This is an exact description of the molecule's topology that enables an atomistic machine learning approach.
+Molecular graphs are natural representations to visualise; see Figure \ref{fig:mol-graph}. This is exact description of the molecule's topology enables an atomistic machine learning approach.
 
 \begin{figure}
     \centering
@@ -151,7 +180,7 @@ Molecular graphs are perhaps the most natural representations to visualise; see 
 \subsubsection{ECFP model}
 
 Based on the prior knowledge encoded in Equation~\ref{eq:klevens}, it is
-reasonable to assume that certain atomic environments have a linear relationship to $\log X_{cmc}$. It, therefore, seems justified to apply a linear model to the ECFP fingerprints described in Equation~\ref{eq:ecfp}:
+reasonable to assume that certain atomic environments have a linear relationship to $\log X_{cmc}$. It therefore seems justified to apply a linear model to the ECFP fingerprints described in Equation~\ref{eq:ecfp}:
 \begin{equation}
     \label{eq:linear-ecfp}
     \log X_{cmc} = \vec{w} \cdot \vec{c} + b,
