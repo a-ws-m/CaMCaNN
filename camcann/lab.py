@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, Type
+from typing import Any, Callable, Dict, Optional, Union, Tuple
 
 import keras_tuner
 import numpy as np
@@ -106,6 +106,8 @@ class GraphExperiment(BaseExperiment):
         self.best_hp_file = self.results_path / "best_hps.json"
 
         self.kpca_file = self.results_path / "kernel_components.csv"
+
+        self.kernel_file = self.results_path / "full_kernel.csv"
 
         self.gp_param_file = self.model_path / "gp_params.json"
 
@@ -288,10 +290,7 @@ class GraphExperiment(BaseExperiment):
 
     def kpca(self, ndim: int = 2):
         """Perform KPCA on NIST and Qin data."""
-        combined_loader, combined_data = get_nist_and_qin(
-            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
-        )
-        kernel_matrix = self.uq_model.pairwise_matrix(combined_loader)
+        kernel_matrix, combined_data = self.pairwise()
 
         components = KernelPCA(ndim, kernel="precomputed").fit_transform(kernel_matrix)
 
@@ -299,6 +298,19 @@ class GraphExperiment(BaseExperiment):
             combined_data[f"Component {dim+1}"] = components[:, dim]
 
         combined_data.to_csv(self.kpca_file)
+    
+    def pairwise(self) -> Tuple[np.ndarray, pd.DataFrame]:
+        """Compute the kernel matrix on the NIST and Qin data."""
+        combined_loader, combined_data = get_nist_and_qin(
+            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+        )
+        kernel_matrix = self.uq_model.pairwise_matrix(combined_loader)
+
+        for j in range(kernel_matrix.shape[1]):
+            combined_data[f"K{j}"] = kernel_matrix[:, j]
+        
+        combined_data.to_csv(self.kernel_file)
+        return kernel_matrix, combined_data
 
     def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
         """Make a DataFrame of predicted CMCs."""
@@ -479,16 +491,21 @@ if __name__ == "__main__":
         type=int,
         help="Compute N kernel principal components on Qin and NIST data after training UQ.",
     )
+    parser.add_argument(
+        "--pairwise",
+        action="store_true",
+        help="Compute just the learned pariwise kernel on all of the data."
+    )
 
     args = parser.parse_args()
 
     if args.and_uq and args.just_uq:
         raise ValueError("Cannot set both `--and-uq` and `--just-uq` flags.")
-    if args.kpca and not (args.and_uq or args.just_uq):
+    if (args.kpca or args.pairwise) and not (args.and_uq or args.just_uq):
         raise ValueError(
             "Must train UQ using `--and-uq` or `--just-uq` to compute kernel matrix."
         )
-    if args.kpca <= 0:
+    if args.kpca is not None and args.kpca <= 0:
         raise ValueError("KPCA components must be positive.")
 
     dataset = dataset_map[args.dataset]
@@ -525,3 +542,5 @@ if __name__ == "__main__":
                 )
                 if args.kpca:
                     exp.kpca(args.kpca)
+                elif args.pairwise:
+                    exp.pairwise()
