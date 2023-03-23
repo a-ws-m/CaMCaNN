@@ -304,7 +304,7 @@ latent representation vector to the CMC property prediction. Each layer in this 
 \begin{equation}
     \vec{v}^{(l)} = \mathbf{W}^{(l)}\vec{v}^{\,(l-1)} + \vec{b}^{\,(l)},
 \end{equation}
-The full network's architecture is illustrated in Figure \ref{fig:model-topology}. The model was implemented using the open-source library Spektral\cite{grattarolaGraphNeuralNetworks2020}.
+The full network's architecture is illustrated in Figure \ref{fig:model-topology}. The model was implemented using the open-source library Spektral\cite{grattarolaGraphNeuralNetworks2020} and optimised using an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
 
 \begin{figure}
     \centering
@@ -345,4 +345,4 @@ The GP's predicted mean and standard deviation define a predicted normal distrib
 
 In this work, the GPs  were defined using a Mat\'ern kernel with parameter $1/2$. Furthermore, the multi-layer perceptron component of the GNN used to calculate $\lrv{}$ was employed as the GP's mean function.
 The kernel parameters were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
-The same optimisation/validation splitting was used as for the GNN hyperparameter search and training was stopped after \num{1000} iterations without improvement in the validation predictions' RMSE. This implementation was based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
+The same optimisation/validation splitting was used as for the GNN hyperparameter search and training was stopped after \num{1000} iterations without improvement in the validation predictions' RMSE, or after a total of \num{5000} iterations. This implementation was based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
