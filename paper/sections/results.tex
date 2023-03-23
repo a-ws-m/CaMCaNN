@@ -108,6 +108,25 @@ the uncertainty estimates.
 Future efforts to improve this type of model may consider incorporating another term in the loss function for the GNN that explicitly biases the model towards learning a form of $\lrv{}$ that captures this similarity. Alternatively, a
 variational Gaussian process could be used, which approximates the Gaussian process using a fixed-size set of `pseudo-points' \cite{hensmanGaussianProcessesBig2013a}; this would enable the entire GNN/GP model to be trained at once using backpropagation \cite{moriartyUnlockNNUncertaintyQuantification2022}.
 
+\subsection{NIST outliers}
+
+Several of the NIST molecules were expected to be outside of the applicability
+domain of the model, which justifies their poor prediction accuracy. The
+majority of the outliers' CMCs are underpredicted, and the GNN/GP model is
+overconfident in their predictions. To understand why the predictions are wrong,
+we exploit the kernel function from the trained GP to create a
+\emph{force-directed graph}. In this approach, each molecule is assigned a point
+in 2D space. Each point is connected by a virtual `spring', whose equilibrium
+length and spring constant depends on the value of the kernel function computed
+between the molecules that the spring connects. The system is then
+equilibriated, in a fashion similar to a molecular dynamics simulation. The resulting
+layout is shown in Figure \ref{fig:fdg}.
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{images/force-graph.pdf}
+    \caption{A visualisation of the molecules in the combined NIST and Qin datasets using a force-directed graph layout. TODO: Explain this layout.}
+    \label{fig:fdg}
+\end{figure}
 
 \subsection{ECFP interpretations}
 
@@ -154,5 +173,3 @@ Both models agree that alkyl chain environments constitute the top two most impo
 its most important environments: \ce{Cl-} and \ce{Br-}. This is to be expected; ionic surfactants typically have much larger CMCs than nonionics, and the model appears to distinguishes these by their counterion. The Qin-Nonionics model
 identifies environments from the headgroups of sugar-based surfactants as being important. These surfactant headgroups possessed relatively complex topologies and therefore several environments; it may have been necessary for the model to
 use many of these environments in order to accurately distinguish between their CMCs.
-
-TODO: Discuss NIST data and applicability domain.
