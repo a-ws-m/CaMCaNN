@@ -26,24 +26,26 @@ Two datasets were used for training and testing:
         splits were used as \citet{qinPredictingCriticalMicelle2021}.
 
     \item[The National Institute of Science and Technology (NIST) dataset]
-        contains 43 unique surfactants and their aqueous CMCs, extracted from
-        the work of \citet{mukerjeeCriticalMicelleConcentrations1971}. The
-        original document compiles CMC measurements for each molecule across
+        contains 43 unique surfactant systems and their aqueous CMCs, extracted
+        from the work of \citet{mukerjeeCriticalMicelleConcentrations1971}. The
+        original document compiles CMC measurements for each system across
         several temperatures and with various additives. Each measurement was
         given a quality rating depending on the authors' assessment of the
         experimental method; measurements with a sufficiently good rating were
         categorised as `suggested' measurements. The dataset used for this work
         was developed by taking the mean of the suggested CMC measurements
         between \SIrange{20}{25}{\degreeCelsius}, and with no additives, for
-        each surfactant that had measurements that fit these criteria. The
-        dataset is provided in the Supplementary Information.
+        each surfactant system with measurements that fit these criteria. The
+        surfactant systems that contained elements that were not present in the
+        dataset (\ce{Mn}, \ce{Cs} and \ce{Mg}) were then pruned. The dataset is
+        provided in the Supplementary Information.
         
         The NIST data were used exclusively for testing, as another layer of
-        external validation. The molecules include surfactants with counterions
-        and combinations of functional groups that are not present in the
-        training data and are expected to be outside the applicability domain of
-        the models, which we include to test the robustness of the uncertainty
-        quantification approach.
+        external validation. Several of the surfactant systems are not expected
+        to be within the applicability domain of the models. This includes
+        surfactants with counterions and combinations of functional groups that
+        are not present in the training data. These data are included to test
+        the robustness of the uncertainty quantification approach.
 \end{description}
 
 The number of each class of surfactant in the train and test subsets of the data are shown in Table~\ref{tab:data-split}. Only the models trained on the Qin-All dataset were evaluated on the NIST dataset, as it contained ionic compounds.
@@ -161,9 +163,13 @@ of molecular structure. Each atom is considered a \emph{node} and each bond an
 as a whole, each atom is assigned its own feature vector, $\vec{v}_i$, based on
 properties such as its element, hybridisation state, charge, etc. The same set
 of atomic features were used here as in the work by
-\citet{qinPredictingCriticalMicelle2021}. These feature vectors are concatenated
-into a node feature matrix, $\mathbf{V}$. The graph's structure is then defined
-by a binary adjacency matrix, $\mathbf{A}$:
+\citet{qinPredictingCriticalMicelle2021}. It is for this reason that the
+molecules in the NIST data containing elements that were not in the training
+data were excluded; the atomic representation includes a fixed-length one-hot
+encoding of the element number, and the new elements cannot be encoded without
+modifying the model after training. These feature vectors are concatenated into
+a node feature matrix, $\mathbf{V}$. The graph's structure is then defined by a
+binary adjacency matrix, $\mathbf{A}$:
 
 \begin{equation}
     \label{eq:adjacency-mat}
