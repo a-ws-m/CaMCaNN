@@ -57,12 +57,16 @@ The performances of all the trained models on the test datasets are reported in 
         Model                                                 & Qin-Nonionics                                      & Qin-All       & NIST          \\\midrule
         Previous work \cite{qinPredictingCriticalMicelle2021} & 0.23                                               & 0.30          & --            \\
         ECFP                                                  & 0.19                                               & 0.26          & 1.59          \\
-        GNN                                                   & \textbf{0.15}                                      & 0.29          & \textbf{1.35} \\
-        GNN/GP                                                & 1.38                                               & \textbf{0.24} & 1.45          \\\bottomrule
+        GNN                                                   & \textbf{0.15}                                      & 0.29          & 1.35          \\
+        GNN/GP                                                & 1.38                                               & \textbf{0.21} & \textbf{1.32} \\\bottomrule
     \end{tabular}
 \end{table}
 
-The performance of the NIST data is significantly worse than the test data performance of every model. This suggests that the NIST data molecules are outside of the applicability domain of the models.
+As expected, the performance of all models on the NIST data is significantly
+worse than on the test data. This supports the hypothesis that the NIST data
+molecules are outside of the applicability domain of the models, but it does not
+exclude the possibility that the models are instead overfitted. Therefore, a more
+detailed analysis of the applicability domain will be provided below.
 
 Finally, the GNN/GP model's predictive performance on the Qin-Nonionics task was very poor. This indicates that the spacing between the molecules' latent representation vectors, determined from the corresponding GNN, was not a good
 indicator of similarity with respect to CMC prediction.
@@ -93,8 +97,8 @@ Deviations from this distribution indicate whether the model was over- or underc
         \label{fig:uq-calibration}
     \end{subfigure}
     \caption{(a) Parity plots of the GNN/GP model's predicted CMCs and \SI{95}{\%}
-    confidence intervals for the Qin-All and NIST datasets and (b) corresponding
-    calibration plots for the test data predictions.}
+        confidence intervals for the Qin-All and NIST datasets and (b) corresponding
+        calibration plots for the test data predictions.}
 \end{figure}
 
 The S-shaped calibration curve for the Qin-All test data indicates that the model was underconfident in its predictions. There is a spike in the number of observed residuals that are close to the centre of the distribution. The corresponding parity plot shows that, nevertheless, the predicted uncertainties were relatively small. The NIST data calibration curve shows remarkably good
