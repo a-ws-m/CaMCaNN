@@ -12,8 +12,21 @@ Two datasets were used for training and testing:
         the data was further subdivided into two tasks: Qin-All, the entirety of
         the dataset, and Qin-Nonionics, which contains only the nonionic
         surfactants.
-    \item[The National Institute of Science and Technology (NIST) dataset] is a
-        dataset of 43 unique surfactants and their aqueous CMCs, extracted from
+
+        The Qin data were split into training and test subsets; the training
+        data were used to fit the models, whilst test data were `locked away'
+        until it had been decided that the model was optimised, and the
+        performance metrics on the test data were then used for evaluation. For
+        some models, the training data were further split into optimisation and
+        validation subsets; the optimisation data were used when calculating the
+        loss function during model fitting. The validation data were used for
+        on-the-fly evaluation of model performance during training, to determine
+        how many iterations of the optimisation routine to use. To provide a
+        consistent benchmark of model performance, the same train/test data
+        splits were used as \citet{qinPredictingCriticalMicelle2021}.
+
+    \item[The National Institute of Science and Technology (NIST) dataset]
+        contains 43 unique surfactants and their aqueous CMCs, extracted from
         the work of \citet{mukerjeeCriticalMicelleConcentrations1971}. The
         original document compiles CMC measurements for each molecule across
         several temperatures and with various additives. Each measurement was
@@ -22,21 +35,17 @@ Two datasets were used for training and testing:
         categorised as `suggested' measurements. The dataset used for this work
         was developed by taking the mean of the suggested CMC measurements
         between \SIrange{20}{25}{\degreeCelsius}, and with no additives, for
-        each surfactant. These data were used exclusively for testing, as
-        another layer of external validation.
+        each surfactant that had measurements that fit these criteria. The
+        dataset is provided in the Supplementary Information.
+        
+        The NIST data were used exclusively for testing, as another layer of
+        external validation. The molecules include surfactants with counterions
+        and combinations of functional groups that are not present in the
+        training data and are expected to be outside the applicability domain of
+        the models, which we include to test the robustness of the uncertainty
+        quantification approach.
 \end{description}
 
-The Qin data \cite{qinPredictingCriticalMicelle2021} were split into training
-and test subsets; the training data were used to fit the models, whilst test
-data were `locked away' until it had been decided that the model was optimised,
-and the performance metrics on the test data were then used for evaluation. For
-some models, the training data were further split into optimisation and
-validation subsets; the optimisation data were used when calculating the loss
-function during model fitting. The validation data were used for on-the-fly
-evaluation of model performance during training, to determine how many
-iterations of the optimisation routine to use.
-
-To provide a consistent benchmark of model performance, the same data splits were used as \citet{qinPredictingCriticalMicelle2021}.
 The number of each class of surfactant in the train and test subsets of the data are shown in Table~\ref{tab:data-split}. Only the models trained on the Qin-All dataset were evaluated on the NIST dataset, as it contained ionic compounds.
 
 \begin{table}
@@ -193,7 +202,7 @@ applied, whereby a subset of the atomic environments were selected for use in th
 In this approach, we include a term in the loss function that depends on the
 norm of $\vec{w}$. The two types of constraints considered in this paper are
 $\ell_1$ and $\ell_2$ regularisation, which correspond to the inclusion of
-$\ell_1$ and $\ell_2$ norms, respectively. Concretely the ElasticNet
+$\ell_1$ and $\ell_2$ norms, respectively. Concretely, the ElasticNet
 \cite{zouRegularizationVariableSelection2005} loss function was employed:
 
 \begin{equation}
@@ -208,7 +217,7 @@ hyperparameters describing the degree of regularisation ($\alpha \geq 0$), and
 the proportions of the regularisation terms ($0 < \rho < 1$), respectively.
 $\mathbf{C}$ are the standardised training data feature vectors,
 $\{\vec{c}^{\,\prime}_n \,|\, 1 \leq n \leq n_\text{samples}\}$, stacked
-row-wise into a matrix..
+row-wise into a matrix.
 
 Standardising the environment counts ensures that they have zero mean and unit variance:
 \begin{equation}
