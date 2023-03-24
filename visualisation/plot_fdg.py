@@ -52,7 +52,10 @@ def get_counterion(smiles: str) -> str:
         else:
             return counterion
     else:
-        return "Nonionic"
+        if "+" in smiles and "-" in smiles:
+            return "Zwitterionic"
+        else:
+            return "Nonionic"
 
 def add_cols(df: pd.DataFrame):
     df["Counterion"] = df["SMILES"].apply(get_counterion)
@@ -127,7 +130,8 @@ sns.kdeplot(
     hue_order=counterion_order,
     ax=axs[1],
     fill=True,
-    bw_adjust=0.5,
+    # bw_adjust=0.9,
+    thresh=0.2,
     legend=False
 )
 sns.scatterplot(
@@ -141,7 +145,8 @@ sns.scatterplot(
     hue_order=counterion_order,
     style_order=counterion_order,
     ax=axs[1],
-    legend=False
+    legend=False,
+    zorder=10
 )
 
 sns.move_legend(axs[0], "upper center", bbox_to_anchor=(1.1,0), frameon=False, ncol=5)
@@ -150,4 +155,4 @@ for ax in axs:
 # plt.tight_layout()
 axs[0].set_title("All molecules")
 axs[1].set_title("NIST underpredictions superimposed\non Qin distribution")
-plt.savefig(HERE / "force-graph.pdf", bbox_inches="tight")
+plt.savefig(HERE.parent / "paper" / "images" / "force-graph.pdf", bbox_inches="tight")
