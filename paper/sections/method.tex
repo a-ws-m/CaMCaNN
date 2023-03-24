@@ -179,7 +179,7 @@ binary adjacency matrix, $\mathbf{A}$:
     \end{cases}
 \end{equation}
 
-Molecular graphs are natural representations to visualise; see Figure \ref{fig:mol-graph}. This is exact description of the molecule's topology enables an atomistic machine learning approach.
+Molecular graphs are natural representations to visualise; see Figure~\ref{fig:mol-graph}. This is exact description of the molecule's topology enables an atomistic machine learning approach.
 
 \begin{figure}
     \centering
@@ -310,7 +310,7 @@ latent representation vector to the CMC property prediction. Each layer in this 
 \begin{equation}
     \vec{v}^{(l)} = \mathbf{W}^{(l)}\vec{v}^{\,(l-1)} + \vec{b}^{\,(l)},
 \end{equation}
-The full network's architecture is illustrated in Figure \ref{fig:model-topology}. The model was implemented using the open-source library Spektral\cite{grattarolaGraphNeuralNetworks2020} and optimised using an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
+The full network's architecture is illustrated in Figure~\ref{fig:model-topology}. The model was implemented using the open-source library Spektral\cite{grattarolaGraphNeuralNetworks2020} and optimised using an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
 
 \begin{figure}
     \centering
@@ -346,9 +346,30 @@ To improve the model's reliability, a \emph{surrogate} model was employed that c
 but in this case, the standardisation applies across each latent feature, $n$.
 Again, $u_n$ and $s_n$ were determined from the training molecules' latent representations.
 
-The standardised latent representation vectors of the training data serve as index points for a Gaussian process (GP); see Figure \ref{fig:model-topology}.
+The standardised latent representation vectors of the training data serve as index points for a Gaussian process (GP); see Figure~\ref{fig:model-topology}.
 The GP's predicted mean and standard deviation define a predicted normal distribution of a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
 
 In this work, the GPs  were defined using a Mat\'ern kernel with parameter $1/2$. Furthermore, the multi-layer perceptron component of the GNN used to calculate $\lrv{}$ was employed as the GP's mean function.
 The kernel parameters were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
 The same optimisation/validation splitting was used as for the GNN hyperparameter search and training was stopped after \num{1000} iterations without improvement in the validation predictions' RMSE, or after a total of \num{5000} iterations. This implementation was based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
+
+\subsubsection{Visualising the latent space}
+
+In order to better understand the model's interpretation of chemical space, we
+implement a technique to exploit the GP's kernel, optimised during training, to
+plot the molecules in 2D space in a way that respects the model's perception of
+their `similarity'. Once having trained the GP, the learned kernel function was
+computed between every pair of molecules in the combined data, NIST and Qin.
+These kernel values were then normalised within the range $[0, 1]$. Each
+molecule was then assigned a node in a graph and these were connected by edges.
+Each edge was given a weight that was equal to the normalised kernel value
+between the two nodes it connected.
+
+This was the starting condition for computing a \emph{force-directed graph
+layout}. The nodes are initialised with a set of 2D coordinates that is
+uniformly distributed and they are moved according to forces acting upon them;
+primarily an attractive force that acts along the edges. In addition, there are
+pairwise repulsive forces acting amongst the nodes that serves to ensure that
+the equilibrium distance between two nodes is non-zero. In this work, the Force
+Atlas 2 algorithm was employed
+\cite{jacomyForceAtlas2ContinuousGraph2014,bastianGephiOpenSource2009}.
