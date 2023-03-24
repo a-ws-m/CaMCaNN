@@ -101,12 +101,15 @@ Deviations from this distribution indicate whether the model was over- or underc
         calibration plots for the test data predictions.}
 \end{figure}
 
-The S-shaped calibration curve for the Qin-All test data indicates that the model was underconfident in its predictions. There is a spike in the number of observed residuals that are close to the centre of the distribution. The corresponding parity plot shows that, nevertheless, the predicted uncertainties were relatively small. The NIST data calibration curve shows remarkably good
-agreement with the ideal distribution, except at the top end, which reflects the tendency of the model to underestimate the CMCs of some of the molecules. The relatively poor RMSE on the NIST data is somewhat ameliorated by the quality of
-the uncertainty estimates.
-
-Future efforts to improve this type of model may consider incorporating another term in the loss function for the GNN that explicitly biases the model towards learning a form of $\lrv{}$ that captures this similarity. Alternatively, a
-variational Gaussian process could be used, which approximates the Gaussian process using a fixed-size set of `pseudo-points' \cite{hensmanGaussianProcessesBig2013a}; this would enable the entire GNN/GP model to be trained at once using backpropagation \cite{moriartyUnlockNNUncertaintyQuantification2022}.
+The S-shaped calibration curve for the Qin-All test data indicates that the
+model was underconfident in its predictions. There is a spike in the number of
+observed residuals that are close to the centre of the distribution. The
+corresponding parity plot shows that, nevertheless, the predicted uncertainties
+were relatively small. The NIST data calibration curve's asymmetry indicates its
+tendency to underestimate the CMCs. It has a generally good agreement with the
+ideal distribution, with the greatest discrepancy above \num{0.8}, which
+indicates that there are several surfactants whose CMC predictions are too low
+and overconfident.
 
 \subsection{ECFP interpretations}
 
@@ -156,16 +159,34 @@ use many of these environments in order to accurately distinguish between their 
 
 \subsection{Applicability domain analysis}
 
-TODO: Plot the outlying NIST molecules.
-
 Several of the NIST molecules were expected to be outside of the applicability
 domain of the model, which justifies their poor prediction accuracy. The
 majority of the outliers' CMCs are underpredicted, and the GNN/GP model is
-overconfident in their predictions. To understand why the predictions are wrong,
-we exploit the kernel function from the trained GP to create a force-directed
-graph, as explained in the Method. The resulting layout is shown in
-Figure~\ref{fig:fdg}. The NIST molecules whose residuals are above the \SI{95}{\%}
-CI are highlighted here.
+overconfident in their predictions. The 13 surfactants with predictions whose
+residuals are greater than the \SI{95}{\%} CI are shown in
+Figure~\ref{fig:nist-underpred}. These constitute 3 nonionic surfactants, 1
+zwitterionic surfactant and 9 ionic surfactants. Of the ionic surfactants, 5
+have quaternary ammonium salts (quats) as counterions.
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{images/nist-underpred.pdf}
+    \caption{The 13 surfactants and counterions in the NIST dataset with residuals
+    that were greater than the \SI{95}{\%} CI.}
+    \label{fig:nist-underpred}
+\end{figure}
+
+In the first instance, it is useful to examine the types of counterions in these
+molecules as compared to the training data. In the training data, there are no
+examples with a bromate, nitrate or carbonate counterion, but there are two
+examples of a quat counterion. However, the quats in the training data are both
+isotropic: tetrapropylammonium and tetramethylammonium. In contrast, those that
+are underpredicted in the NIST data are highly anisotropic and are effectively
+surfactants themselves; their behaviour can be expected to be very different.
+
+To understand why the predictions are wrong, we exploit the kernel function from
+the trained GP to create a force-directed graph, as explained in the Method. The
+resulting layout is shown in Figure~\ref{fig:fdg}. The NIST molecules whose
+residuals are above the \SI{95}{\%} CI are highlighted here.
 
 From the graph of the entire data, it is apparent that the majority of the
 surfactants are segregated based upon the type of counterion that was in the
@@ -173,16 +194,15 @@ solution. This suggests that the model has learned that the counterion is an
 important factor for determining CMC and the weights associated with this
 counterion have a profound impact on the prediction. However, the graph of the
 NIST outliers indicates that the model classifies all of these molecules as
-being primarily similar to the nonionic compounds. This is clearly erroneous in
-the case of the ionic compounds here: the quaternary ammonium salts (quats), the
-bromates, the carbonates and the nitrates. Notably, except for a single example
-of a quat, these counterions are not present in the training data. This suggests
-that the model has not learned appropriate weights for these counterions, hence
-it fails to properly segregate them from the nonionic compounds.
+being primarily similar to the nonionic or zwitterionic compounds. This is
+clearly erroneous in the case of the ionic compounds here: the quats, the
+bromates, the carbonates and the nitrates. This suggests that the model has not
+learned appropriate weights for these counterions, hence it fails to properly
+segregate them.
 
 \begin{figure}
     \includegraphics[width=\textwidth]{images/force-graph.pdf}
-    \caption{ A visualisation of the molecules in the combined NIST and Qin
+    \caption{A visualisation of the molecules in the combined NIST and Qin
         datasets using a force-directed graph layout. Left: The entirety of the
         combined NIST and Qin datasets, where each molecule is assigned a point.
         Right: The NIST molecules that are overconfidently underpredicted, so

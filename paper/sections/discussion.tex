@@ -10,3 +10,16 @@ during training and in use. Representations may also include descriptions of
 state, such as temperature and pressure \cite{chenGraphNetworksUniversal2019},
 but this is redundant in cases where the training data spans a very limited
 range of states.
+
+Future efforts to improve this type of model may consider incorporating another
+term in the loss function for the GNN that explicitly biases the model towards
+learning a form of $\lrv{}$ that captures this similarity. Alternatively, a
+variational Gaussian process could be used, which approximates the Gaussian
+process using a fixed-size set of `pseudo-points'
+\cite{hensmanGaussianProcessesBig2013a}; this would enable the entire GNN/GP
+model to be trained at once using backpropagation
+\cite{moriartyUnlockNNUncertaintyQuantification2022}.
+
+TODO: Examine interpretability, how easy it is to determine what is within the
+applicability domain of the models and the advantages and limitations of the UQ
+model.
