@@ -68,7 +68,7 @@
 %% a running title from the author: this should be supplied as an
 %% optional argument to \title.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\title{In too deep? Neural networks versus linear models for critical micelle concentration prediction}
+\title{Exploring the Applicability Domain of Predictive Models for Critical Micelle Concentrations using Graph Neural Networks and Gaussian Processes}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Some journals require a list of abbreviations or keywords to be
@@ -104,7 +104,22 @@
 %% if an abstract is not used by the target journal.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-    TODO: Write this.
+    This paper presents a novel approach to predicting critical micelle
+    concentrations (CMCs) using graph neural networks (GNNs) augmented with
+    Gaussian Processes (GPs). The proposed model uses learned latent space
+    representations of molecules to predict CMCs and estimate uncertainties. The
+    performance of the model on a dataset containing nonionic, cationic, anionic
+    and zwitterionic molecules, is compared against a linear model that works
+    with extended-connectivity fingerprints (ECFPs). Our results demonstrate
+    that the GNN-based model performs slightly better than the linear ECFP model
+    and achieves predictive accuracy that is comparable to published models that
+    were evaluated on a smaller range of surfactant chemistries, but the main
+    benefit of the GNN model is the ability to provide uncertainty estimates. We
+    illustrate the applicability domain of our model using a visualisation of
+    the latent space, which helps identify molecules likely to have erroneous
+    predictions. The proposed approach can help in the design of new surfactants
+    and provide valuable insights into the molecular properties that influence
+    CMCs.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

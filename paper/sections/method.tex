@@ -349,7 +349,7 @@ Again, $u_n$ and $s_n$ were determined from the training molecules' latent repre
 The standardised latent representation vectors of the training data serve as index points for a Gaussian process (GP); see Figure~\ref{fig:model-topology}.
 The GP's predicted mean and standard deviation define a predicted normal distribution of a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
 
-In this work, the GPs  were defined using a Mat\'ern kernel with parameter $1/2$. Furthermore, the multi-layer perceptron component of the GNN used to calculate $\lrv{}$ was employed as the GP's mean function.
+In this work, the GPs  were defined using a Mat\'ern kernel with parameter $1/2$, and a fixed noise variance of \num{1e-5}. Furthermore, the multi-layer perceptron component of the GNN used to calculate $\lrv{}$ was employed as the GP's mean function.
 The kernel parameters were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
 The same optimisation/validation splitting was used as for the GNN hyperparameter search and training was stopped after \num{1000} iterations without improvement in the validation predictions' RMSE, or after a total of \num{5000} iterations. This implementation was based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
 
