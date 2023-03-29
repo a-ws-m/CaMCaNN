@@ -116,8 +116,6 @@ and overconfident.
 TODO: find out the hybridization states of the atoms in these fingerprints
 so that we can clarify the environments more:
 \begin{itemize}
-    \item 4201881788
-    \item 1435798937
     \item 3833245231
     \item 3204830367
 \end{itemize}
@@ -141,12 +139,12 @@ by the number of $\mathcal{E}_m$ that they contain. This is particularly true of
         \ce{(CH2)5}                 & -0.64                             & \ce{(CH2)5}               & -0.76           \\
         \ce{(CH2)3}                 & -0.55                             & \ce{(CH2)3}               & -0.69           \\
         \ce{Cl-}                    & 0.31                              & \ce{(CH2)2CH}             & -0.29           \\
-        \ce{Br-}                    & 0.29                              & \ce{C}                    & -0.25           \\
+        \ce{Br-}                    & 0.29                              & \ce{R1-C(-R2)-R3}         & -0.25           \\
         \ce{(CH2)2CH}               & -0.27                             & \ce{C(CH(OH))3CH}         & -0.19           \\
         \ce{CH2}                    & -0.23                             & \ce{CH2(CH(OH))3CH}       & 0.14            \\
-        \ce{O}                      & 0.18                              & \ce{CH(CH(OH))2CH2OH}     & -0.12           \\
+        \ce{R1-O-R2}                & 0.18                              & \ce{CH(CH(OH))2CH2OH}     & -0.12           \\
         \ce{OH}                     & -0.17                             & \ce{CH2CH(O)(CH(OH))2CH3} & 0.09            \\
-        \ce{O(CH2)2OH}              & -0.14                             & \ce{CH3}                  & -0.06           \\
+        \ce{R1-O-(CH2)2OH}          & -0.14                             & \ce{CH3}                  & -0.06           \\
         \ce{CH2O(CH2)2OH}           & -0.14                             & \ce{CH(CH(OH))3CH}        & 0.05            \\
         \bottomrule
     \end{tabular}
@@ -171,7 +169,7 @@ have quaternary ammonium salts (quats) as counterions.
 \begin{figure}
     \includegraphics[width=\textwidth]{images/nist-underpred.pdf}
     \caption{The 13 surfactants and counterions in the NIST dataset with residuals
-    that were greater than the \SI{95}{\%} CI.}
+        that were greater than the \SI{95}{\%} CI.}
     \label{fig:nist-underpred}
 \end{figure}
 
