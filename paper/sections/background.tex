@@ -1,5 +1,3 @@
-Broadly, CMC predictive models take four forms: empirical, semi-empirical, theoretical and simulated, or some combination of these. Here we will focus on predictive models for aqueous solutions containing a single surfactant and discuss some of the trade-offs between the different approaches with regard to speed, universality and interpretability.
-
 Theoretical approaches have the potential to be the most useful type of
 predictive model if they are accurate and applicable to the desired system, as they are directly related to scientific knowledge, and their results can be understood in terms of well-studied principles.
 \citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological model for studying aqueous nonionic surfactant systems that enabled CMC prediction and modelling other properties across a range of temperatures. The model they developed was the product of decomposing the process of micellisation into discrete steps that they could describe thermodynamically so as to yield a description of the free energy of micellisation in terms of a set of molecular parameters:
@@ -17,15 +15,228 @@ A functional form to estimate the parameters was described for linear, nonionic,
 However, the error is much larger for other systems, like \ce{C8E6}. The
 authors expect that this inaccuracy is because the model overestimates the CMC values for systems in which the micelles do not grow.
 
-The connection this model established between a small set of physically meaningful properties that can be estimated and emergent properties of surfactants is extremely useful, especially because it does not explicitly require fitting to any experimental data. However, the procedures described for estimating the Tolman length are only applicable to linear hydrocarbon chains, not the branched case or heterogeneous tail groups. Estimating the average cross-sectional area of the head group may also not be trivial.
+The connection this model established between a small set of physically meaningful properties that can be estimated and emergent properties of surfactants is extremely useful, especially because it does not explicitly require fitting to any experimental data. However, the procedures described for estimating the Tolman length are only applicable to linear hydrocarbon chains, not branched nor heterogeneous tail groups. Estimating the average cross-sectional area of the head group may also not be trivial.
 
-Semi-empirical approaches are grounded in theory but have parameters optimised based on experimental data. Many semi-empirical approaches to CMC prediction can be described as \emph{segment-based} methods, whereby the surfactant is decomposed into discrete segments, which correspond to groups of atoms and bonds.
+Greater generalisability and better accuracy can be realised by considering the
+process of aggregation on a more precise level: identifying the behaviour of
+individual atoms, or small groups thereof. Simulation approaches can model the
+interaction of these units with each other and derive the potential energy of a
+configuration from these calculations. By combining this information with
+entropy considerations, statistical mechanics can indicate free energy changes,
+such as those associated with micellisation, from which the CMC can be derived.
 
-\citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model (s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear polyoxyethylene alcohols by first deriving expressions for the activity coefficient of a surfactant in water. In the s-UNIQUAC model, a segment-based local-composition model was used, and the fugacity could then be approximated using the fitted interaction energies between the segments and water. In this case, the segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the surfactant was treated as a chain of soft-sphere segments in order to first derive the Helmholtz energy of the solution and, from that, derive the fugacity. In this case, the segments used were \ce{CH2}/\ce{CH3} (these were treated as the same segment) and \ce{C2H4O}. The interaction energies of the segments were fitted, as well as parameters of a function describing the soft sphere diameter of a segment in a chain in terms of the chain length.
+Molecular dynamics (MD) simulations treat individual atoms, in the all-atomistic
+(AA) approach, or groups of atoms, in the coarse-grained (CG) approach, as
+particles in a box that exert force on each other. This allows the particles'
+movement to be simulated by iteratively updating their positions and momenta in
+discrete `time steps'. \citet{jorgeMolecularDynamicsSimulation2008} used two
+types of AA approach to simulate the self-assembly of
+\textit{n}-decyltrimethylammonium bromide: one approach that explicitly
+considered hydrogens, and another, united-atom approach that grouped hydrogens
+with their respective connecting atom. They then estimated the CMC by
+considering the concentration of `free' surfactants, i.e. surfactants that were
+not in micelles, which they defined as an aggregate containing five or more
+surfactants. The more accurate model for determining CMC, the united-atom
+approach, yielded a CMC with an error of \SI{0.23}{\log \micro M}. The author
+asserted that the simulation size, i.e. the number of particles, was too small
+to obtain a more accurate value of CMC. This highlights an issue with using MD
+to predict CMC: careful consideration must be given to ensure that the system is
+large enough and that enough timesteps have been performed to ensure
+convergence, but increasing these parameters leads to an increase in
+computational cost.
 
-\citet{chengCorrelationCriticalMicelle2005} compared the performance of these models on a larger dataset alongside three other models. Two of these were segment-based models: the polymer-NRTL model \cite{liStudiesUNIQUACSAFT1998} and
-a UNIFAC model \cite{voutsasPredictionCriticalMicelle2001}, both of which were cited as inspirations for the s-UNIQUAC model. The authors also employed their own modified Aranovich and Donohue (m-AD) model. The m-AD model calculates the
-CMC as a mole fraction, $x_S^L$, approximating it as the reciprocal of the limiting value of the surfactant's activity coefficient in an aqueous solution,
+The computational cost in increasing the system size can be mitigated using
+coarse-graining, which reduces the number of interactions that must be computed
+by grouping atoms into beads, as well as enabling larger time steps, meaning
+that the same timescale can be simulated with fewer rounds of calculation
+\cite{fitzgeraldMultiscaleModelingNanomaterials2015}. These beads must be
+modelled differently than individual atoms and there are a few approaches to
+this. \citet{vishnyakovPredictionCriticalMicelle2013} used dissipative particle
+dynamics (DPD) to model the CMCs of \ce{C8E8}, dodecyldimethylamineoxide (DDAO)
+and \textit{N}-decanoyl-\textit{N}-methyl-\textsc{D}-glucamide (MEGA-10). They
+proposed a methodology for obtaining reasonable parameters to describe the bead
+interactions based on known infinite dilution coefficients, $\gamma_\infty$.
+Their calculated CMC for \ce{C8E8} had an error relative to the average
+experimental value equal to \SI{0.07}{\log \micro M}, for DDAO it was
+\SI{0.06}{\log \micro M}, and for MEGA-10 it was \SI{0.06}{\log \micro M}.
+
+Clearly, this approach can produce extremely accurate results. However, it is
+limited to compounds that can be parameterised by a known $\gamma_\infty$.
+Although this value can also be simulated, this must be done very carefully as
+the error in this value will be compounded. Furthermore, the authors do not
+discuss parameterising ionic surfactants, for which more complex interactions
+must be considered. Despite the reduced cost relative to AA-MD models of the
+same system scales, CG-MD approaches are still one of the more expensive
+approaches to CMC prediction. But MD simulations give very deep insight into the
+processes occurring at a molecular level; its results yield a precise
+description of the arrangement of molecules in a system, their shape and
+aggregation number, which is a level of detail other approaches do not come
+close to achieving.
+
+Another approach is to try to reduce the scale of the simulation by only
+considering the effect of individual molecules and local interactions. The
+conductor-like screening model (COSMO) provides a tool for decomposing the
+problem in this way, by treating a molecule as a cavity with a charged surface
+in a solvent that acts as a dielectric continuum
+\cite{klamtCOSMONewApproach1993}. The cavity's surface is described by the
+solvent-accessible surface of the molecule. The geometry of this surface
+combined with a segment-wise description of its polarising charges is called the
+COSMO-surface and it can be calculated using density functional theory (DFT).
+
+COSMO for realistic solvation (COSMO-RS) adapts the model for more complex types
+of solvent \cite{klamtCOSMORSAlternativeSimulation2010}. Solvents only act like
+a dielectric continuum when they are capable of perfectly screening the
+COSMO-surface of a solute, i.e. every point on the molecule's COSMO surface is
+matched by a point of opposite polarity due to the configuration of the solvent
+molecules. Due to entropy considerations, as well as the fact that some solvent
+molecules do not have appropriate polar charges to match-up in this way, this is
+often a poor approximation. COSMO-RS uses statistical mechanics to determine the
+probability distribution describing how surface charge densities align between
+two molecules. This allows chemical potentials to be determined.
+
+COSMO-RS has two major advantages over MD simulations. Firstly, it removes the
+need to study the configuration space of an entire ensemble of molecules; the
+problem is reduced just to local interactions. This means the computational cost
+does not scale with respect to the system size, but also that it can only
+consider homogeneous, unstructured systems. Another advantage is that it
+naturally considers effects from dipole and quadrupole moments, which can be
+hard to capture using the classical forces that drive MD
+\cite{klamtCOSMORSAlternativeSimulation2010}.
+
+\citet{turchiFirstprinciplesPredictionCritical2022} used COSMO-RS to predict
+CMCs by treating a micelle as a separate phase and then considering the
+two-phase equilibrium between the micelle and an aqueous phase containing free
+surfactants. They modelled the micellar `phase' using two strategies. Their
+first strategy was to treat the micellar phase as being equivalent to a bulk,
+homogeneous phase of surfactant. The CMC could then be determined by the
+equilibrium surfactant concentration in the aqueous phase. In actuality,
+micelles are structured and inhomogeneous; the authors argued that this
+approximation is more valid as the difference in polarity between the head and
+tail of a surfactant is reduced, which was the case for the majority of nonionic
+surfactants they considered.
+
+Their second strategy was to consider the micellar phase as a bulk, homogeneous
+phase of an oil, whose chemistry was analogous to that of the surfactant's tail
+group. They then implemented an iterative procedure to calculate the interfacial
+tension (IFT) between the oil and aqueous surfactant phases at different
+concentrations of surfactant. The concentration at which the IFT is zero yields
+the CMC prediction. The premise of this approach is that the oil phase is
+representative of a micelle's interior, containing primarily tail groups, which
+is particularly true as the interactions between head and tail groups become
+more unfavourable. This is the case for highly polar head groups: primarily for
+ionic surfactants.
+
+The authors recommended applying both strategies and using the lower result as
+the CMC prediction. With the combined strategies, they attained an RMSE of
+\SI{0.81}{\log \micro M} on a dataset of 24 surfactants, containing a mix of
+ionic, nonionic and zwitterionic. Excluding the two worst predictions gives a
+much more favourable RMSE of \SI{0.55}{\log \micro M}. These results are
+relatively inaccurate, but it is impressive that the technique can be applied
+across all classes of surfactant, whilst requiring significantly lower
+computational cost than MD. Furthermore, the authors were able to determine
+which of the nonionic surfactants had a low propensity to form micelles by
+whether the predicted IFT between water and surfactant phases was large at
+equilibrium, which is a testament to the model's interpretability.
+
+Other approaches have extended COSMO-RS to explicitly account for the internal
+structure of micelles, such as COSMOmic, which treats a micelle as being made of
+concentric layers that each have their own surface charge profiles
+\cite{klamtCOSMOmicMechanisticApproach2008}. To compute these charge profiles,
+the layer's composition with respect to individual atoms of the surfactant must
+be known; this can be determined using MD. The combination of layer-wise atomic
+distributions and the COSMO-surface associated with each atom gives the layer's
+surface charge density profile. COSMOmic considers how the COSMO-surface of a
+surfactant would intersect with the layers' surface charge profiles when it is
+randomly positioned and oriented within the micelle, in order to determine the
+partition coefficient of inserting a surfactant molecule into the micelle.
+
+\citet{jakobtorweihenPredictingCriticalMicelle2017} calculated CMCs using
+COSMOmic by first performing MD simulations to attain the layer-wise atomic
+distributions. As discussed above, MD by itself can calculate the CMC of a
+system, which might suggest that the COSMOmic step is redundant. However, one
+can expect the layer-wise atomic distributions to converge much more rapidly
+than equilibrium concentrations if the micelle is \emph{pre-assembled}, meaning
+that the initial configuration for the simulation constitutes a guess for the
+micelle's structure. The authors then predicted the CMCs of several
+polyoxyethylene alcohols by determining the partition coefficients of inserting
+the respective surfactant monomer into a micelle.
+
+Another consideration with this technique is that molecules may adopt several
+conformations, each with a unique COSMO-surface. Although it was found that the
+choice of conformer used to describe the micellar layer-wise charge density
+profiles has a negligible effect on the results
+\cite{jakobtorweihenCombinationCOSMOmicMolecular2013}, the conformer used for
+the partitioning surfactant is important. With the best choice of conformer, the
+authors achieved an RMSE of $\sim \SI{0.36}{\log \micro M}$ on predictions for
+\ce{C_$i$E6} surfactants, where $i \in \{6, 8, 10, 12, 14, 16\}$. However, when
+considering surfactants with fixed tail length but varying head group size,
+\ce{C10E_$j$}, $j \in {4, 6, 8}$, the authors could not identify a consistent
+conformer selection that would not yield significant outliers.
+
+The technique is a promising compromise between the accuracy of the full-MD
+approach and the lower computational cost of COSMO-RS. However, to improve the
+reliability, a method for accurately identifying a good choice of conformer and
+the shape of the pre-assembled micelle must be realised.
+
+Finally, COSMOplex is a recent extension of COSMOmic that removes the need to
+perform and initial MD simulation to determine the micellar structure
+\cite{klamtCOSMOplexSelfconsistentSimulation2019}. Instead, it optimises a guess
+of the initial structure using a self-consistent approach by considering
+COSMOmic's predicted probability distribution of the partitioning surfactant's
+configuration within the micelle to iteratively yield new estimates for the
+layer-wise charge distributions. In this way, the authors predicted the CMCs of
+10 nonionic surfactants with varied head and tail group chemistries, achieving
+an RMSE of \SI{0.86}{\log \micro M}. The authors note that these results are
+preliminary and stand to be improved.
+
+The advantage of this technique is both a decrease in computational cost and
+improved parsimony; by eliminating the MD step, there is reduced complexity and
+the aforementioned difficulties with force field considerations are irrelevant.
+One of the difficulties with the technique is its sensitivity to the original
+guess for the atomic distributions
+\cite{klamtCOSMOplexSelfconsistentSimulation2019}. Improving the guess or the
+optimisation technique to be less sensitive to local minima would therefore lead
+to more accurate predictions.
+
+COSMO techniques are an interesting method to reduce the dimensionality of
+self-assembly structure studies whilst maintaining a solid grounding in theory,
+which allows a researcher to directly relate the results to scientific
+principles whilst understanding the limits of the approximations \emph{a
+priori}. However, \citet{herbertDielectricContinuumMethods2021} have argued that
+the discussion around COSMO-RS indicates that there is not enough detail in the
+literature to allow for an open source implementation, meaning that many modern
+extensions are only available in the proprietary software package
+\textsc{COSMOTHERM} \cite{eckertFastSolventScreening2002}. The closed-source
+nature of the technology is a barrier to scientific scrutiny and, crucially,
+improvement of the model.
+
+Another approach is to use an equation of state with a much less complex
+functional form to determine the CMC. The reduction in complexity can be
+achieved using a semi-empirical method that is parameterised by fitting to
+experimental data.
+
+\citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model
+(s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear
+polyoxyethylene alcohols by first deriving expressions for the activity
+coefficient of a surfactant in water. In the s-UNIQUAC model, a segment-based
+local-composition model was used, and the fugacity could then be approximated
+using the fitted interaction energies between the segments and water. In this
+case, the segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the
+surfactant was treated as a chain of soft-sphere segments in order to first
+derive the Helmholtz energy of the solution and, from that, derive the fugacity.
+In this case, the segments used were \ce{CH2}/\ce{CH3} (these were treated as
+the same segment) and \ce{C2H4O}. The interaction energies of the segments were
+fitted, as well as parameters of a function describing the soft sphere diameter
+of a segment in a chain in terms of the chain length.
+
+\citet{chengCorrelationCriticalMicelle2005} compared the performance of these
+models on a larger dataset alongside three other models. Two of these were
+segment-based models: the polymer-NRTL model \cite{liStudiesUNIQUACSAFT1998} and
+a UNIFAC model \cite{voutsasPredictionCriticalMicelle2001}, both of which were
+cited as inspirations for the s-UNIQUAC model. The authors also employed their
+own modified Aranovich and Donohue (m-AD) model. The m-AD model calculates the
+CMC as a mole fraction, $x_S^L$, approximating it as the reciprocal of the
+limiting value of the surfactant's activity coefficient in an aqueous solution,
 $\gamma_S^{L,\infty}$:
 
 \begin{equation}
@@ -33,16 +244,25 @@ $\gamma_S^{L,\infty}$:
     x_S^L = \frac{1}{\gamma_S^{L,\infty}}
 \end{equation}
 
-The m-AD model considers the exchange equilibrium on a three-dimensional lattice of infinitely separated solvent and solute molecules in order to determine $\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model.
-Instead, the authors fitted an interchange energy, $\Delta$, separately for each molecule. Of course, if a new parameter must be fitted for every molecule, a model has no predictive ability. Therefore, correlations were examined between
-$\Delta$ and other, readily calculated surfactant properties, which will be discussed later.
+The m-AD model considers the exchange equilibrium on a three-dimensional lattice
+of infinitely separated solvent and solute molecules in order to determine
+$\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model;
+instead, the authors fitted an interchange energy, $\Delta$, separately for each
+molecule. Of course, if a new parameter must be fitted for every molecule, a
+model has no predictive ability. Therefore, correlations were examined between
+$\Delta$ and other, readily calculated surfactant values: the Kier-Hall
+zero-order index (KH0) of the tail groups, which indicates  and the total
+molecular energy of the surfactant.
 
-Where data from the literature was available, the predictive performance of the models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n} and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
-\ref{tab:segment-methods}.
+Where data from the literature was available, the predictive performance of the
+models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n}
+and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
+\ref{tab:segment-methods}. The models all have a reasonably good accuracy, but
+the SAFT model in particular is excellent.
 
 \begin{table}
     \caption{Comparison of the RMSEs of selected models on polyoxyethylene
-        alcohols. Data from \citet{chengCorrelationCriticalMicelle2005}.}
+        alcohols' CMCs. Data from \citet{chengCorrelationCriticalMicelle2005}.}
     \label{tab:segment-methods}
     \begin{tabular}{lr}
         \toprule
@@ -55,6 +275,109 @@ Where data from the literature was available, the predictive performance of the 
     \end{tabular}
 \end{table}
 
-NOTE: I could talk about simulation approaches and other, purely empirical ones,
-but at this point I decided this section was getting long and moved on. Suggestions
-about what to focus on would be appreciated!
+Segment-based semi-empirical methods are very promising for predicting CMCs
+within a class of surfactants. Their major drawback is that they are only
+applicable to molecules that can be decomposed into segments that have trained
+parameters. In addition, they must respect the limitations of the theories they
+are based upon. For example, it was described earlier how the SAFT model needs
+special treatment to be applied to these polyoxyethylene alcohol surfactants,
+requiring a function to describe a segment's soft sphere diameter with respect
+to the chain length. A more complex function would be required when branching is
+introduced, or when chains can be made up of combinations of different units,
+and it is difficult to make these adaptations.
+
+Finally, purely empirical methods have a very heavy reliance on data abundance.
+Empirical methods offer a way of making predictions even when a unified theory
+that ties in the behaviour of several classes of molecules is not readily
+apparent, or else when the theory requires computationally expensive procedures
+to put into practice. However, without an underlying theory, the assumptions and
+therefore the limitations of the model are not well defined and it is possible
+for the model to `learn' trends that contradict established scientific
+intuition.
+
+Empirical QSPR methods require validation to determine their reliability and
+applicability domain
+\cite{veerasamyValidationQSARModelsstrategies2011,tropshaBestPracticesQSAR2010,leonardSelectionTrainingTest2006},
+which is often achieved by partitioning the available data into \emph{training}
+and \emph{test} subsets; the former is used for optimising the model's
+parameters, but the latter is `hidden' from the model until training is
+complete, and the prediction metrics on the test data indicate how the model can
+be expected to perform in general. The test set should span the chemical space
+in which the model is intended to be applied
+\cite{leonardSelectionTrainingTest2006}. At a high level, this means that all
+classes of surfactant that are `advertised' as being within the applicability
+domain of the model should be represented in both the test and train data
+subsets.
+
+Every empirical QSPR method is characterised by two features: the choice of
+molecular descriptors, which are the numerical features that make up the model
+inputs, and the functional form of the approximator that maps the descriptors to
+the property prediction. This functional form includes the parameters that are
+optimised based upon the training data.
+
+\citet{matteiModelingCriticalMicelle2013} extended the Marrero and Gani
+group-contribution method \cite{ganiAutomaticCreationMissing2005} to predict the
+CMCs of 150 nonionic surfactants. This is another segment-based method, but here
+the pretence of describing the problem in terms of the effect of interacting
+segments is abandoned. Instead, each segment is treated as an independent
+\emph{group} that contributes to the prediction in an additive, linear fashion.
+
+The descriptors in this case are the number of each group present in a molecule.
+In the original method \cite{ganiAutomaticCreationMissing2005}, different
+`orders' of groups were identified; the first-order groups are forbidden from
+overlapping with one another and they are formulated so that any molecule of
+interest can be described using these groups exclusively. Higher order groups
+serve to distinguish polyfunctional molecules and isomers
+\cite{ganiAutomaticCreationMissing2005}.
+
+\citet{matteiModelingCriticalMicelle2013} introduced third-order groups to
+improve their model's accuracy by analysing the molecules with the highest
+prediction errors after training an initial model with just the prior work's set
+of first- and second-order groups \cite{ganiAutomaticCreationMissing2005}. This
+is an example of \emph{feature selection}, whereby the set of descriptors is
+expanded or contracted to adapt to the problem
+\cite{liFeatureSelectionData2017,guyonIntroductionVariableFeature2003}.
+
+The authors randomly selected 30 compounds to use as a test dataset, achieving a
+RMSE of \SI{0.13}{\log \micro M}. The model is therefore remarkably accurate and
+boasts high interpretability: the fitted contributions of each group describe
+their effect on the CMC quantitatively, and the existence of higher order
+polyfunctional groups with large contributions implies that their constituent
+functional groups have a significant interaction with each other that affects
+the CMC. However, it may be difficult to determine whether a new molecule is
+within the applicability domain of the model, particularly because positional
+isomers are not necessarily distinguished from each another using the group
+representation.
+
+Recently, an approach based on graph neural networks (GNNs) has produced highly
+accurate predictions whilst being applicable to nonionic, cationic, anionic and
+zwitterionic surfactants simultaneously \cite{qinPredictingCriticalMicelle2021}.
+Neural networks have many trainable parameters and a complex functional form.
+This ensures their versatility as universal approximators but makes them highly
+susceptible to overfitting \cite{bejaniSystematicReviewOverfitting2021}. This
+approach boasts potentially the largest applicability domain (for a single set
+of trained parameters) of any model discussed previously, except for MD
+simulations, though simulations spanning so many classes of molecule may require
+different forcefields.
+
+GNN approaches, like the one of \citet{qinPredictingCriticalMicelle2021},
+operate on molecular graphs, which are characterised by atomic nodes whose edges
+represent bonds. Each operation on this graph considers just the local
+environment of an atom, i.e. the atoms that can be reached by traversing a
+single bond, but by stacking these operations in sequence, the size of the
+environment that is considered increases. In this sense the model is similar to
+a group contribution approach, but the groups are determined by walking $r$
+steps along bonds from every atom in the molecule, where $r$ is equal to the
+number of subsequent graph operations, so that every group overlaps.
+Furthermore, each `contribution' is non-linear, and the number of contributions
+is always equal to the number of atoms in a molecule. A more detailed discussion
+of GNNs will be given in the Method.
+
+The abstract operations that neural networks perform make deriving chemical
+insights as to the functioning of the model quite difficult. Furthermore, deep
+neural networks' ostensible `universality' can be misleading: extrapolating the
+model's results to out-of-domain molecules (ones that are `dissimilar' from the
+training data) will yield unreliable and potentially misleading predictions. It
+is also not readily apparent which molecules are in-domain without having an
+intimate knowledge of the training data; this becomes very difficult, as we wish
+to use the largest possible size of training dataset.

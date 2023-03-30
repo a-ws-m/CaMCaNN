@@ -333,16 +333,25 @@ class ECFPCountFeaturiser:
 
 if __name__ == "__main__":
     # Quick and dirty test
-    all_results = pd.read_csv(
-        Path(__file__).parents[1] / "datasets" / "qin_all_results.csv", header=0
-    )
-    test_smiles = all_results["smiles"]
+    # all_results = pd.read_csv(
+    #     Path(__file__).parents[1] / "datasets" / "qin_all_results.csv", header=0
+    # )
+    # test_smiles = all_results["smiles"]
+    test_smiles = ["CC(C)(C)C(O)C(O)C(C(C)C)O"]
     test_molecules = [MolFromSmiles(test_smile) for test_smile in test_smiles]
 
-    featuriser = ECFPCountFeaturiser()
-    fingerprints = featuriser.featurise_molecules(test_molecules, 2)
+    hash_df = pd.read_csv(Path(__file__).parents[3] / "ecfp-all" / "hashes.csv", index_col=0)
+    learned_hashes = SMILESHashes(hash_df)
+    featuriser = ECFPCountFeaturiser(learned_hashes)
+    fingerprints = featuriser.featurise_molecules(test_molecules, 2, add_new_hashes=False)
+    labelled = featuriser.label_features(fingerprints, test_smiles)
+    print(labelled.loc[:, labelled.sum() > 0])
+    # Get indexes
+    has_fp = labelled.sum() > 0
+    fp_hashes = hash_df.index[has_fp]
+    print(fp_hashes)
 
-    smiles_series = featuriser.smiles_hashes.hash_df.SMILES
-    non_unique = smiles_series.value_counts() > 1
+    # smiles_series = featuriser.smiles_hashes.hash_df.SMILES
+    # non_unique = smiles_series.value_counts() > 1
     # We'd really like to make sure these are distinguished
-    print(non_unique[non_unique])
+    # print(non_unique[non_unique])

@@ -1,0 +1,43 @@
+The ideal molecular
+representation depends on the task at hand. Ideally, it should be compact but
+complete
+\cite{faberCrystalStructureRepresentations2015,himanenDScribeLibraryDescriptors2020};
+`as simple as possible, but not simpler.' To that end, the representation should
+contain enough information to distinguish between isomers that with distinct
+properties. However, concessions can be made if we restrict the model's domain
+and self-imposed limits on the type of isomers we expose the model to, both
+during training and in use. Representations may also include descriptions of
+state, such as temperature and pressure \cite{chenGraphNetworksUniversal2019},
+but this is redundant in cases where the training data spans a very limited
+range of states.
+
+The representations employed by both the GNN and the linear models capture
+topological information and the performances of all of the models on in-domain
+data suggest that this is sufficient for the task of predicting CMC very accurately.
+However, both of the models are unable to distinguish between certain positional
+isomers, depending on the size of the atomic environments that they consider.
+In the case of ECFPs, this is dictated by the radius around each atom that
+is included in the fingerprint, whilst for the GNNs, this is determined by
+the number of consecutive graph layers. Increasing these parameters both
+increases computational cost and model complexity, introducing more parameters
+and therefore requiring more data in order to optimise them appropriately.
+
+One of the great advantages of using such a topological approach is that the
+contributions of each molecular fragment can be explicitly determined, as shown
+in the section on ECFP interpretations. In the case of the GNN, introducing a
+kernel to the model, via a Gaussian process operating on the GNN's learned
+latent space representations, offers a quantitative measure of molecular
+similarity that can simultaneously be employed for adding uncertainty to the CMC
+predictions and visualising the chemical space of the training data.
+Superimposing the test data onto this graph of chemical space highlights which
+molecules may have erroneous predictions, based on the fact that they are
+clustered amongst training data molecules with very different chemistries.
+
+Future efforts to improve this type of model may consider incorporating another
+term in the loss function for the GNN that explicitly biases the model towards
+learning a form of $\lrv{}$ that captures this similarity. Alternatively, a
+variational Gaussian process could be used, which approximates the Gaussian
+process using a fixed-size set of `pseudo-points'
+\cite{hensmanGaussianProcessesBig2013a}; this would enable the entire GNN/GP
+model to be trained at once using backpropagation
+\cite{moriartyUnlockNNUncertaintyQuantification2022}.

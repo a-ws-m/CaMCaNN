@@ -3,12 +3,13 @@ from argparse import ArgumentParser
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, Type
+from typing import Any, Callable, Dict, Optional, Union, Tuple
 
 import keras_tuner
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from sklearn.decomposition import KernelPCA
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
@@ -22,6 +23,7 @@ from .data.io import (
     ECFPData,
     QinGraphData,
     get_nist_data,
+    get_nist_and_qin,
 )
 from .gnn import build_gnn
 from .linear import LinearECFPModel, LinearResults
@@ -103,6 +105,12 @@ class GraphExperiment(BaseExperiment):
 
         self.best_hp_file = self.results_path / "best_hps.json"
 
+        self.kpca_file = self.results_path / "kernel_components.csv"
+
+        self.kernel_file = self.results_path / "full_kernel.csv"
+
+        self.gp_param_file = self.model_path / "gp_params.json"
+
         self.hypermodel = hypermodel
         self.tuner = keras_tuner.Hyperband(
             hypermodel=hypermodel,
@@ -119,7 +127,7 @@ class GraphExperiment(BaseExperiment):
         if pretrained:
             with self.best_hp_file.open("r") as f:
                 self.best_hps_dict = json.load(f)
-            
+
             hps = keras_tuner.HyperParameters()
             self.hypermodel(hps)
             hps.values = self.best_hps_dict
@@ -228,7 +236,12 @@ class GraphExperiment(BaseExperiment):
 
         return nist_metrics
 
-    def train_uq(self, with_scaler: bool = True, linear_mean_fn: bool = False):
+    def train_uq(
+        self,
+        with_scaler: bool = True,
+        linear_mean_fn: bool = False,
+        retrain: bool = False,
+    ):
         """Train and test the uncertainty quantified model."""
         hps = keras_tuner.HyperParameters()
         self.hypermodel(hps)
@@ -236,9 +249,19 @@ class GraphExperiment(BaseExperiment):
         latent_model = self.hypermodel(hps, latent_model=True)
 
         loaded_model = load_model(self.model_path)
+
+        load_gp_params = self.gp_param_file.exists() and not retrain
+        param_path = self.gp_param_file if load_gp_params else None
+
         self.uq_model = GraphGPProcess(
-            latent_model, self.graph_data, loaded_model, with_scaler, linear_mean_fn
+            latent_model,
+            self.graph_data,
+            loaded_model,
+            with_scaler,
+            linear_mean_fn,
+            param_path,
         )
+        self.uq_model.save_model(self.gp_param_file)
 
         train_metrics = self.uq_model.evaluate(self.graph_data.optim_loader_no_shuffle)
         val_metrics = self.uq_model.evaluate(self.graph_data.val_loader)
@@ -264,6 +287,30 @@ class GraphExperiment(BaseExperiment):
         )
         nist_metrics = self.uq_model.evaluate(nist_data)
         pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
+
+    def kpca(self, ndim: int = 2):
+        """Perform KPCA on NIST and Qin data."""
+        kernel_matrix, combined_data = self.pairwise()
+
+        components = KernelPCA(ndim, kernel="precomputed").fit_transform(kernel_matrix)
+
+        for dim in range(ndim):
+            combined_data[f"Component {dim+1}"] = components[:, dim]
+
+        combined_data.to_csv(self.kpca_file)
+    
+    def pairwise(self) -> Tuple[np.ndarray, pd.DataFrame]:
+        """Compute the kernel matrix on the NIST and Qin data."""
+        combined_loader, combined_data = get_nist_and_qin(
+            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+        )
+        kernel_matrix = self.uq_model.pairwise_matrix(combined_loader)
+
+        for j in range(kernel_matrix.shape[1]):
+            combined_data[f"K{j}"] = kernel_matrix[:, j]
+        
+        combined_data.to_csv(self.kernel_file)
+        return kernel_matrix, combined_data
 
     def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
         """Make a DataFrame of predicted CMCs."""
@@ -419,8 +466,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--just-uq", action="store_true", help="Just train the uncertainty quantifier."
     )
-    parser.add_argument("--no-gp-scaler", action="store_true", help="Don't use a scaler on the latent points for the Gaussian process.")
-    parser.add_argument("--lin-mean-fn", action="store_true", help="Use a linear function for the mean of the Gaussian process. If not set, will use the trained MLP from the NN as the mean function.")
+    parser.add_argument(
+        "--no-gp-scaler",
+        action="store_true",
+        help="Don't use a scaler on the latent points for the Gaussian process.",
+    )
+    parser.add_argument(
+        "--lin-mean-fn",
+        action="store_true",
+        help="Use a linear function for the mean of the Gaussian process. If not set, will use the trained MLP from the NN as the mean function.",
+    )
     parser.add_argument(
         "--only-best",
         action="store_true",
@@ -431,11 +486,27 @@ if __name__ == "__main__":
         action="store_true",
         help="Test saved model on NIST anionics data.",
     )
+    parser.add_argument(
+        "--kpca",
+        type=int,
+        help="Compute N kernel principal components on Qin and NIST data after training UQ.",
+    )
+    parser.add_argument(
+        "--pairwise",
+        action="store_true",
+        help="Compute just the learned pariwise kernel on all of the data."
+    )
 
     args = parser.parse_args()
 
     if args.and_uq and args.just_uq:
         raise ValueError("Cannot set both `--and-uq` and `--just-uq` flags.")
+    if (args.kpca or args.pairwise) and not (args.and_uq or args.just_uq):
+        raise ValueError(
+            "Must train UQ using `--and-uq` or `--just-uq` to compute kernel matrix."
+        )
+    if args.kpca is not None and args.kpca <= 0:
+        raise ValueError("KPCA components must be positive.")
 
     dataset = dataset_map[args.dataset]
     model = model_map[args.model]
@@ -466,4 +537,10 @@ if __name__ == "__main__":
                 exp.train_best(args.epochs)
                 exp.test()
             if do_uq:
-                exp.train_uq(with_scaler=not args.no_gp_scaler, linear_mean_fn=args.lin_mean_fn)
+                exp.train_uq(
+                    with_scaler=not args.no_gp_scaler, linear_mean_fn=args.lin_mean_fn
+                )
+                if args.kpca:
+                    exp.kpca(args.kpca)
+                elif args.pairwise:
+                    exp.pairwise()
