@@ -337,7 +337,7 @@ if __name__ == "__main__":
     #     Path(__file__).parents[1] / "datasets" / "qin_all_results.csv", header=0
     # )
     # test_smiles = all_results["smiles"]
-    test_smiles = ["COCCO"]
+    test_smiles = ["CC(C)(C)C(O)C(O)C(C(C)C)O"]
     test_molecules = [MolFromSmiles(test_smile) for test_smile in test_smiles]
 
     hash_df = pd.read_csv(Path(__file__).parents[3] / "ecfp-all" / "hashes.csv", index_col=0)
