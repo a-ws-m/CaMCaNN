@@ -14,18 +14,20 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
-    TypeAlias,
     Tuple,
+    TypeAlias,
     Union,
 )
 from zlib import crc32
 
 import numpy as np
 import pandas as pd
-from rdkit.Chem import MolFromSmiles, MolFragmentToSmiles
-from rdkit.Chem.rdmolops import FindAtomEnvironmentOfRadiusN
+from rdkit.Chem import MolFragmentToSmiles, MolFromSmiles
 from rdkit.Chem.rdchem import Atom, Bond, Mol
+from rdkit.Chem.rdmolops import FindAtomEnvironmentOfRadiusN
 from scipy.sparse import csr_array
+from sklearn.cluster import OPTICS
+from sklearn.preprocessing import StandardScaler
 
 AtomicIndex: TypeAlias = int
 BondIndex: TypeAlias = int
@@ -72,6 +74,24 @@ def frag_to_smiles(mol: Mol, atoms: Union[int, Iterable[int]]) -> str:
     if isinstance(atoms, int):
         atoms = [atoms]
     return MolFragmentToSmiles(mol, atomsToUse=list(atoms), allHsExplicit=True)
+
+
+def cluster_df(df: pd.DataFrame, fps: np.ndarray, min_samples: int = 2):
+    """Cluster a molecular DataFrame based on fingerprint similarity."""
+    # Scale the array column-wise using a standard scaler
+    # scaler = StandardScaler()
+    # scaled_fps = scaler.fit_transform(fps)
+    scaled_fps = fps.astype(np.bool8)
+
+    # Apply OPTICS clustering to the scaled array
+    optics = OPTICS(min_samples=min_samples, metric="jaccard")
+    clusters = optics.fit_predict(scaled_fps)
+
+    # Add the clusters as a new column in the DataFrame
+    df["cluster"] = clusters
+
+    # Return the updated DataFrame
+    return df
 
 
 class SimpleMolecule(NamedTuple):
@@ -340,10 +360,14 @@ if __name__ == "__main__":
     test_smiles = ["CC(C)(C)C(O)C(O)C(C(C)C)O"]
     test_molecules = [MolFromSmiles(test_smile) for test_smile in test_smiles]
 
-    hash_df = pd.read_csv(Path(__file__).parents[3] / "ecfp-all" / "hashes.csv", index_col=0)
+    hash_df = pd.read_csv(
+        Path(__file__).parents[3] / "ecfp-all" / "hashes.csv", index_col=0
+    )
     learned_hashes = SMILESHashes(hash_df)
     featuriser = ECFPCountFeaturiser(learned_hashes)
-    fingerprints = featuriser.featurise_molecules(test_molecules, 2, add_new_hashes=False)
+    fingerprints = featuriser.featurise_molecules(
+        test_molecules, 2, add_new_hashes=False
+    )
     labelled = featuriser.label_features(fingerprints, test_smiles)
     print(labelled.loc[:, labelled.sum() > 0])
     # Get indexes

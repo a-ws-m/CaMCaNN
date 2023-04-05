@@ -16,6 +16,7 @@ from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from tensorflow.keras.models import Model, load_model
 
+from .data.featurise.ecfp import cluster_df
 from .data.io import (
     Datasets,
     RANDOM_SEED,
@@ -298,7 +299,7 @@ class GraphExperiment(BaseExperiment):
             combined_data[f"Component {dim+1}"] = components[:, dim]
 
         combined_data.to_csv(self.kpca_file)
-    
+
     def pairwise(self) -> Tuple[np.ndarray, pd.DataFrame]:
         """Compute the kernel matrix on the NIST and Qin data."""
         combined_loader, combined_data = get_nist_and_qin(
@@ -308,7 +309,7 @@ class GraphExperiment(BaseExperiment):
 
         for j in range(kernel_matrix.shape[1]):
             combined_data[f"K{j}"] = kernel_matrix[:, j]
-        
+
         combined_data.to_csv(self.kernel_file)
         return kernel_matrix, combined_data
 
@@ -353,6 +354,7 @@ class ECFPExperiment(BaseExperiment):
         super().__init__(model, dataset, results_path)
 
         self.hash_path = results_path / "hashes.csv"
+        self.clusters_path = results_path / "clusters.csv"
 
         self.featuriser = ECFPData(dataset, self.hash_path)
 
@@ -427,6 +429,13 @@ class ECFPExperiment(BaseExperiment):
         with self.nist_res_path.open("w") as f:
             json.dump(results, f)
 
+    def find_clusters(self):
+        """Get the cluster predictions for the Qin data."""
+        all_fps, _ = self.featuriser.all_data
+        df = self.featuriser.df
+        clustered_df = cluster_df(df, all_fps)
+        clustered_df.to_csv(self.clusters_path)
+
 
 if __name__ == "__main__":
 
@@ -457,6 +466,9 @@ if __name__ == "__main__":
     parser.add_argument("name", type=str, help="The name of the model.")
     parser.add_argument(
         "-e", "--epochs", type=int, help="The number of epochs to train."
+    )
+    parser.add_argument(
+        "--cluster", action="store_true", help="Just perform clustering with the ECFPs."
     )
     parser.add_argument(
         "--and-uq",
@@ -494,7 +506,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pairwise",
         action="store_true",
-        help="Compute just the learned pariwise kernel on all of the data."
+        help="Compute just the learned pariwise kernel on all of the data.",
     )
 
     args = parser.parse_args()
@@ -520,10 +532,17 @@ if __name__ == "__main__":
             raise NotImplementedError("Cannot use UQ with linear ECFP model.")
 
         ecfp_exp = ECFPExperiment(dataset, results_path=results_path)
-        ecfp_exp.train_test()
-        if args.test_nist:
-            ecfp_exp.test_nist()
+
+        if args.cluster:
+            ecfp_exp.find_clusters()
+        else:
+            ecfp_exp.train_test()
+            if args.test_nist:
+                ecfp_exp.test_nist()
     else:
+        if args.cluster:
+            raise ValueError("Can only cluster for an ECFPLinear model.")
+
         pretrained = args.just_uq
         exp = GraphExperiment(
             build_gnn, dataset, results_path=results_path, pretrained=pretrained
