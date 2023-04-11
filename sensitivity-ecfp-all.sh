@@ -1,26 +1,20 @@
 #!/bin/bash
 
-# Define the number of retrials to perform
-num_trials=4
+# Define the combinations of num_splits and num_repeats
+splits=(2 3 4 5)
+repeats=(3 2 1 1)
 
-# Define a range for the loop
-start=5
-end=8
+# Loop over each combination
+for i in "${!splits[@]}"; do
+    # Extract num_splits and num_repeats
+    num_splits=${splits[i]}
+    num_repeats=${repeats[i]}
 
-for trial in $(seq 1 $num_trials); do
-    # Loop through the range
-    for i in $(seq $start $end); do
-        ratio="0.$i"
+    # Create the directory
+    dir_name="ecfp-all-$num_splits-splits"
 
-        # Define the directory name
-        directory="ecfp-all-$i-trial-$trial"
+    echo "Running python module"
 
-        # Make the directory
-        mkdir "$directory"
-
-        echo "Running python module"
-
-        # Run the Python module with the directory as an argument
-        python -m camcann.lab ECFPLinear All -r "$ratio" --test-nist "$directory"
-    done
+    # Run the python module with the arguments
+    python -m camcann.lab --test-nist --splits "$num_splits" --repeats "$num_repeats" ECFPLinear All "$dir_name"
 done

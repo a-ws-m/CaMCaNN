@@ -9,7 +9,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from rdkit.Chem import MolFromSmiles
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import KFold, train_test_split, RepeatedStratifiedKFold
 from spektral.data import Dataset, DisjointLoader, Graph
 from spektral.transforms import LayerPreprocess
 
@@ -155,15 +155,19 @@ class DataLoader(ABC):
     """Handle reading Qin datasets from file."""
 
     def __init__(
-        self, dataset: Union[QinDatasets, Datasets], train_ratio: Optional[float] = None,
+        self,
+        dataset: Union[QinDatasets, Datasets],
+        num_splits: Optional[int] = None,
+        num_repeats: Optional[int] = None,
+        fold_idx: Optional[int] = None,
     ) -> None:
         """Load data and find train/test indexes.
 
         Args:
             dataset: Which Qin dataset to load.
-            train_ratio: The ratio to use for splitting the data. If this
-                is `None`, the data is split according to the `traintest` column, or
-                else it is all treated like test data if this is missing.
+            num_splits: The number of folds to split into.
+            num_repeats: The number of repeats to perform.
+            fold_idx: The fold to train.
 
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
@@ -172,14 +176,21 @@ class DataLoader(ABC):
         )
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles_col]
 
-        if train_ratio is not None:
+        if num_splits is not None:
             # self.train_idxs, self.test_idxs = train_test_split(
             #     self.df.index,
             #     train_size=train_ratio,
             #     stratify=self.df["cluster"],
             #     random_state=RANDOM_SEED,
             # )
-            self.train_idxs, self.test_idxs = cluster_split(self.df, train_ratio)
+            rsk = RepeatedStratifiedKFold(
+                n_splits=num_splits, n_repeats=num_repeats, random_state=RANDOM_SEED
+            )
+            all_train_idx, all_test_idx = list(zip(*rsk.split(self.df.index, self.df["cluster"])))
+            self.train_idxs, self.test_idxs = (
+                all_train_idx[fold_idx],
+                all_test_idx[fold_idx],
+            )
             self.optim_idxs, self.val_idxs = train_test_split(
                 self.train_idxs, train_size=0.9, random_state=RANDOM_SEED
             )
@@ -205,7 +216,9 @@ class ECFPData(DataLoader):
         self,
         dataset: Union[Datasets, QinDatasets],
         hash_file: Optional[Path] = None,
-        train_ratio: Optional[float] = None,
+        num_splits: Optional[int] = None,
+        num_repeats: Optional[int] = None,
+        fold_idx: Optional[int] = None,
     ) -> None:
         """Load data and initialise featuriser.
 
@@ -214,7 +227,9 @@ class ECFPData(DataLoader):
             hash_file: Where to save/load hash data to.
 
         """
-        super().__init__(dataset, train_ratio)
+        super().__init__(
+            dataset, num_splits=num_splits, num_repeats=num_repeats, fold_idx=fold_idx
+        )
 
         smiles_hashes = None
         save_hashes = False
@@ -276,7 +291,9 @@ class QinGraphData(DataLoader):
         dataset: QinDatasets,
         mol_featuriser: MolNodeFeaturizer = MolNodeFeaturizer(),
         preprocess: Optional[LayerPreprocess] = None,
-        train_ratio: Optional[float] = None,
+        num_splits: Optional[int] = None,
+        num_repeats: Optional[int] = None,
+        fold_idx: Optional[int] = None,
     ) -> None:
         """Load data and initialise featuriser.
 
@@ -285,7 +302,9 @@ class QinGraphData(DataLoader):
             mol_featuriser: The molecular featuriser to use. This is important for consistency with featurising, e.g. one hot encoding.
 
         """
-        super().__init__(dataset, train_ratio)
+        super().__init__(
+            dataset, num_splits=num_splits, num_repeats=num_repeats, fold_idx=fold_idx
+        )
 
         self.mol_featuriser = mol_featuriser
         graphs = mols_to_graph(

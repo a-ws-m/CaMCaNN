@@ -1,0 +1,13 @@
+,0
+train_rmse,0.23965268758184388
+train_r2,0.962408596956634
+selection_alpha,0.3226957421152346
+selection_l1_ratio,0.1
+final_alpha,2.7
+intercept,3.0593009156000006
+test_rmse,0.42951603109517034
+test_r2,0.854200268338348
+num_non_negligible,123.0
+train_nll,
+test_nll,
+num_low_freq,138.0
