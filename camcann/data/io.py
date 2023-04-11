@@ -1,8 +1,10 @@
 """Data loading and preprocessing utilities."""
 from abc import ABC
+from collections import defaultdict
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -17,11 +19,52 @@ from .featurise.graph import MolNodeFeaturizer, mols_to_graph
 DATASET_FOLDER = Path(__file__).parent / "datasets"
 RANDOM_SEED = 2021
 
+
+def cluster_split(df: pd.DataFrame, train_ratio: float) -> Tuple[List[int], List[int]]:
+    """Get train and test indices for a DataFrame with cluster labels.
+
+    Similar to scikit-learn's stratified ``train_test_split``, but ensures that
+    the train set with ratio of r_0 is a subset of the train set for ratio r_1,
+    where r_1 > r_0.
+
+    Args:
+        df: A DataFrame containing a `cluster` column.
+
+    Returns:
+        train_indices
+        test_indices
+
+    """
+    shuffled_df = df.sample(frac=1, random_state=RANDOM_SEED)
+    classes = df["cluster"].unique()
+
+    # Organise the data by which indexes belong to each class
+    test_bins = {
+        class_: list(shuffled_df.index[shuffled_df["cluster"] == class_])
+        for class_ in classes
+    }
+
+    # Selectively remove the indexes until we get the correct ratios
+    train_bins = defaultdict(list)
+    for class_, indexes in test_bins.items():
+        total_num_index = len(indexes)
+        curr_train_ratio = lambda: len(train_bins[class_]) / total_num_index
+        while curr_train_ratio() < train_ratio:
+            train_bins[class_].append(indexes.pop())
+
+    all_train_idxs = list(itertools.chain.from_iterable(train_bins.values()))
+    all_test_idxs = list(itertools.chain.from_iterable(test_bins.values()))
+
+    print(f"True train ratio = {len(all_train_idxs) / len(df.index)}")
+    return all_train_idxs, all_test_idxs
+
+
 def get_polyoxyethylene_smiles(num_head: int, num_tail: int) -> str:
     """Get a SMILES string for a polyoxyethylene alcohol."""
     head = "C" * num_head
     tail = "CCO" * num_tail
     return head + "O" + tail
+
 
 class GraphData(Dataset):
     """Handle graph data subsets."""
@@ -111,11 +154,16 @@ class DataReader:
 class DataLoader(ABC):
     """Handle reading Qin datasets from file."""
 
-    def __init__(self, dataset: Union[QinDatasets, Datasets]) -> None:
+    def __init__(
+        self, dataset: Union[QinDatasets, Datasets], train_ratio: Optional[float] = None,
+    ) -> None:
         """Load data and find train/test indexes.
 
         Args:
             dataset: Which Qin dataset to load.
+            train_ratio: The ratio to use for splitting the data. If this
+                is `None`, the data is split according to the `traintest` column, or
+                else it is all treated like test data if this is missing.
 
         """
         self.df = pd.read_csv(dataset.value, header=0, index_col=0)
@@ -123,25 +171,41 @@ class DataLoader(ABC):
             self.df["smiles"] if "smiles" in self.df.columns else self.df["SMILES"]
         )
         self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles_col]
-        try:
-            self.test_idxs = np.where(self.df["traintest"] == "test")[0]
-            self.train_idxs = np.where(self.df["traintest"] == "train")[0]
+
+        if train_ratio is not None:
+            # self.train_idxs, self.test_idxs = train_test_split(
+            #     self.df.index,
+            #     train_size=train_ratio,
+            #     stratify=self.df["cluster"],
+            #     random_state=RANDOM_SEED,
+            # )
+            self.train_idxs, self.test_idxs = cluster_split(self.df, train_ratio)
             self.optim_idxs, self.val_idxs = train_test_split(
-                self.train_idxs, train_size=0.9, random_state=2022
+                self.train_idxs, train_size=0.9, random_state=RANDOM_SEED
             )
-        except (KeyError, ValueError):
-            # No train/test split
-            self.test_idxs = np.indices((len(self.df.index),))
-            self.train_idxs = np.array([])
-            self.optim_idxs = self.train_idxs
-            self.val_idxs = self.train_idxs
+        else:
+            try:
+                self.test_idxs = np.where(self.df["traintest"] == "test")[0]
+                self.train_idxs = np.where(self.df["traintest"] == "train")[0]
+                self.optim_idxs, self.val_idxs = train_test_split(
+                    self.train_idxs, train_size=0.9, random_state=RANDOM_SEED
+                )
+            except (KeyError, ValueError):
+                # No train/test split
+                self.test_idxs = self.df.index
+                self.train_idxs = np.array([])
+                self.optim_idxs = self.train_idxs
+                self.val_idxs = self.train_idxs
 
 
 class ECFPData(DataLoader):
     """Handle reading Qin datasets from file and featurising with ECFP fingerprints."""
 
     def __init__(
-        self, dataset: Union[Datasets, QinDatasets], hash_file: Optional[Path] = None
+        self,
+        dataset: Union[Datasets, QinDatasets],
+        hash_file: Optional[Path] = None,
+        train_ratio: Optional[float] = None,
     ) -> None:
         """Load data and initialise featuriser.
 
@@ -150,7 +214,7 @@ class ECFPData(DataLoader):
             hash_file: Where to save/load hash data to.
 
         """
-        super().__init__(dataset)
+        super().__init__(dataset, train_ratio)
 
         smiles_hashes = None
         save_hashes = False
@@ -212,6 +276,7 @@ class QinGraphData(DataLoader):
         dataset: QinDatasets,
         mol_featuriser: MolNodeFeaturizer = MolNodeFeaturizer(),
         preprocess: Optional[LayerPreprocess] = None,
+        train_ratio: Optional[float] = None,
     ) -> None:
         """Load data and initialise featuriser.
 
@@ -220,7 +285,7 @@ class QinGraphData(DataLoader):
             mol_featuriser: The molecular featuriser to use. This is important for consistency with featurising, e.g. one hot encoding.
 
         """
-        super().__init__(dataset)
+        super().__init__(dataset, train_ratio)
 
         self.mol_featuriser = mol_featuriser
         graphs = mols_to_graph(
@@ -294,6 +359,7 @@ class QinGraphData(DataLoader):
         """Get the full data loader."""
         return DisjointLoader(self.all_dataset, shuffle=False)
 
+
 def get_nist_and_qin(
     mol_featuriser: MolNodeFeaturizer,
     preprocess: Optional[LayerPreprocess] = None,
@@ -306,9 +372,17 @@ def get_nist_and_qin(
     nist_df["Convertable"] = ~nist_df["SMILES"].str.contains(r"(Mn)|(Cs)|(Mg)")
     convertable_df = nist_df[nist_df["Convertable"]]
 
-    nist_graphs = mols_to_graph(list(convertable_df["Molecules"]), mol_featuriser, list(convertable_df["log CMC"]))
-    nist_graphs = mols_to_graph(list(nist_df["Molecules"]), mol_featuriser, list(nist_df["log CMC"]))
-    nist_graphs = list(map(preprocess, nist_graphs)) if preprocess is not None else nist_graphs
+    nist_graphs = mols_to_graph(
+        list(convertable_df["Molecules"]),
+        mol_featuriser,
+        list(convertable_df["log CMC"]),
+    )
+    nist_graphs = mols_to_graph(
+        list(nist_df["Molecules"]), mol_featuriser, list(nist_df["log CMC"])
+    )
+    nist_graphs = (
+        list(map(preprocess, nist_graphs)) if preprocess is not None else nist_graphs
+    )
 
     qin_loader = QinGraphData(QinDatasets.QIN_ALL_RESULTS, mol_featuriser, preprocess)
     qin_df = qin_loader.df

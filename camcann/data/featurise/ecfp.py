@@ -76,7 +76,7 @@ def frag_to_smiles(mol: Mol, atoms: Union[int, Iterable[int]]) -> str:
     return MolFragmentToSmiles(mol, atomsToUse=list(atoms), allHsExplicit=True)
 
 
-def cluster_df(df: pd.DataFrame, fps: np.ndarray, min_samples: int = 2):
+def cluster_df(df: pd.DataFrame, fps: np.ndarray, min_samples: int = 4):
     """Cluster a molecular DataFrame based on fingerprint similarity."""
     # Scale the array column-wise using a standard scaler
     # scaler = StandardScaler()
@@ -89,6 +89,8 @@ def cluster_df(df: pd.DataFrame, fps: np.ndarray, min_samples: int = 2):
 
     # Add the clusters as a new column in the DataFrame
     df["cluster"] = clusters
+
+    print(f"{len(df['cluster'].unique())} clusters found.")
 
     # Return the updated DataFrame
     return df

@@ -50,6 +50,7 @@ class BaseExperiment:
         dataset: Union[Datasets, QinDatasets],
         results_path: Path,
         debug: bool = False,
+        train_ratio: Optional[float] = None,
     ) -> None:
         """Initialise paths."""
         self.results_path = results_path
@@ -74,6 +75,7 @@ class BaseExperiment:
         self.model_type = model
         self.dataset = dataset
         self.debug = debug
+        self.train_ratio = train_ratio
 
 
 class GraphExperiment(BaseExperiment):
@@ -94,9 +96,10 @@ class GraphExperiment(BaseExperiment):
         results_path: Path,
         debug: bool = False,
         pretrained: bool = False,
+        train_ratio: Optional[float] = None,
     ) -> None:
         """Initialize the model and the datasets."""
-        super().__init__(hypermodel, dataset, results_path, debug)
+        super().__init__(hypermodel, dataset, results_path, debug, train_ratio)
 
         self.tb_dir = results_path / "logs"
         self.tb_dir.mkdir(exist_ok=True)
@@ -123,7 +126,7 @@ class GraphExperiment(BaseExperiment):
             project_name="gnn_search",
         )
 
-        self.graph_data = QinGraphData(dataset, preprocess=LayerPreprocess(GCNConv))
+        self.graph_data = QinGraphData(dataset, preprocess=LayerPreprocess(GCNConv), train_ratio=train_ratio)
 
         if pretrained:
             with self.best_hp_file.open("r") as f:
@@ -173,9 +176,15 @@ class GraphExperiment(BaseExperiment):
 
     def train_best(self, epochs: int):
         """Train the best hyperparameters on all the data."""
-        best_hp = self.tuner.get_best_hyperparameters()[0]
+        try:
+            best_hp = self.tuner.get_best_hyperparameters()[0]
+            self.best_hps_dict = best_hp.values
+        except IndexError:
+            self.best_hps_dict = json.loads(self.best_hp_file.read_text())
+            best_hp = keras_tuner.HyperParameters()
+            best_hp.values = self.best_hps_dict
 
-        self.best_hps_dict = best_hp.values
+
         print("Best hyperparameters:")
         print(self.best_hps_dict)
 
@@ -315,12 +324,21 @@ class GraphExperiment(BaseExperiment):
 
     def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
         """Make a DataFrame of predicted CMCs."""
+
+        if self.train_ratio is not None:
+            traintest = [
+                "train" if i in self.graph_data.train_idxs else "test"
+                for i in range(len(self.graph_data.df.index))
+            ]
+        else:
+            traintest = self.graph_data.df.traintest
+
         data = {
             "smiles": self.graph_data.df.smiles,
             "exp": self.graph_data.df.exp,
             "qin": self.graph_data.df.pred,
             "pred": predictions,
-            "traintest": self.graph_data.df.traintest,
+            "traintest": traintest,
         }
 
         if stddevs is not None:
@@ -348,15 +366,18 @@ class ECFPExperiment(BaseExperiment):
     """Train and evaluate a simple, linear ECFP model."""
 
     def __init__(
-        self, dataset: Union[Datasets, QinDatasets], results_path: Path
+        self,
+        dataset: Union[Datasets, QinDatasets],
+        results_path: Path,
+        train_ratio: Optional[float] = None,
     ) -> None:
         """Load dataset and initialise featuriser."""
-        super().__init__(model, dataset, results_path)
+        super().__init__(model, dataset, results_path, train_ratio=train_ratio)
 
         self.hash_path = results_path / "hashes.csv"
         self.clusters_path = results_path / "clusters.csv"
 
-        self.featuriser = ECFPData(dataset, self.hash_path)
+        self.featuriser = ECFPData(dataset, self.hash_path, train_ratio)
 
         train_fps, train_targets = self.featuriser.train_data
         test_fps, test_targets = self.featuriser.test_data
@@ -372,13 +393,21 @@ class ECFPExperiment(BaseExperiment):
     def _make_pred_df(self, predictions):
         """Make a DataFrame of predicted CMCs."""
         df = self.featuriser.df
+
+        if self.train_ratio is not None:
+            traintest = [
+                "train" if i in self.featuriser.train_idxs else "test"
+                for i in range(len(df.index))
+            ]
+        else:
+            traintest = df.traintest
         return pd.DataFrame(
             {
                 "smiles": df.smiles,
                 "exp": df.exp,
                 "qin": df.pred,
                 "pred": predictions,
-                "traintest": df.traintest,
+                "traintest": traintest,
             }
         )
 
@@ -468,6 +497,13 @@ if __name__ == "__main__":
         "-e", "--epochs", type=int, help="The number of epochs to train."
     )
     parser.add_argument(
+        "-r",
+        "--ratio",
+        type=float,
+        help="The training data ratio. If unspecified, will use the Qin split.",
+        default=None,
+    )
+    parser.add_argument(
         "--cluster", action="store_true", help="Just perform clustering with the ECFPs."
     )
     parser.add_argument(
@@ -531,7 +567,7 @@ if __name__ == "__main__":
         if do_uq:
             raise NotImplementedError("Cannot use UQ with linear ECFP model.")
 
-        ecfp_exp = ECFPExperiment(dataset, results_path=results_path)
+        ecfp_exp = ECFPExperiment(dataset, results_path=results_path, train_ratio=args.ratio)
 
         if args.cluster:
             ecfp_exp.find_clusters()
@@ -545,7 +581,7 @@ if __name__ == "__main__":
 
         pretrained = args.just_uq
         exp = GraphExperiment(
-            build_gnn, dataset, results_path=results_path, pretrained=pretrained
+            build_gnn, dataset, results_path=results_path, pretrained=pretrained, train_ratio=args.ratio
         )
         if args.test_nist:
             print(exp.test_nist())
