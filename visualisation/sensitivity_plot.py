@@ -11,10 +11,10 @@ sns.set_style("darkgrid")
 ROOT = Path(__file__).parents[1]
 
 MODELS: Dict[str, str] = {
-    "ECFP All": "ecfp-all-{}-splits-trial-{}",
-    "ECFP Nonionics": "ecfp-nonionic-{}-splits-trial-{}",
-    "GNN All": "gnn-all-{}-splits-trial-{}",
-    "GNN Nonionics": "gnn-nonionics-{}-splits-trial-{}",
+    "ECFP Qin-All": "ecfp-all-{}-splits-trial-{}",
+    "ECFP Qin-Nonionics": "ecfp-nonionic-{}-splits-trial-{}",
+    "GNN Qin-All": "gnn-all-{}-splits-trial-{}",
+    "GNN Qin-Nonionics": "gnn-nonionics-{}-splits-trial-{}",
 }
 
 
@@ -48,7 +48,9 @@ def plot_sensitivity(dir_templates: List[str], model_names: List[str], splits: L
     rmse_df = pd.DataFrame({"Train ratio": train_ratios, RMSE_NAME: rmse_values, "Model name": model_name_map})
     fg = sns.FacetGrid(data=rmse_df, col="Model name", col_wrap=2)
     fg.map_dataframe(sns.regplot, x="Train ratio", y=RMSE_NAME, logx=True, x_bins=4)
-    plt.savefig(plot_fname)
+    fg.set_titles(col_template="{col_name}")
+    fg.tight_layout()
+    fg.savefig(plot_fname)
 
 
 if __name__ == "__main__":

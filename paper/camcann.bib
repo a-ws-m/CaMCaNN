@@ -14,6 +14,39 @@
   abstract = {Alternative methods for determining the critical micelle concentration (CMC) are proposed using coarse-grained molecular dynamics (MD) simulations. In the literature, the CMC value is commonly taken to be the ``free'' (unassociated) surfactant concentration in the presence of micellar aggregates given by MD simulations. In the present study, two surfactants with different head groups and the same alkyl tail, n-octyltrimethylammonium bromide (C8TAB) and sodium octyl sulfate (S8S), were used to calculate the CMC value. The CMC of surfactants can be calculated from the variation in the zero-shear-rate viscosity as a function of the surfactant concentration in both the premicellar and micellar regions. Linear slopes were obtained in both regions with increasing surfactant concentrations. The CMC values for C8TAB and S8S were determined from the intersection of the two lines and are in good agreement with experimental values.}
 }
 
+@article{ankerstOPTICSOrderingPoints1999,
+  title = {{{OPTICS}}: Ordering Points to Identify the Clustering Structure},
+  shorttitle = {{{OPTICS}}},
+  author = {Ankerst, Mihael and Breunig, Markus M. and Kriegel, Hans-Peter and Sander, J{\"o}rg},
+  year = {1999},
+  month = jun,
+  journal = {ACM SIGMOD Record},
+  volume = {28},
+  number = {2},
+  pages = {49--60},
+  issn = {0163-5808},
+  doi = {10.1145/304181.304187},
+  urldate = {2023-04-13},
+  abstract = {Cluster analysis is a primary method for database mining. It is either used as a stand-alone tool to get insight into the distribution of a data set, e.g. to focus further analysis and data processing, or as a preprocessing step for other algorithms operating on the detected clusters. Almost all of the well-known clustering algorithms require input parameters which are hard to determine but have a significant influence on the clustering result. Furthermore, for many real-data sets there does not even exist a global parameter setting for which the result of the clustering algorithm describes the intrinsic clustering structure accurately. We introduce a new algorithm for the purpose of cluster analysis which does not produce a clustering of a data set explicitly; but instead creates an augmented ordering of the database representing its density-based clustering structure. This cluster-ordering contains information which is equivalent to the density-based clusterings corresponding to a broad range of parameter settings. It is a versatile basis for both automatic and interactive cluster analysis. We show how to automatically and efficiently extract not only 'traditional' clustering information (e.g. representative points, arbitrary shaped clusters), but also the intrinsic clustering structure. For medium sized data sets, the cluster-ordering can be represented graphically and for very large data sets, we introduce an appropriate visualization technique. Both are suitable for interactive exploration of the intrinsic clustering structure offering additional insights into the distribution and correlation of the data.},
+  keywords = {cluster analysis,database mining,visualization}
+}
+
+@article{bajuszWhyTanimotoIndex2015,
+  title = {Why Is {{Tanimoto}} Index an Appropriate Choice for Fingerprint-Based Similarity Calculations?},
+  author = {Bajusz, D{\'a}vid and R{\'a}cz, Anita and H{\'e}berger, K{\'a}roly},
+  year = {2015},
+  month = may,
+  journal = {Journal of Cheminformatics},
+  volume = {7},
+  number = {1},
+  pages = {20},
+  issn = {1758-2946},
+  doi = {10.1186/s13321-015-0069-3},
+  urldate = {2023-04-13},
+  abstract = {Cheminformaticians are equipped with a very rich toolbox when carrying out molecular similarity calculations. A large number of molecular representations exist, and there are several methods (similarity and distance metrics) to quantify the similarity of molecular representations. In this work, eight well-known similarity/distance metrics are compared on a large dataset of molecular fingerprints with sum of ranking differences (SRD) and ANOVA analysis. The effects of molecular size, selection methods and data pretreatment methods on the outcome of the comparison are also assessed.},
+  keywords = {Analysis of variance,Data fusion,Distance metrics,Fingerprint,Ranking,Similarity,Sum of ranking differences}
+}
+
 @paper{bastianGephiOpenSource2009,
   title = {Gephi: {{An}} Open Source Software for Exploring and Manipulating Networks},
   author = {Bastian, Mathieu and Heymann, Sebastien and Jacomy, Mathieu},
@@ -47,6 +80,23 @@
   journal = {Journal of machine learning research},
   volume = {13},
   number = {2}
+}
+
+@article{butinaUnsupervisedDataBase1999,
+  title = {Unsupervised {{Data Base Clustering Based}} on {{Daylight}}'s {{Fingerprint}} and {{Tanimoto Similarity}}: {{A Fast}} and {{Automated Way To Cluster Small}} and {{Large Data Sets}}},
+  shorttitle = {Unsupervised {{Data Base Clustering Based}} on {{Daylight}}'s {{Fingerprint}} and {{Tanimoto Similarity}}},
+  author = {Butina, Darko},
+  year = {1999},
+  month = jul,
+  journal = {Journal of Chemical Information and Computer Sciences},
+  volume = {39},
+  number = {4},
+  pages = {747--750},
+  publisher = {{American Chemical Society}},
+  issn = {0095-2338},
+  doi = {10.1021/ci9803381},
+  urldate = {2023-04-13},
+  abstract = {One of the most commonly used clustering algorithms within the worldwide pharmaceutical industry is Jarvis-Patrick's (J-P) (Jarvis, R. A. IEEE Trans. Comput. 1973, C-22, 1025-1034). The implementation of J-P under Daylight software, using Daylight's fingerprints and the Tanimoto similarity index, can deal with sets of 100 k molecules in a matter of a few hours. However, the J-P clustering algorithm has several associated problems which make it difficult to cluster large data sets in a consistent and timely manner. The clusters produced are greatly dependent on the choice of the two parameters needed to run J-P clustering, such that this method tends to produce clusters which are either very large and heterogeneous or homogeneous but too small. In any case, J-P always requires time-consuming manual tuning. This paper describes an algorithm which will identify dense clusters where similarity within each cluster reflects the Tanimoto value used for the clustering, and, more importantly, where the cluster centroid will be at least similar, at the given Tanimoto value, to every other molecule within the cluster in a consistent and automated manner. The similarity term used throughout this paper reflects the overall similarity between two given molecules, as defined by Daylight's fingerprints and the Tanimoto similarity index.}
 }
 
 @article{chengCorrelationCriticalMicelle2005,
@@ -387,6 +437,20 @@
   keywords = {anionic surfactants,CODESSA,critical micelle concentration,dipole moment,molecular connectivity,MOPAC,property prediction,quantitative structure–property relationships,topology}
 }
 
+@article{jaccardDistributionFloraAlpine1912,
+  title = {The {{Distribution}} of the {{Flora}} in the {{Alpine Zone}}.1},
+  author = {Jaccard, Paul},
+  year = {1912},
+  journal = {New Phytologist},
+  volume = {11},
+  number = {2},
+  pages = {37--50},
+  issn = {1469-8137},
+  doi = {10.1111/j.1469-8137.1912.tb05611.x},
+  urldate = {2023-04-13},
+  langid = {english}
+}
+
 @article{jacomyForceAtlas2ContinuousGraph2014,
   title = {{{ForceAtlas2}}, a {{Continuous Graph Layout Algorithm}} for {{Handy Network Visualization Designed}} for the {{Gephi Software}}},
   author = {Jacomy, Mathieu and Venturini, Tommaso and Heymann, Sebastien and Bastian, Mathieu},
@@ -594,6 +658,21 @@
   keywords = {Critical Micelle Concentration,Gossypol,Straight Chain,Surface Active Agent}
 }
 
+@misc{kosubNoteTriangleInequality2016,
+  title = {A Note on the Triangle Inequality for the {{Jaccard}} Distance},
+  author = {Kosub, Sven},
+  year = {2016},
+  month = dec,
+  number = {arXiv:1612.02696},
+  eprint = {arXiv:1612.02696},
+  publisher = {{arXiv}},
+  doi = {10.48550/arXiv.1612.02696},
+  urldate = {2023-04-13},
+  abstract = {Two simple proofs of the triangle inequality for the Jaccard distance in terms of nonnegative, monotone, submodular functions are given and discussed.},
+  archiveprefix = {arxiv},
+  keywords = {Computer Science - Discrete Mathematics,Computer Science - Information Retrieval,Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
 @article{leonardSelectionTrainingTest2006,
   title = {On Selection of Training and Test Sets for the Development of Predictive {{QSAR}} Models},
   author = {Leonard, J. Thomas and Roy, Kunal},
@@ -713,7 +792,7 @@
 
 @article{matthewsGPflowGaussianProcess2017,
   title = {{{GPflow}}: {{A Gaussian}} Process Library Using {{TensorFlow}}},
-  author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and Fujii, {\relax Keisuke} and Boukouvalas, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and Ghahramani, Zoubin and Hensman, James},
+  author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and Fujii, {\relax Keisuke}. and Boukouvalas, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and Ghahramani, Zoubin and Hensman, James},
   year = {2017},
   month = apr,
   journal = {Journal of Machine Learning Research},
@@ -957,6 +1036,13 @@
   urldate = {2023-01-01},
   abstract = {Article Experimentelle Studien \"uber kapillare Eigenschaften der w\"asserigen L\"osungen von Fetts\"auren was published on August 1, 1908 in the journal Zeitschrift f\"ur Physikalische Chemie (volume 64U, issue 1).},
   langid = {ngerman}
+}
+
+@article{tanimotoElementaryMathematicalTheory1958,
+  title = {Elementary Mathematical Theory of Classification and Prediction},
+  author = {Tanimoto, Taffee T.},
+  year = {1958},
+  publisher = {{International Business Machines Corp.}}
 }
 
 @article{tibshiraniRegressionShrinkageSelection1996,

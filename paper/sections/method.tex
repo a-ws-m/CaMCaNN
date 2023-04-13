@@ -4,55 +4,70 @@ Two datasets were used for training and testing:
 
 \begin{description}
     \item[The Qin dataset] is a dataset of 202 surfactants curated in a
-        previous work, by \citet{qinPredictingCriticalMicelle2021}, by
-        accumulating results from several publications. To the authors'
-        knowledge, it is currently the largest public dataset of CMCs for
-        several classes of surfactant collected at standard conditions in an
-        aqueous environment between \SIrange{20}{25}{\celsius}. In this work,
-        the data was further subdivided into two tasks: Qin-All, the entirety of
-        the dataset, and Qin-Nonionics, which contains only the nonionic
-        surfactants.
+          previous work, by \citet{qinPredictingCriticalMicelle2021}, by
+          accumulating results from several publications. To the authors'
+          knowledge, it is currently the largest public dataset of CMCs for
+          several classes of surfactant collected at standard conditions in an
+          aqueous environment between \SIrange{20}{25}{\celsius}. In this work,
+          the data was further subdivided into two tasks: Qin-All, the entirety of
+          the dataset, and Qin-Nonionics, which contains only the nonionic
+          surfactants.
 
-        The Qin data were split into training and test subsets; the training
-        data were used to fit the models, whilst test data were `locked away'
-        until it had been decided that the model was optimised, and the
-        performance metrics on the test data were then used for evaluation. For
-        some models, the training data were further split into optimisation and
-        validation subsets; the optimisation data were used when calculating the
-        loss function during model fitting. The validation data were used for
-        on-the-fly evaluation of model performance during training, to determine
-        how many iterations of the optimisation routine to use. To provide a
-        consistent benchmark of model performance, the same train/test data
-        splits were used as \citet{qinPredictingCriticalMicelle2021}.
+          The Qin data were split into training and test subsets; the training
+          data were used to fit the models, whilst test data were `locked away'
+          until it had been decided that the model was optimised, and the
+          performance metrics on the test data were then used for evaluation. For
+          some models, the training data were further split into optimisation and
+          validation subsets; the optimisation data were used when calculating the
+          loss function during model fitting. The validation data were used for
+          on-the-fly evaluation of model performance during training, to determine
+          how many iterations of the optimisation routine to use.
+
+          In the first case, a sensitivity analysis was carried out. The data for
+          each task were split using a repeated, stratified $k$-fold
+          cross-validation. Each molecule was assigned a class based upon its
+          molecular fingerprint, which will be described below, in the section on
+          Extended connectivity fingerprints. The data were then split into $k$
+          folds of roughly equal size, and containing approximately the same
+          percentage of molecules of each class, for $k \in (2, 5)$. For each
+          fold, a model was trained using $k-1$ folds and evaluated on the
+          remaining fold. This was repeated thrice for $k = 2$ and twice for $k =
+              3$, each time with different randomisation, so that there were a similar
+          number of models trained for each value of $k$.
+
+          After the sensitivity analysis, to provide a consistent benchmark of
+          model performance with the previous work
+          \cite{qinPredictingCriticalMicelle2021}, the same train/test data splits
+          were used as \citet{qinPredictingCriticalMicelle2021}.
 
     \item[The National Institute of Science and Technology (NIST) dataset]
-        contains 43 unique surfactant systems and their aqueous CMCs, extracted
-        from the work of \citet{mukerjeeCriticalMicelleConcentrations1971}. The
-        original document compiles CMC measurements for each system across
-        several temperatures and with various additives. Each measurement was
-        given a quality rating depending on the authors' assessment of the
-        experimental method; measurements with a sufficiently good rating were
-        categorised as `suggested' measurements. The dataset used for this work
-        was developed by taking the mean of the suggested CMC measurements
-        between \SIrange{20}{25}{\degreeCelsius}, and with no additives, for
-        each surfactant system with measurements that fit these criteria. The
-        surfactant systems that contained elements that were not present in the
-        dataset (\ce{Mn}, \ce{Cs} and \ce{Mg}) were then pruned. The dataset is
-        provided in the Supplementary Information.
-        
-        The NIST data were used exclusively for testing, as another layer of
-        external validation. Several of the surfactant systems are not expected
-        to be within the applicability domain of the models. This includes
-        surfactants with counterions and combinations of functional groups that
-        are not present in the training data. These data are included to test
-        the robustness of the uncertainty quantification approach.
+          contains 43 unique surfactant systems and their aqueous CMCs, extracted
+          from the work of \citet{mukerjeeCriticalMicelleConcentrations1971}. The
+          original document compiles CMC measurements for each system across
+          several temperatures and with various additives. Each measurement was
+          given a quality rating depending on the authors' assessment of the
+          experimental method; measurements with a sufficiently good rating were
+          categorised as `suggested' measurements. The dataset used for this work
+          was developed by taking the mean of the suggested CMC measurements
+          between \SIrange{20}{25}{\degreeCelsius}, and with no additives, for
+          each surfactant system with measurements that fit these criteria. The
+          surfactant systems that contained elements that were not present in the
+          dataset (\ce{Mn}, \ce{Cs} and \ce{Mg}) were then pruned. The dataset is
+          provided in the Supplementary Information.
+
+          The NIST data were used exclusively for testing, as another layer of
+          external validation. Several of the surfactant systems are not expected
+          to be within the applicability domain of the models. This includes
+          surfactants with counterions and combinations of functional groups that
+          are not present in the training data. These data are included to test
+          the robustness of the uncertainty quantification approach.
 \end{description}
 
-The number of each class of surfactant in the train and test subsets of the data are shown in Table~\ref{tab:data-split}. Only the models trained on the Qin-All dataset were evaluated on the NIST dataset, as it contained ionic compounds.
+The number of each type of surfactant in the train and test subsets of the data are shown in Table~\ref{tab:data-split}. Only the models trained on the Qin-All dataset were evaluated on the NIST dataset, as it contained ionic compounds.
 
 \begin{table}
     \centering
-    \caption{The number of each class of surfactant contained in the train/test subsets of the CMC datasets.}
+    \caption{The number of each type of surfactant contained in the train/test subsets of the CMC datasets. Missing entries mean no samples of that class.}
     \label{tab:data-split}
     \begin{tabular}{@{}llrrrr@{}} \toprule \multicolumn{2}{c}{Data subset} & \multicolumn{4}{c}{Number of}                                                    \\\cmidrule(r){1-2}\cmidrule(l){3-6}
                Task                                                    & Train/test                    & Nonionics & Anionics & Cationics & Zwitterionics \\\midrule
@@ -67,13 +82,15 @@ The number of each class of surfactant in the train and test subsets of the data
 
 As described in the Introduction, the QSPR pipeline needs molecular descriptors
 and a functional form. The design processes for these are called \emph{feature
-engineering} and \emph{model selection}, respectively.
+    engineering} and \emph{model selection}, respectively.
 
 \subsection{Feature engineering}
 
 In this work, two types of molecular descriptor are employed: extended
 connectivity fingerprints (ECFPs)
-\cite{rogersExtendedConnectivityFingerprints2010} and molecular graphs. 
+\cite{rogersExtendedConnectivityFingerprints2010} and molecular graphs.
+
+\subsubsection{Extended connectivity fingerprints (ECFPs)}
 
 In the ECFP approach, the molecule is split into atomic environments up to a
 given radius, $r$: each environment is centred on an atom and extends $r$ steps
@@ -114,7 +131,29 @@ so that there is multicollinearity. This redundancy can impede model fitting and
 interpretation. However, these issues can be ameliorated using a process of
 \emph{feature selection}, which will be discussed below.
 
+ECFPs are commonly employed for determining molecular similarity through the use
+of the Tanimoto similarity metric
+\cite{tanimotoElementaryMathematicalTheory1958,bajuszWhyTanimotoIndex2015,butinaUnsupervisedDataBase1999}.
+The Tanimoto similarity is a function of two binary fingerprints, so the
+count-based ECFPs are first converted by $b_i = \min (1, c_i)$. That is, if an
+atomic environment is present in a molecule, it is assigned a one; otherwise, it
+is zero. The Tanimoto similarity between molecules A and B is then
+\begin{equation}
+    S_{AB} = \frac{\vec{b}_A \cdot \vec{b}_B}{\vec{b}_A \cdot \vec{b}_A + \vec{b}_B \cdot \vec{b}_B - \vec{b}_A \cdot \vec{b}_B}.
+\end{equation}
 
+In the original work by \citeauthor{tanimotoElementaryMathematicalTheory1958}, a
+`distance coefficient' is defined based on the logarithm of the similarity of
+two points; however, this is not a true distance metric as it does not satisfy
+the triangle inequality. Instead, the Jaccard distance, $d_{AB} = 1 - S_{AB}$,
+was employed to perform clustering of the molecules of the Qin dataset. The
+pairwise distances between each molecule in the Qin dataset were computed and
+the OPTICS clustering algorithm was then used to assign a class to each of them
+\cite{ankerstOPTICSOrderingPoints1999}. The algorithm was parameterised with a
+minimum cluster size of 4 molecules. As described above, these clusters were
+then used when performing the stratified $k$-fold cross-validation.
+
+\subsubsection{Molecular graphs}
 
 % In the case of the Stauff-Klevens model, the representation effectively has two
 % components: the category of the headgroup, and the length of the tail group. The
@@ -281,27 +320,27 @@ The next step is a pooling layer, which converts the graph to a single \emph{lat
 
 \begin{description}
     \item[Mean pooling] was used in the previous work. It computes the average
-        over all atoms' latent feature vectors.
+          over all atoms' latent feature vectors.
     \item[Sum pooling] computes the sum of all atoms' latent feature vectors.
-        This is the most analogous to the ECFPs in that the contribution of an atomic environment scales linearly with the number of times it occurs
-        in the molecule.
+          This is the most analogous to the ECFPs in that the contribution of an atomic environment scales linearly with the number of times it occurs
+          in the molecule.
     \item[Gated attention pooling] applies an \emph{attention} mechanism to decide which environments
-        are relevant to the prediction \cite{liGatedGraphSequence2017}:
-        \begin{equation}
-            \lrv{} = \sum_i^N \sigma\left(\mathbf{W}_1 \vec{v}_i^{\,(L)} + \vec{b}_1 \right) \odot \left(\mathbf{W}_2 \vec{v}_i^{\,(L)} + \vec{b}_2 \right),
-        \end{equation}
-        where $\mathbf{W}_1$ and $\mathbf{W}_2$ are trained weights and
-        $\vec{b}_1$ and $\vec{b}_2$ are biases, $\sigma$ is the sigmoid
-        activation function, $N$ is the number of atoms in the molecule, and
-        $\odot$ represents element-wise multiplication.
+          are relevant to the prediction \cite{liGatedGraphSequence2017}:
+          \begin{equation}
+              \lrv{} = \sum_i^N \sigma\left(\mathbf{W}_1 \vec{v}_i^{\,(L)} + \vec{b}_1 \right) \odot \left(\mathbf{W}_2 \vec{v}_i^{\,(L)} + \vec{b}_2 \right),
+          \end{equation}
+          where $\mathbf{W}_1$ and $\mathbf{W}_2$ are trained weights and
+          $\vec{b}_1$ and $\vec{b}_2$ are biases, $\sigma$ is the sigmoid
+          activation function, $N$ is the number of atoms in the molecule, and
+          $\odot$ represents element-wise multiplication.
     \item[Attention sum pooling] is a simpler variation of the above. By using a
-        softmax function, it performs a weighted average of the atomic environments'
-        contributions:
-        \begin{align}
-            \mathbf{X} = \mathrm{softmax}(\mathbf{V}^{(L)}\vec{w}), \\
-            \lrv{} = \sum_i^N \mathbf{X}_i \cdot \vec{v}^{\,(L)}_i,
-        \end{align}
-        where $\vec{w}$ are trained weights.
+          softmax function, it performs a weighted average of the atomic environments'
+          contributions:
+          \begin{align}
+              \mathbf{X} = \mathrm{softmax}(\mathbf{V}^{(L)}\vec{w}), \\
+              \lrv{} = \sum_i^N \mathbf{X}_i \cdot \vec{v}^{\,(L)}_i,
+          \end{align}
+          where $\vec{w}$ are trained weights.
 \end{description}
 
 After training the model, $\lrv{}$ effectively acts as a machine-learned representation of the molecule that captures only the information about its topology and composition that is useful for predicting the CMC. Finding an optimised representation is a feature of neural networks that happens implicitly during training, called \emph{representation learning} \cite{goodfellowRepresentationLearning2016}.
@@ -366,7 +405,7 @@ Each edge was given a weight that was equal to the normalised kernel value
 between the two nodes it connected.
 
 This was the starting condition for computing a \emph{force-directed graph
-layout}. The nodes are initialised with a set of 2D coordinates that is
+    layout}. The nodes are initialised with a set of 2D coordinates that is
 uniformly distributed and they are moved according to forces acting upon them;
 primarily an attractive force that acts along the edges. In addition, there are
 pairwise repulsive forces acting amongst the nodes that serves to ensure that
