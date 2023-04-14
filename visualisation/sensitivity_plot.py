@@ -12,8 +12,8 @@ ROOT = Path(__file__).parents[1]
 
 MODELS: Dict[str, str] = {
     "ECFP Qin-All": "ecfp-all-{}-splits-trial-{}",
-    "ECFP Qin-Nonionics": "ecfp-nonionic-{}-splits-trial-{}",
     "GNN Qin-All": "gnn-all-{}-splits-trial-{}",
+    "ECFP Qin-Nonionics": "ecfp-nonionic-{}-splits-trial-{}",
     "GNN Qin-Nonionics": "gnn-nonionics-{}-splits-trial-{}",
 }
 
@@ -59,5 +59,5 @@ if __name__ == "__main__":
         MODELS.keys(),
         [2, 3, 4, 5],
         [3, 2, 1, 1],
-        "sensitivity-plots.pdf",
+        "paper/images/sensitivity-plots.pdf",
     )

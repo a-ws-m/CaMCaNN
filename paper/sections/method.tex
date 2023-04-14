@@ -23,22 +23,23 @@ Two datasets were used for training and testing:
           on-the-fly evaluation of model performance during training, to determine
           how many iterations of the optimisation routine to use.
 
-          In the first case, a sensitivity analysis was carried out. The data for
-          each task were split using a repeated, stratified $k$-fold
-          cross-validation. Each molecule was assigned a class based upon its
-          molecular fingerprint, which will be described below, in the section on
-          Extended connectivity fingerprints. The data were then split into $k$
-          folds of roughly equal size, and containing approximately the same
-          percentage of molecules of each class, for $k \in (2, 5)$. For each
-          fold, a model was trained using $k-1$ folds and evaluated on the
-          remaining fold. This was repeated thrice for $k = 2$ and twice for $k =
-              3$, each time with different randomisation, so that there were a similar
-          number of models trained for each value of $k$.
+          Initially, to provide a consistent benchmark of model performance with
+          the previous work \cite{qinPredictingCriticalMicelle2021}, the same
+          train/test data splits were used as
+          \citet{qinPredictingCriticalMicelle2021}. This will be referred to as
+          the benchmarking test.
 
-          After the sensitivity analysis, to provide a consistent benchmark of
-          model performance with the previous work
-          \cite{qinPredictingCriticalMicelle2021}, the same train/test data splits
-          were used as \citet{qinPredictingCriticalMicelle2021}.
+          After training these models, a sensitivity analysis was carried out.
+          The data for each task were split using a repeated, stratified
+          $k$-fold cross-validation. Each molecule was assigned a class based
+          upon its molecular fingerprint, which will be described below, in the
+          section on Extended connectivity fingerprints. The data were then
+          split into $k$ folds of roughly equal size, and containing
+          approximately the same percentage of molecules of each class, for $k
+          \in (2, 5)$. For each fold, a model was trained using $k-1$ folds and
+          evaluated on the remaining fold. This was repeated thrice for $k = 2$
+          and twice for $k = 3$, each time with different randomisation, so that
+          there were a similar number of models trained for each value of $k$.
 
     \item[The National Institute of Science and Technology (NIST) dataset]
           contains 43 unique surfactant systems and their aqueous CMCs, extracted
@@ -147,11 +148,17 @@ In the original work by \citeauthor{tanimotoElementaryMathematicalTheory1958}, a
 two points; however, this is not a true distance metric as it does not satisfy
 the triangle inequality. Instead, the Jaccard distance, $d_{AB} = 1 - S_{AB}$,
 was employed to perform clustering of the molecules of the Qin dataset. The
-pairwise distances between each molecule in the Qin dataset were computed and
-the OPTICS clustering algorithm was then used to assign a class to each of them
-\cite{ankerstOPTICSOrderingPoints1999}. The algorithm was parameterised with a
-minimum cluster size of 4 molecules. As described above, these clusters were
-then used when performing the stratified $k$-fold cross-validation.
+pairwise distances between each feature-selected molecular fingerprint in the
+Qin dataset were computed and the OPTICS clustering algorithm was then used to
+assign a class to each of them \cite{ankerstOPTICSOrderingPoints1999}. The
+algorithm was parameterised with a minimum cluster size of 4 molecules. Outlying
+molecules, which did not fit into any other class, were assigned an `outliers'
+class for the sake of the stratified splitting procedure.
+
+The clusters must be assigned before determining the train/test splits for each
+fold during the sensitivity analysis, so in order to provide a canonical cluster
+assignment, the fingerprints resulting from the benchmarking test on the Qin-All
+task were employed.
 
 \subsubsection{Molecular graphs}
 
@@ -282,10 +289,12 @@ groups that the model includes. Both of these are potential issues when using
 only an $\ell_1$ norm in the loss function
 \cite{efronLeastAngleRegression2004,zouRegularizationVariableSelection2005}.
 
-
-To determine the best values for $\alpha$ and $\rho$, $k$-fold cross-validation was employed: the training data were partitioned into $k$ subsets of roughly equal size. $k$ models were trained using $k-1$ optimisation subsets, and the final subset was used for
-validation. The average mean-squared error of the $k$ models, evaluated on their respective validation subsets, is the overall final score. This routine, with $k=5$, was applied for a range of $\alpha$ and $\rho$ combinations, and the
-lowest-scoring combination was used. The hyperparameter search space is defined in the Supplementary Information.
+To determine the best values for $\alpha$ and $\rho$, 5-fold cross-validation of
+the training data was used. This was applied for a range of $\alpha$ and $\rho$
+combinations, and the combination that achieved the lowest average
+mean-squared-error was then used to train a model using the entirety of the
+training data. The hyperparameter search space is defined in the Supplementary
+Information.
 
 The features with non-negligible fitted weights from ElasticNet were then selected for use in the final linear model. This model, ridge regression, uses just $\ell_2$ regularisation so that all of the weights are non-negligible, but we
 still address the issue of multicollinearity \cite{mcdonaldRidgeRegression2009}:
@@ -375,6 +384,7 @@ the performance of a large search space of hyperparameter configurations. The al
 trials with the best performance are then allocated more resources, whilst the remainder is discarded. A reduction factor of 3 was chosen, meaning that $2/3$ of the trials were discarded after each iteration. This procedure iterates until the best configuration is found.
 
 The algorithm can be executed multiple times if resources are available to obtain a more reliable result; the training procedure is stochastic, and therefore the performance of two trials with the same hyperparameters may be different. In this case, a single run was performed. The training data was partitioned into an optimisation subset and a validation subset in a ratio of 9:1. The trials were fit to the optimisation subset and evaluated based on the RMSE of their predictions on the validation subset.
+The best hyperparameters determined on the benchmark tasks were then used during the sensitivity analysis.
 
 \subsubsection{Adding uncertainty with a Gaussian process}
 
