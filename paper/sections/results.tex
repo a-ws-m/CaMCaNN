@@ -9,11 +9,15 @@ approximately \SI{74}{\%}, and so is the ratio of the initial number of features
     \label{tab:ecfp-fs}
     \begin{tabular}{@{}lccc@{}} \toprule
                       & \multicolumn{3}{c}{Number of training data atomic environments}                                                            \\\cmidrule(l){2-4}
-        Dataset       & Initially                                                       & Found in multiple molecules & With non-negligible weight \\\midrule
+        Task          & Initially                                                       & Found in multiple molecules & With non-negligible weight \\\midrule
         Qin-Nonionics & 260                                                             & 201                         & 81                         \\
         Qin-All       & 410                                                             & 302                         & 134                        \\\bottomrule
     \end{tabular}
 \end{table}
+
+The OPTICS clustering routine on the Qin-All dataset using these fingerprints
+resulted in 24 classes and 31 outlying molecules. The resulting classifications
+for each molecule are available in the Supplementary information.
 
 \subsection{Hyperband tuning}
 
@@ -44,13 +48,13 @@ hyperparameters discovered on each set are described in Table \ref{tab:hb-hps}.
     \end{tabular}
 \end{table}
 
-\subsection{Model performance}
+\subsection{Benchmark model performance}
 
-The performances of all the trained models on the test datasets are reported in Table \ref{tab:evaluation}. All of the models outperformed those of the previous work. For every task, the most accurate model was either the GNN or the combined GNN with the GP (GNN/GP). However, the linear model's performance is surprisingly good, considering its relative simplicity, faster optimisation and the far smaller number of parameters it constitutes.
+The performances of all the trained models on the benchmark tasks are reported in Table \ref{tab:evaluation}. All of the models outperformed those of the previous work. For every task, the most accurate model was either the GNN or the combined GNN with the GP (GNN/GP). However, the linear model's performance is surprisingly good, considering its relative simplicity, faster optimisation and the far smaller number of parameters it constitutes.
 
 \begin{table}
     \centering
-    \caption{Test dataset evaluation results for the models trained in this work versus those of the previous work. The best RMSE for each task is emboldened.}
+    \caption{Benchmark task evaluation results for the models trained in this work versus those of the previous work. The best RMSE for each task is emboldened.}
     \label{tab:evaluation}
     \begin{tabular}{@{}lccc@{}} \toprule
                                                               & \multicolumn{3}{c}{Test RMSE (\si{\log \micro M})}                                 \\\cmidrule(l){2-4}
@@ -202,4 +206,32 @@ segregate them.
         estimate of the distribution of the Qin molecules on the left, coloured
         by the type of counterion.}
     \label{fig:fdg}
+\end{figure}
+
+\subsection{Sensitivity analysis}
+
+Figure~\ref{fig:sensitivity} shows the test set evaluations for the GNN and ECFP
+models using repeated, stratified $k$-fold cross-validation. The ECFP and GNN
+models appear to have very similar performance on the Qin-All dataset, but the
+ECFP model outperforms the GNN model for all training ratios on the
+Qin-Nonionics dataset. Notably, there is also a much broader distribution of
+model RMSEs on the Qin-Nonionics data. This suggests that the model is much more
+sensitive to the specific molecules that are included in the train and test
+splits. The Qin-All GNN models with very high RMSEs at larger train ratios are
+overfit, which demonstrates the potential of these more complex models to find
+local minima.
+
+Extrapolating the trend lines indicates that the benchmark performance is much
+better than what would be expected. This highlights the importance of selecting
+an appropriate training data split, which spans the entirety of the chemical
+space of interest. On such a small dataset, it is not possible to achieve this
+without using a high training ratio.
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{images/sensitivity-plots.pdf}
+    \caption{Test set RMSEs for the sensitivity analysis models. The average
+        RMSE for each value of $k$ is indicated, as well as the range of the RMSEs.
+        A logarithmic fit to the data is shown, with a \SI{95}{\%} confidence
+        interval determined by bootstrapping, using \num{1000} repeats.}
+    \label{fig:sensitivity}
 \end{figure}

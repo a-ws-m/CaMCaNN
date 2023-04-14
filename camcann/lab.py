@@ -16,6 +16,7 @@ from spektral.transforms import LayerPreprocess
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 from tensorflow.keras.models import Model, load_model
 
+from .data.featurise.ecfp import cluster_df
 from .data.io import (
     Datasets,
     RANDOM_SEED,
@@ -49,6 +50,9 @@ class BaseExperiment:
         dataset: Union[Datasets, QinDatasets],
         results_path: Path,
         debug: bool = False,
+        num_splits: Optional[int] = None,
+        num_repeats: Optional[int] = None,
+        fold_idx: Optional[int] = None,
     ) -> None:
         """Initialise paths."""
         self.results_path = results_path
@@ -73,6 +77,9 @@ class BaseExperiment:
         self.model_type = model
         self.dataset = dataset
         self.debug = debug
+        self.num_splits = num_splits
+        self.num_repeats = num_repeats
+        self.fold_idx = fold_idx
 
 
 class GraphExperiment(BaseExperiment):
@@ -93,9 +100,14 @@ class GraphExperiment(BaseExperiment):
         results_path: Path,
         debug: bool = False,
         pretrained: bool = False,
+        num_splits: Optional[int] = None,
+        num_repeats: Optional[int] = None,
+        fold_idx: Optional[int] = None,
     ) -> None:
         """Initialize the model and the datasets."""
-        super().__init__(hypermodel, dataset, results_path, debug)
+        super().__init__(
+            hypermodel, dataset, results_path, debug, num_splits, num_repeats, fold_idx
+        )
 
         self.tb_dir = results_path / "logs"
         self.tb_dir.mkdir(exist_ok=True)
@@ -122,7 +134,13 @@ class GraphExperiment(BaseExperiment):
             project_name="gnn_search",
         )
 
-        self.graph_data = QinGraphData(dataset, preprocess=LayerPreprocess(GCNConv))
+        self.graph_data = QinGraphData(
+            dataset,
+            preprocess=LayerPreprocess(GCNConv),
+            num_splits=num_splits,
+            num_repeats=num_repeats,
+            fold_idx=fold_idx,
+        )
 
         if pretrained:
             with self.best_hp_file.open("r") as f:
@@ -172,9 +190,14 @@ class GraphExperiment(BaseExperiment):
 
     def train_best(self, epochs: int):
         """Train the best hyperparameters on all the data."""
-        best_hp = self.tuner.get_best_hyperparameters()[0]
+        try:
+            best_hp = self.tuner.get_best_hyperparameters()[0]
+            self.best_hps_dict = best_hp.values
+        except IndexError:
+            self.best_hps_dict = json.loads(self.best_hp_file.read_text())
+            best_hp = keras_tuner.HyperParameters()
+            best_hp.values = self.best_hps_dict
 
-        self.best_hps_dict = best_hp.values
         print("Best hyperparameters:")
         print(self.best_hps_dict)
 
@@ -274,19 +297,22 @@ class GraphExperiment(BaseExperiment):
         means, stddevs = self.uq_model.predict(self.graph_data.all_loader)
         self._make_pred_df(means, stddevs).to_csv(self.uq_predict_path)
 
-        nist_data, nist_df = get_nist_data(
-            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
-        )
-        nist_means, nist_stddevs = self.uq_model.predict(nist_data)
-        nist_df["pred"] = nist_means.flatten()
-        nist_df["stddev"] = nist_stddevs.flatten()
-        nist_df.to_csv(self.uq_nist_pred_path)
+        try:
+            nist_data, nist_df = get_nist_data(
+                self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+            )
+            nist_means, nist_stddevs = self.uq_model.predict(nist_data)
+            nist_df["pred"] = nist_means.flatten()
+            nist_df["stddev"] = nist_stddevs.flatten()
+            nist_df.to_csv(self.uq_nist_pred_path)
 
-        nist_data, nist_df = get_nist_data(
-            self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
-        )
-        nist_metrics = self.uq_model.evaluate(nist_data)
-        pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
+            nist_data, nist_df = get_nist_data(
+                self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+            )
+            nist_metrics = self.uq_model.evaluate(nist_data)
+            pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
+        except ValueError:
+            print("Couldn't encode NIST molecules.")
 
     def kpca(self, ndim: int = 2):
         """Perform KPCA on NIST and Qin data."""
@@ -298,7 +324,7 @@ class GraphExperiment(BaseExperiment):
             combined_data[f"Component {dim+1}"] = components[:, dim]
 
         combined_data.to_csv(self.kpca_file)
-    
+
     def pairwise(self) -> Tuple[np.ndarray, pd.DataFrame]:
         """Compute the kernel matrix on the NIST and Qin data."""
         combined_loader, combined_data = get_nist_and_qin(
@@ -308,18 +334,27 @@ class GraphExperiment(BaseExperiment):
 
         for j in range(kernel_matrix.shape[1]):
             combined_data[f"K{j}"] = kernel_matrix[:, j]
-        
+
         combined_data.to_csv(self.kernel_file)
         return kernel_matrix, combined_data
 
     def _make_pred_df(self, predictions, stddevs: Optional[np.ndarray] = None):
         """Make a DataFrame of predicted CMCs."""
+
+        if self.num_splits is not None:
+            traintest = [
+                "train" if i in self.graph_data.train_idxs else "test"
+                for i in range(len(self.graph_data.df.index))
+            ]
+        else:
+            traintest = self.graph_data.df.traintest
+
         data = {
             "smiles": self.graph_data.df.smiles,
             "exp": self.graph_data.df.exp,
             "qin": self.graph_data.df.pred,
             "pred": predictions,
-            "traintest": self.graph_data.df.traintest,
+            "traintest": traintest,
         }
 
         if stddevs is not None:
@@ -347,14 +382,33 @@ class ECFPExperiment(BaseExperiment):
     """Train and evaluate a simple, linear ECFP model."""
 
     def __init__(
-        self, dataset: Union[Datasets, QinDatasets], results_path: Path
+        self,
+        dataset: Union[Datasets, QinDatasets],
+        results_path: Path,
+        num_splits: Optional[int] = None,
+        num_repeats: Optional[int] = None,
+        fold_idx: Optional[int] = None,
     ) -> None:
         """Load dataset and initialise featuriser."""
-        super().__init__(model, dataset, results_path)
+        super().__init__(
+            model,
+            dataset,
+            results_path,
+            num_splits=num_splits,
+            num_repeats=num_repeats,
+            fold_idx=fold_idx,
+        )
 
         self.hash_path = results_path / "hashes.csv"
+        self.clusters_path = results_path / "clusters.csv"
 
-        self.featuriser = ECFPData(dataset, self.hash_path)
+        self.featuriser = ECFPData(
+            dataset,
+            self.hash_path,
+            num_splits=num_splits,
+            num_repeats=num_repeats,
+            fold_idx=fold_idx,
+        )
 
         train_fps, train_targets = self.featuriser.train_data
         test_fps, test_targets = self.featuriser.test_data
@@ -370,13 +424,21 @@ class ECFPExperiment(BaseExperiment):
     def _make_pred_df(self, predictions):
         """Make a DataFrame of predicted CMCs."""
         df = self.featuriser.df
+
+        if self.num_splits is not None:
+            traintest = [
+                "train" if i in self.featuriser.train_idxs else "test"
+                for i in range(len(df.index))
+            ]
+        else:
+            traintest = df.traintest
         return pd.DataFrame(
             {
                 "smiles": df.smiles,
                 "exp": df.exp,
                 "qin": df.pred,
                 "pred": predictions,
-                "traintest": df.traintest,
+                "traintest": traintest,
             }
         )
 
@@ -427,6 +489,13 @@ class ECFPExperiment(BaseExperiment):
         with self.nist_res_path.open("w") as f:
             json.dump(results, f)
 
+    def find_clusters(self):
+        """Get the cluster predictions for the Qin data."""
+        all_fps, _ = self.featuriser.all_data
+        df = self.featuriser.df
+        clustered_df = cluster_df(df, all_fps)
+        clustered_df.to_csv(self.clusters_path)
+
 
 if __name__ == "__main__":
 
@@ -457,6 +526,9 @@ if __name__ == "__main__":
     parser.add_argument("name", type=str, help="The name of the model.")
     parser.add_argument(
         "-e", "--epochs", type=int, help="The number of epochs to train."
+    )
+    parser.add_argument(
+        "--cluster", action="store_true", help="Just perform clustering with the ECFPs."
     )
     parser.add_argument(
         "--and-uq",
@@ -494,7 +566,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pairwise",
         action="store_true",
-        help="Compute just the learned pariwise kernel on all of the data."
+        help="Compute just the learned pariwise kernel on all of the data.",
+    )
+
+    sensitivity_group = parser.add_argument_group(
+        "Sensitivity analysis",
+        "Flags to set for sensitivity analysis. If unspecified, trains a model using the Qin data split. Otherwise, uses repeated stratified k-fold CV to train models.",
+    )
+    sensitivity_group.add_argument(
+        "--splits",
+        type=int,
+        default=None,
+        help="The number of splits to use. Defines the train/test ratio.",
+    )
+    sensitivity_group.add_argument(
+        "--repeats", type=int, default=None, help="The number of repeats."
     )
 
     args = parser.parse_args()
@@ -507,40 +593,75 @@ if __name__ == "__main__":
         )
     if args.kpca is not None and args.kpca <= 0:
         raise ValueError("KPCA components must be positive.")
+    if (args.splits is None) != (args.repeats is None):
+        # One is not None
+        raise ValueError("Must specify both or neither of splits and repeats.")
 
     dataset = dataset_map[args.dataset]
     model = model_map[args.model]
 
     do_uq = args.and_uq or args.just_uq
 
-    results_path = Path(".") / args.name
+    if args.splits is not None:
+        folds = list(range(args.splits * args.repeats))
+        results_paths = [Path(".") / f"{args.name}-trial-{idx}" for idx in folds]
+    else:
+        results_paths = [Path(".") / args.name]
+        folds = [None]
 
     if model is LinearECFPModel:
         if do_uq:
             raise NotImplementedError("Cannot use UQ with linear ECFP model.")
 
-        ecfp_exp = ECFPExperiment(dataset, results_path=results_path)
-        ecfp_exp.train_test()
-        if args.test_nist:
-            ecfp_exp.test_nist()
+        for results_path, fold in zip(results_paths, folds):
+            ecfp_exp = ECFPExperiment(
+                dataset,
+                results_path=results_path,
+                num_splits=args.splits,
+                num_repeats=args.repeats,
+                fold_idx=fold,
+            )
+
+            if args.cluster:
+                ecfp_exp.find_clusters()
+            else:
+                ecfp_exp.train_test()
+                if args.test_nist:
+                    ecfp_exp.test_nist()
     else:
+        if args.cluster:
+            raise ValueError("Can only cluster for an ECFPLinear model.")
+
         pretrained = args.just_uq
-        exp = GraphExperiment(
-            build_gnn, dataset, results_path=results_path, pretrained=pretrained
-        )
-        if args.test_nist:
-            print(exp.test_nist())
-        else:
-            if not pretrained:
-                if not args.only_best:
-                    exp.search()
-                exp.train_best(args.epochs)
-                exp.test()
-            if do_uq:
-                exp.train_uq(
-                    with_scaler=not args.no_gp_scaler, linear_mean_fn=args.lin_mean_fn
-                )
-                if args.kpca:
-                    exp.kpca(args.kpca)
-                elif args.pairwise:
-                    exp.pairwise()
+        for results_path, fold in zip(results_paths, folds):
+            metrics_path = results_path / "metrics.csv"
+            if metrics_path.exists():
+                print(f"{metrics_path} exists, continuing!")
+                continue
+            print(f"{metrics_path} does not exist, training model.")
+            exp = GraphExperiment(
+                build_gnn,
+                dataset,
+                results_path=results_path,
+                pretrained=pretrained,
+                num_splits=args.splits,
+                num_repeats=args.repeats,
+                fold_idx=fold,
+            )
+            if args.test_nist:
+                print(exp.test_nist())
+            else:
+                if not pretrained:
+                    if not args.only_best:
+                        exp.search()
+                    exp.train_best(args.epochs)
+                    exp.test()
+                if do_uq:
+                    exp.train_uq(
+                        with_scaler=not args.no_gp_scaler,
+                        linear_mean_fn=args.lin_mean_fn,
+                    )
+                    if args.kpca:
+                        exp.kpca(args.kpca)
+                    elif args.pairwise:
+                        exp.pairwise()

@@ -13,6 +13,7 @@ if DO_PY_FA:
     from fa2 import ForceAtlas2
 
 CACHE_POSITIONS = False
+COLOUR_COUNTERION = True
 HERE = Path(__file__).parent
 
 if DO_PY_FA:
@@ -28,6 +29,8 @@ nist_pred_df["norm resid"] = nist_pred_df["resid"] / nist_pred_df["stddev"]
 nist_pred_df["cdf"] = norm.cdf(nist_pred_df["norm resid"])
 nist_pred_df["Above 95% CI"] = nist_pred_df["cdf"] > 0.95
 nist_pred_df["Above 95% CI"].sum() / len(nist_pred_df["Above 95% CI"])
+
+clusters_df = pd.read_csv(HERE / "clusters.csv")
 
 def get_counterion(smiles: str) -> str:
     """Get the counterion for a smiles string"""
@@ -64,6 +67,8 @@ def add_cols(df: pd.DataFrame):
 add_cols(kernel_df)
 kernel_df = kernel_df.merge(nist_pred_df, on="Molecule name", how="left")
 kernel_df["Above 95% CI"] = kernel_df["Above 95% CI"].apply(lambda x: x is True)
+kernel_df["Cluster"] = clusters_df["cluster"]
+kernel_df["Cluster"] = pd.Categorical(kernel_df["Cluster"])
 
 if DO_PY_FA:
     forceatlas2 = ForceAtlas2(
@@ -99,25 +104,33 @@ if DO_PY_FA:
     kernel_df["x"] = positions[:, 0]
     kernel_df["y"] = positions[:, 1]
 
-all_counterions = kernel_df["Counterion"].unique()
+style = "Counterion" if COLOUR_COUNTERION else "Cluster"
+to_plot = kernel_df if COLOUR_COUNTERION else kernel_df[(kernel_df["Cluster"] != -1) & (kernel_df["Counterion"] == "Nonionic")]
+
+all_counterions = to_plot["Counterion"].unique()
 counterion_order = list(all_counterions)
+
+all_classes = to_plot["Cluster"].unique()
+class_order = list(all_classes)
+
+order = counterion_order if COLOUR_COUNTERION else class_order
 
 fig, axs = plt.subplots(1, 2, sharex=True, sharey=True, subplot_kw=dict(aspect="equal"))
 sns.scatterplot(
-    kernel_df,
+    to_plot,
     x="x",
     y="y",
-    style="Counterion",
+    style=style,
     # size="Source",
-    hue="Counterion",
+    hue=style,
     # size_order=["NIST", "Qin"],
-    hue_order=counterion_order,
-    style_order=counterion_order,
+    hue_order=order,
+    style_order=order,
     ax=axs[0],
     legend=True
 )
 
-just_qin = kernel_df[kernel_df["Source"] == "Qin"]
+just_qin = to_plot[to_plot["Source"] == "Qin"]
 
 qin_counterion_counts = just_qin["Counterion"].value_counts()
 include_kde = just_qin["Counterion"].apply(lambda x: qin_counterion_counts[x] > 2)
@@ -126,8 +139,8 @@ sns.kdeplot(
     just_qin[include_kde],
     x="x",
     y="y",
-    hue="Counterion",
-    hue_order=counterion_order,
+    hue=style,
+    hue_order=order,
     ax=axs[1],
     fill=True,
     # bw_adjust=0.9,
@@ -135,15 +148,15 @@ sns.kdeplot(
     legend=False
 )
 sns.scatterplot(
-    kernel_df[kernel_df["Above 95% CI"]],
+    to_plot[to_plot["Above 95% CI"]],
     x="x",
     y="y",
-    style="Counterion",
-    hue="Counterion",
+    style=style,
+    hue=style,
     # size="Source",
     # size_order=["NIST", "Qin"],
-    hue_order=counterion_order,
-    style_order=counterion_order,
+    hue_order=order,
+    style_order=order,
     ax=axs[1],
     legend=False,
     zorder=10

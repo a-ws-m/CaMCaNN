@@ -4,6 +4,12 @@ Empirical models were applied to predict CMCs from two datasets. One dataset was
 A linear model based on ECFPs demonstrated remarkably good performance, improving on a previous work \cite{qinPredictingCriticalMicelle2021} that applied a more complex GNN model, despite using a smaller number of parameters and having a much faster optimisation time. A new model was presented that improved the architecture of previous work's GNN and was capable of obtaining better performances than the ECFP model on the Qin-Nonionics task and
 demonstrated a better ability to generalise to the NIST dataset.
 
+Sensitivity analysis showed that the GNN models have a tendency to overfit when
+training data samples do not adequately cover the chemical space of interest.
+When using small datasets, with only a few examples of certain surfactant
+classes, it may be preferable to use a simpler functional form, like the linear
+ECFP model.
+
 Finally, a surrogate model was developed by feeding the latent space representation of a molecule, learned by the GNN model, to a Gaussian process.
 This yielded uncertainty estimates alongside CMC predictions. Although this model appeared to fail when applied to the Qin-Nonionics task, it yielded the best predictive performance of all of the models for the Qin-All task, as well as
 providing good uncertainty estimates on the in-domain NIST test data.
