@@ -9,6 +9,7 @@ import seaborn as sns
 sns.set_style("darkgrid")
 
 ROOT = Path(__file__).parents[1]
+MODEL_DIR = ROOT / "models"
 
 MODELS: Dict[str, str] = {
     "ECFP Qin-All": "ecfp-all-{}-splits-trial-{}",
@@ -27,7 +28,7 @@ def plot_sensitivity(dir_templates: List[str], model_names: List[str], splits: L
     for dir_template, model_name in zip(dir_templates, model_names):
         for split, num_repeats in zip(splits, repeats):
             num_trials = split * num_repeats
-            model_dirs = [ROOT / dir_template.format(split, trial) for trial in range(num_trials)]
+            model_dirs = [MODEL_DIR / dir_template.format(split, trial) for trial in range(num_trials)]
             for model_dir in model_dirs:
                 metrics_file = model_dir / "metrics.csv"
                 predictions_file = model_dir / "predictions.csv"

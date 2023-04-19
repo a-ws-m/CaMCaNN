@@ -11,7 +11,7 @@ for i in "${!splits[@]}"; do
     num_repeats=${repeats[i]}
 
     # Create the directory
-    dir_name="ecfp-nonionic-$num_splits-splits"
+    dir_name="models/ecfp-nonionic-$num_splits-splits"
 
     echo "Running python module"
 

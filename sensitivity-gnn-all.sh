@@ -16,10 +16,10 @@ for i in "${!splits[@]}"; do
     for trial in $(seq 0 $((num_repeats * num_splits - 1))); do
         # Create the directory
         dir_name="$base_dir_name-trial-$trial"
-        mkdir "$dir_name"
+        mkdir "models/$dir_name"
 
         # Copy the hyperparameters
-        cp "gnn-search-all/best_hps.json" "$dir_name"
+        cp "models/gnn-search-all/best_hps.json" "$dir_name"
     done
 
     echo "Running python module"
