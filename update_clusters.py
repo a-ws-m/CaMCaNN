@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 HERE = Path(__file__).parent
-CLUSTER_FILE = HERE / "ecfp-all/clusters.csv"
+CLUSTER_FILE = HERE / "models/ecfp-all/clusters.csv"
 DATASET_DIR = HERE / "camcann/data/datasets"
 QIN_ALL_FILE = DATASET_DIR / "qin_all_results.csv"
 QIN_NONIONICS_FILE = DATASET_DIR / "qin_nonionic_results.csv"

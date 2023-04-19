@@ -363,7 +363,7 @@ if __name__ == "__main__":
     test_molecules = [MolFromSmiles(test_smile) for test_smile in test_smiles]
 
     hash_df = pd.read_csv(
-        Path(__file__).parents[3] / "ecfp-all" / "hashes.csv", index_col=0
+        Path(__file__).parents[3] / "models" / "ecfp-all" / "hashes.csv", index_col=0
     )
     learned_hashes = SMILESHashes(hash_df)
     featuriser = ECFPCountFeaturiser(learned_hashes)

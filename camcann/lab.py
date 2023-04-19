@@ -31,7 +31,7 @@ from .linear import LinearECFPModel, LinearResults
 from .uq import GraphGPProcess
 
 RANDOM_SEED = 2022
-
+MODELS_DIR = Path(".") / "models"
 
 class BaseExperiment:
     """Train a model on the Qin data, potentially with separate UQ, and report results.
@@ -602,11 +602,14 @@ if __name__ == "__main__":
 
     do_uq = args.and_uq or args.just_uq
 
+    # Make the models directory if it doesn't already exist
+    MODELS_DIR.mkdir(exist_ok=True)
+
     if args.splits is not None:
         folds = list(range(args.splits * args.repeats))
-        results_paths = [Path(".") / f"{args.name}-trial-{idx}" for idx in folds]
+        results_paths = [MODELS_DIR / f"{args.name}-trial-{idx}" for idx in folds]
     else:
-        results_paths = [Path(".") / args.name]
+        results_paths = [MODELS_DIR / args.name]
         folds = [None]
 
     if model is LinearECFPModel:
