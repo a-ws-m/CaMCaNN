@@ -1,5 +1,3 @@
-Theoretical approaches have the potential to be the most useful type of
-predictive model if they are accurate and applicable to the desired system, as they are directly related to scientific knowledge, and their results can be understood in terms of well-studied principles.
 \citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological model for studying aqueous nonionic surfactant systems that enabled CMC prediction and modelling other properties across a range of temperatures. The model they developed was the product of decomposing the process of micellisation into discrete steps that they could describe thermodynamically so as to yield a description of the free energy of micellisation in terms of a set of molecular parameters:
 
 \begin{itemize}
@@ -309,6 +307,13 @@ classes of surfactant that are `advertised' as being within the applicability
 domain of the model should be represented in both the test and train data
 subsets.
 
+Some of the alternative goals of empirical QSPR models are that they are general
+enough to be applicable to a diverse range of compounds; they can be used to
+design novel molecules with target properties
+\cite{gantzerInverseQSPRNovoDesign2020,bolboacaMolecularDesignQSARs2013}; and
+that they are interpretable \cite{zefirovFragmentalApproachQSPR2002}, meaning
+that they can be analysed to glean chemical insights.
+
 Every empirical QSPR method is characterised by two features: the choice of
 molecular descriptors, which are the numerical features that make up the model
 inputs, and the functional form of the approximator that maps the descriptors to
@@ -346,7 +351,7 @@ polyfunctional groups with large contributions implies that their constituent
 functional groups have a significant interaction with each other that affects
 the CMC. However, it may be difficult to determine whether a new molecule is
 within the applicability domain of the model, particularly because positional
-isomers are not necessarily distinguished from each another using the group
+isomers are not necessarily distinguished from each other using the group
 representation.
 
 Recently, an approach based on graph neural networks (GNNs) has produced highly
