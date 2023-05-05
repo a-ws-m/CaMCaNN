@@ -47,14 +47,13 @@ surfactants, i.e. surfactants that were not in micelles, which they defined as
 an aggregate containing five or more surfactants. The more accurate model for
 determining CMC, the united-atom approach, yielded a CMC with an error of
 \SI{0.23}{\log \micro M}. The author asserted that the simulation size, i.e. the
-number of particles, was too small to obtain a more accurate value of CMC. This
-highlights an issue with using MD to predict CMC: careful consideration must be
-given to ensure that the system is large enough and that enough timesteps have
-been performed to ensure convergence, but increasing these parameters leads to
-an increase in computational cost.
-
-TODO: Reference Panagiotopoulos and commentary on whether atomistic FFs can be used
-to predict CMC.
+number of particles, was too small to obtain a more accurate value of CMC.
+However, \citet{jusufiExplicitImplicitSolventSimulations2015} have
+criticised the free surfactant concentration approach for modeling CMC of ionic
+surfactants in general. They note that free surfactant concentration above the
+CMC is highly dependent on the choice of overall surfactant concentration,
+especially for ionic surfactants, which necessitates careful extrapolation in
+order to accurately determine CMCs.
 
 The computational cost in increasing the system size can be mitigated using
 coarse-graining, which reduces the number of interactions that must be computed

@@ -142,7 +142,7 @@ is assigned zero. The Tanimoto similarity between molecules A and B is then
     S_{AB} = \frac{\vec{b}_A \cdot \vec{b}_B}{\vec{b}_A \cdot \vec{b}_A + \vec{b}_B \cdot \vec{b}_B - \vec{b}_A \cdot \vec{b}_B}.
 \end{equation}
 
-In the original work by \citeauthor{tanimotoElementaryMathematicalTheory1958}, a
+In the original work by \citet{tanimotoElementaryMathematicalTheory1958}, a
 `distance coefficient' is defined based on the logarithm of the similarity of
 two points; however, this is not a true distance metric as it does not satisfy
 the triangle inequality. Instead, the Jaccard distance, $d_{AB} = 1 - S_{AB}$,
@@ -311,7 +311,7 @@ It was empirically observed that the combination of ElasticNet feature selection
 
 \subsubsection{Molecular graph model}
 
-The basic topology of the graph neural network (GNN) used in this work was identical to the one used by \citeqin. That is, the first step of the model consists of a stack of graph network layers, which mutate the node features in a molecular graph based on those of bonded atoms.
+The basic topology of the graph neural network (GNN) used in this work was identical to the one used by \citet{qinPredictingCriticalMicelle2021}. That is, the first step of the model consists of a stack of graph network layers, which mutate the node features in a molecular graph based on those of bonded atoms.
 These layers employ the graph convolution network (GCN) architecture introduced by \cite{kipfSemiSupervisedClassificationGraph2017a}. Layer $l$ computes a new node feature matrix, $\mathbf{V}^{(l)}$, based on the adjacency matrix, $\mathbf{A}$:
 \begin{equation}
     \mathbf{V}^{(l)} = \mathbf{D}^{-1/2} \mathbf{A} \mathbf{D}^{-1/2} \mathbf{V}^{(l-1)} \mathbf{W}^{(l)} + \mathbf{b}^{(l)}.
@@ -331,7 +331,7 @@ $\mathbf{V}^{(1)}$, therefore, encodes not only information about the atom itsel
 The next step is a pooling layer, which converts the graph to a single \emph{latent representation vector}, $\lrv{}$, losing the explicit topological information. Several choices of pooling function were trialled:
 
 \begin{description}
-    \item[Mean pooling] was employed by \citeqin. It computes the average
+    \item[Mean pooling] was employed by \citet{qinPredictingCriticalMicelle2021}. It computes the average
           over all atoms' latent feature vectors.
     \item[Sum pooling] computes the sum of all atoms' latent feature vectors.
           This is the most analogous to the ECFPs in that the contribution of an atomic environment scales linearly with the number of times it occurs
@@ -411,7 +411,7 @@ In order to better understand the model's interpretation of chemical space, we
 implement a technique to exploit the GP's kernel, optimised during training, to
 plot the molecules in 2D space in a way that respects the model's perception of
 their `similarity'. This approach is inspired by
-\citeauthor{isayevMaterialsCartographyRepresenting2015}, who compared the
+\citet{isayevMaterialsCartographyRepresenting2015}, who compared the
 fingerprints of several inorganic compounds to develop so-called materials
 catrograms. However, by employing the machine-learned latent representations of
 molecules, the cartogram instead reflects molecular similarities learned by the
