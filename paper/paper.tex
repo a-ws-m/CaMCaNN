@@ -33,6 +33,7 @@
 %% when typesetting).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \setchemfig{angle increment=30,atom sep=2em}
+\newcommand*{\citeqin}{\citeauthor{qinPredictingCriticalMicelle2021}\cite{qinPredictingCriticalMicelle2021}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Meta-data block
@@ -61,7 +62,7 @@
 \author{Panagiota Angeli}
 \author{Alberto Striolo}
 \affiliation[UCL]{Department of Chemical Engineering, University College London, UK}
-\alsoaffiliation[UO]{Gallolgy College of Engineering, University of Oklahoma, USA}
+\alsoaffiliation[UO]{School of Chemical, Biological and Materials Engineering, University of Oklahoma, USA}
 \author{Ian McRobbie}
 \affiliation[Innospec]{Senior Vice President, Research and Technology, Innospec Ltd., Ellesmere Port, UK}
 
@@ -93,12 +94,7 @@
 %% be automatically moved as appropriate.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{tocentry}
-
-    I'm looking for ideas for the TOC graphical entry -- common practice seems
-    to be to draw a really abstract picture of a molecule going through a
-    network, but that doesn't seem like the best thing to do here because I'm
-    specifically comparing against other models.
-
+    \includegraphics[width=\textwidth]{images/uq-parity.pdf}
 \end{tocentry}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -108,7 +104,7 @@
 \begin{abstract}
     This paper presents a novel approach to predicting critical micelle
     concentrations (CMCs) using graph neural networks (GNNs) augmented with
-    Gaussian Processes (GPs). The proposed model uses learned latent space
+    Gaussian processes (GPs). The proposed model uses learned latent space
     representations of molecules to predict CMCs and estimate uncertainties. The
     performance of the model on a dataset containing nonionic, cationic, anionic
     and zwitterionic molecules, is compared against a linear model that works
@@ -116,13 +112,14 @@
     that the GNN-based model performs slightly better than the linear ECFP
     model, when there is enough well-balanced training data, and achieves
     predictive accuracy that is comparable to published models that were
-    evaluated on a smaller range of surfactant chemistries. But the main benefit
-    of the GNN model is the ability to provide uncertainty estimates. We
-    illustrate the applicability domain of our model using a visualisation of
-    the latent space, which helps identify molecules likely to have erroneous
-    predictions. The proposed approach can help in the design of new surfactants
-    and provide valuable insights into the molecular properties that influence
-    CMCs.
+    evaluated on a smaller range of surfactant chemistries. While the main
+    advantage of the ECPF model is to enhance chemical intuition via a
+    manageable parameters dataset, that of the GNN model is the ability to
+    provide uncertainty estimates. We illustrate the applicability domain of our
+    model using a visualisation of the latent space, which helps identify
+    molecules likely to have erroneous predictions. The proposed approach can
+    help in the design of new surfactants and provide valuable insights into the
+    molecular properties that influence CMCs.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -153,9 +150,14 @@
 %% classes.  This should be given within the "acknowledgement"
 %% environment, which will make the correct section or running title.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% \begin{acknowledgement}
-
-% \end{acknowledgement}
+\begin{acknowledgement}
+We thank the Advanced Characterisation of Materials CDT and the ABK fellowship
+for their financial support. This work was also supported by the Engineering and
+Physical Sciences Research Council (EPSRC), project number EP/VO32909/1. Alberto
+Striolo gratefully acknowledges financial support from the Asahi Glass Chair of
+Chemical Engineering at the University of Oklahoma. Finally, the authors are
+grateful to Innospec Ltd. for their support.
+\end{acknowledgement}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% The same is true for Supporting Information, which should use the

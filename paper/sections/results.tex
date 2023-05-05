@@ -1,7 +1,7 @@
 \subsection{ECFP feature selection}
 
 The number of atomic environments remaining after each stage of the feature selection process is reported in Table \ref{tab:ecfp-fs}. Notably, the ratio of the number of features to the size of the training dataset is similar at
-approximately \SI{74}{\%}, and so is the ratio of the initial number of features to the number of selected features, \SIrange{31}{33}{\%}. The number of features is large compared to many of the empirical models described above but not the number of graph network parameters. Furthermore, this model also aims to cover a large part of chemical space, so a large number of parameters is to be expected.
+approximately \SI{74}{\%}, and so is the ratio of the initial number of features to the number of selected features, \SIrange{31}{33}{\%}. The number of features is large compared to many of the empirical models described above, but not compared to the number of parameters for the GNN, which is significantly more complex. Furthermore, this model also aims to cover a large part of chemical space, so a large number of parameters is to be expected.
 
 \begin{table}
     \centering
@@ -50,7 +50,7 @@ hyperparameters discovered on each set are described in Table \ref{tab:hb-hps}.
 
 \subsection{Benchmark model performance}
 
-The performances of all the trained models on the benchmark tasks are reported in Table \ref{tab:evaluation}. All of the models outperformed those of the previous work. For every task, the most accurate model was either the GNN or the combined GNN with the GP (GNN/GP). However, the linear model's performance is surprisingly good, considering its relative simplicity, faster optimisation and the far smaller number of parameters it constitutes.
+The performances of all the trained models on the benchmark tasks are reported in Table \ref{tab:evaluation}. All of the models outperformed those of \citeqin. For every task, the most accurate model was either the GNN or the combined GNN with the GP (GNN/GP). The linear model's performance is surprisingly good, considering its relative simplicity, faster optimisation and the far smaller number of parameters it constitutes.
 
 \begin{table}
     \centering
@@ -77,7 +77,7 @@ indicator of similarity with respect to CMC prediction.
 
 \subsubsection{Uncertainty quantification}
 
-However, the RMSE does not capture the quality of the predicted standard deviations. One metric that captures these is the negative log-likelihood (NLL) of observing the true CMCs, given the model's predicted normal distributions:
+The RMSE does not capture the quality of the predicted standard deviations. One metric that captures these is the negative log-likelihood (NLL) of observing the true CMCs, given the model's predicted normal distributions:
 \begin{equation}
     \text{NLL} = -\sum_n \log p_n(\hat{y}_n),
 \end{equation}
@@ -113,7 +113,7 @@ were relatively small. The NIST data calibration curve's asymmetry indicates its
 tendency to underestimate the CMCs. It has a generally good agreement with the
 ideal distribution, with the greatest discrepancy above \num{0.8}, which
 indicates that there are several surfactants whose CMC predictions are too low
-and overconfident.
+and that these predictions are also overconfident.
 
 \subsection{ECFP interpretations}
 
@@ -148,17 +148,17 @@ by the number of $\mathcal{E}_m$ that they contain. This is particularly true of
 \end{table}
 
 Both models agree that alkyl chain environments constitute the top two most important contributors to CMC, suggesting that tail length is the most important factor. The model trained on all surfactant classes includes two counterions in
-its most important environments: \ce{Cl-} and \ce{Br-}. This is to be expected; ionic surfactants typically have much larger CMCs than nonionics, and the model appears to distinguishes these by their counterion. The Qin-Nonionics model
+its most important environments: \ce{Cl-} and \ce{Br-}. This is to be expected; ionic surfactants typically have much larger CMCs than nonionics, and the model appears to distinguish these by their counterion. The Qin-Nonionics model
 identifies environments from the headgroups of sugar-based surfactants as being important. These surfactant headgroups possessed relatively complex topologies and therefore several environments; it may have been necessary for the model to
 use many of these environments in order to accurately distinguish between their CMCs.
 
 \subsection{Applicability domain analysis}
 
-Several of the NIST molecules were expected to be outside of the applicability
-domain of the model, which justifies their poor prediction accuracy. The
-majority of the outliers' CMCs are underpredicted, and the GNN/GP model is
-overconfident in their predictions. The 13 surfactants with predictions whose
-residuals are greater than the \SI{95}{\%} CI are shown in
+Several of the molecules included in the NIST datset were expected to be outside
+of the applicability domain of the model, which justifies their poor prediction
+accuracy. The majority of the outliers' CMCs are underpredicted, and the GNN/GP
+model is overconfident in their predictions. The 13 surfactants whose
+predictions' residuals are greater than the \SI{95}{\%} CI are shown in
 Figure~\ref{fig:nist-underpred}. These constitute 3 nonionic surfactants, 1
 zwitterionic surfactant and 9 ionic surfactants. Of the ionic surfactants, 5
 have quaternary ammonium salts (quats) as counterions.
@@ -170,30 +170,30 @@ have quaternary ammonium salts (quats) as counterions.
     \label{fig:nist-underpred}
 \end{figure}
 
-In the first instance, it is useful to examine the types of counterions in these
-molecules as compared to the training data. In the training data, there are no
-examples with a bromate, nitrate or carbonate counterion, but there are two
-examples of a quat counterion. However, the quats in the training data are both
-isotropic: tetrapropylammonium and tetramethylammonium. In contrast, those that
-are underpredicted in the NIST data are highly anisotropic and are effectively
-surfactants themselves; their behaviour can be expected to be very different.
+It is useful to examine the types of counterions in these molecules as compared
+to the training data. In the training data, there are no examples with a
+bromate, nitrate or carbonate counterion, but there are two examples of a quat
+counterion. However, the quats in the training data are isotropic:
+tetrapropylammonium and tetramethylammonium. In contrast, those that are
+underpredicted are highly anisotropic and are effectively surfactants
+themselves; their behaviour can be expected to be very different compared
+to that of the surfactants in the training data.
 
-To understand why the predictions are wrong, we exploit the kernel function from
-the trained GP to create a force-directed graph, as explained in the Method. The
-resulting layout is shown in Figure~\ref{fig:fdg}. The NIST molecules whose
-residuals are above the \SI{95}{\%} CI are highlighted here.
+To gain further insights, we exploit the kernel function from the trained GP to
+create a force-directed graph, as explained in the Method. The resulting layout
+is shown in Figure~\ref{fig:fdg}. The NIST molecules whose residuals are above
+the \SI{95}{\%} CI are highlighted here.
 
 From the graph of the entire data, it is apparent that the majority of the
 surfactants are segregated based upon the type of counterion that was in the
 solution. This suggests that the model has learned that the counterion is an
 important factor for determining CMC and the weights associated with this
 counterion have a profound impact on the prediction. However, the graph of the
-NIST outliers indicates that the model classifies all of these molecules as
-being primarily similar to the nonionic or zwitterionic compounds. This is
-clearly erroneous in the case of the ionic compounds here: the quats, the
-bromates, the carbonates and the nitrates. This suggests that the model has not
-learned appropriate weights for these counterions, hence it fails to properly
-segregate them.
+outliers indicates that the model classifies all of these molecules as being
+primarily similar to the nonionic or zwitterionic compounds. This is clearly
+erroneous for the ionic compounds: the quats, the bromates, the carbonates and
+the nitrates. This suggests that the model has not learned appropriate weights
+for these counterions, hence it fails to properly segregate them.
 
 \begin{figure}
     \includegraphics[width=\textwidth]{images/force-graph.pdf}
@@ -212,7 +212,7 @@ segregate them.
 
 Figure~\ref{fig:sensitivity} shows the test set evaluations for the GNN and ECFP
 models using repeated, stratified $k$-fold cross-validation. The ECFP and GNN
-models appear to have very similar performance on the Qin-All dataset, but the
+models show very similar performance on the Qin-All dataset, but the
 ECFP model outperforms the GNN model for all training ratios on the
 Qin-Nonionics dataset. Notably, there is also a much broader distribution of
 model RMSEs on the Qin-Nonionics data. This suggests that the model is much more
