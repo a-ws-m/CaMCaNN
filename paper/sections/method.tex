@@ -410,12 +410,19 @@ The same optimisation/validation splitting was used as for the GNN hyperparamete
 In order to better understand the model's interpretation of chemical space, we
 implement a technique to exploit the GP's kernel, optimised during training, to
 plot the molecules in 2D space in a way that respects the model's perception of
-their `similarity'. Once having trained the GP, the learned kernel function was
-computed between every pair of molecules in the combined data, NIST and Qin.
-These kernel values were then normalised within the range $[0, 1]$. Each
-molecule was then assigned a node in a graph and these were connected by edges.
-Each edge was given a weight that was equal to the normalised kernel value
-between the two nodes it connected.
+their `similarity'. This approach is inspired by
+\citeauthor{isayevMaterialsCartographyRepresenting2015}, who compared the
+fingerprints of several inorganic compounds to develop so-called materials
+catrograms. However, by employing the machine-learned latent representations of
+molecules, the cartogram instead reflects molecular similarities learned by the
+model itself.
+
+Once having trained the GP, the learned kernel function was computed between
+every pair of molecules in the combined data, NIST and Qin. These kernel values
+were then normalised within the range $[0, 1]$. Each molecule was then assigned
+a node in a graph and these were connected by edges. Each edge was given a
+weight that was equal to the normalised kernel value between the two nodes it
+connected.
 
 This was the starting condition for computing a \emph{force-directed graph
     layout}. The nodes are initialised with a set of 2D coordinates that is
