@@ -50,7 +50,7 @@ hyperparameters discovered on each set are described in Table \ref{tab:hb-hps}.
 
 \subsection{Benchmark model performance}
 
-The performances of all the trained models on the benchmark tasks are reported in Table \ref{tab:evaluation}. All of the models outperformed those of \citeqin. For every task, the most accurate model was either the GNN or the combined GNN with the GP (GNN/GP). The linear model's performance is surprisingly good, considering its relative simplicity, faster optimisation and the far smaller number of parameters it constitutes.
+The performances of all the trained models on the benchmark tasks are reported in Table \ref{tab:evaluation}. All of the models outperformed those of \citet{qinPredictingCriticalMicelle2021}. For every task, the most accurate model was either the GNN or the combined GNN with the GP (GNN/GP). The linear model's performance is surprisingly good, considering its relative simplicity, faster optimisation and the far smaller number of parameters it constitutes.
 
 \begin{table}
     \centering
@@ -176,33 +176,40 @@ bromate, nitrate or carbonate counterion, but there are two examples of a quat
 counterion. However, the quats in the training data are isotropic:
 tetrapropylammonium and tetramethylammonium. In contrast, those that are
 underpredicted are highly anisotropic and are effectively surfactants
-themselves; their behaviour can be expected to be very different compared
-to that of the surfactants in the training data.
+themselves; their behaviour can be expected to be very different compared to
+that of the surfactants in the training data. Furthermore, the two
+polyoxyethylene alcohols in Figure~\ref{fig:nist-underpred} have remarkably
+small tail groups relative to the examples in the training data, which justifies
+their exceptional CMC predictions. This leaves two surfactants among the
+outliers that might reasonably be expected to lie within the applicability
+domain, constituting \SI{4.7}{\%} of the total NIST dataset, which is close to
+the \SI{5}{\%} that are expected to be outside the \SI{95}{\%} CI.
 
-To gain further insights, we exploit the kernel function from the trained GP to
-create a force-directed graph, as explained in the Method. The resulting layout
-is shown in Figure~\ref{fig:fdg}. The NIST molecules whose residuals are above
-the \SI{95}{\%} CI are highlighted here.
+To gain insight into the relationships between molecules, we exploit the kernel
+function from the trained GP to create a molecular cartogram, as explained in
+the Method. The resulting cartogram is shown in Figure~\ref{fig:fdg}. The NIST
+molecules whose residuals are above the \SI{95}{\%} CI are highlighted here.
 
-From the graph of the entire data, it is apparent that the majority of the
+From the cartogram of the entire data, it is apparent that the majority of the
 surfactants are segregated based upon the type of counterion that was in the
 solution. This suggests that the model has learned that the counterion is an
 important factor for determining CMC and the weights associated with this
-counterion have a profound impact on the prediction. However, the graph of the
-outliers indicates that the model classifies all of these molecules as being
-primarily similar to the nonionic or zwitterionic compounds. This is clearly
-erroneous for the ionic compounds: the quats, the bromates, the carbonates and
-the nitrates. This suggests that the model has not learned appropriate weights
-for these counterions, hence it fails to properly segregate them.
+counterion have a profound impact on the prediction. However, the visualisation
+of the outliers indicates that the model classifies all of these molecules as
+being primarily similar to the nonionic or zwitterionic compounds. This is
+clearly erroneous for the ionic compounds: the quats, the bromates, the
+carbonates and the nitrates. This suggests that the model has not learned
+appropriate weights for these counterions, hence it fails to properly segregate
+them.
 
 \begin{figure}
     \includegraphics[width=\textwidth]{images/force-graph.pdf}
-    \caption{A visualisation of the molecules in the combined NIST and Qin
-        datasets using a force-directed graph layout. Left: The entirety of the
-        combined NIST and Qin datasets, where each molecule is assigned a point.
-        Right: The NIST molecules that are overconfidently underpredicted, so
-        that the residual is above the \SI{95}{\%} CI, are superimposed on a
-        kernel density estimate (KDE) plot of the Qin data. This KDE plot is an
+    \caption{Cartogram of the molecules in the combined NIST and Qin datasets
+        using a force-directed graph layout. Left: The entirety of the combined
+        NIST and Qin datasets, where each molecule is assigned a point. Right:
+        The NIST molecules that are overconfidently underpredicted, so that the
+        residual is above the \SI{95}{\%} CI, are superimposed on a kernel
+        density estimate (KDE) plot of the Qin data. This KDE plot is an
         estimate of the distribution of the Qin molecules on the left, coloured
         by the type of counterion.}
     \label{fig:fdg}

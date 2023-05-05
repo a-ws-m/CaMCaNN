@@ -1,10 +1,6 @@
 \citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological
 model for studying aqueous nonionic surfactant systems that enabled CMC
 prediction and modelling other properties across a range of temperatures. The
-
-TODO: Comment on its use in the literature. I can't find any papers that use it except to
-expand on it for e.g. mixtures of surfactants.
-
 model they developed was the product of decomposing the process of micellisation
 into discrete steps that they could describe thermodynamically so as to yield a
 description of the free energy of micellisation in terms of a set of molecular
@@ -36,31 +32,28 @@ Greater generalisability and better accuracy can be realised by considering the
 process of aggregation on a more precise level: identifying the behaviour of
 individual atoms, or small groups thereof. Simulation approaches can model the
 interaction of these units with each other and derive the potential energy of a
-configuration from these calculations.
-
-TODO: References.
+configuration from these calculations
+\cite{frenkelUnderstandingMolecularSimulation2001,joshiReviewAdvancementsCoarsegrained2021,filipeMolecularDynamicsSimulations2022}.
 
 Molecular dynamics (MD) simulations treat individual atoms, in the all-atomistic
 (AA) approach, or groups of atoms, in the coarse-grained (CG) approach, as
 particles in a box that exert force on each other. This allows the particles'
 movement to be simulated by integrating the equations of motion.
-\citet{jorgeMolecularDynamicsSimulation2008} used two types of AA approach to
-simulate the self-assembly of \textit{n}-decyltrimethylammonium bromide: one
-approach that explicitly considered hydrogens, and the united-atom approach, which
-groups hydrogens with their respective connecting atom. They then estimated the
-CMC by considering the concentration of `free' surfactants, i.e. surfactants
-that were not in micelles, which they defined as an aggregate containing five or
-more surfactants. The more accurate model for determining CMC, the united-atom
-approach, yielded a CMC with an error of \SI{0.23}{\log \micro M}. The author
-asserted that the simulation size, i.e. the number of particles, was too small
-to obtain a more accurate value of CMC. This highlights an issue with using MD
-to predict CMC: careful consideration must be given to ensure that the system is
-large enough and that enough timesteps have been performed to ensure
-convergence, but increasing these parameters leads to an increase in
-computational cost.
-
-TODO: Reference Panagiotopoulos and commentary on whether atomistic FFs can be used
-to predict CMC.
+\citet{jorgeMolecularDynamicsSimulation2008} used two approaches to simulate the
+self-assembly of \textit{n}-decyltrimethylammonium bromide: an AA approach, and
+a united-atom approach, which groups hydrogens with their respective connecting
+atom. They then estimated the CMC by considering the concentration of `free'
+surfactants, i.e. surfactants that were not in micelles, which they defined as
+an aggregate containing five or more surfactants. The more accurate model for
+determining CMC, the united-atom approach, yielded a CMC with an error of
+\SI{0.23}{\log \micro M}. The author asserted that the simulation size, i.e. the
+number of particles, was too small to obtain a more accurate value of CMC.
+However, \citet{jusufiExplicitImplicitSolventSimulations2015} have
+criticised the free surfactant concentration approach for modeling CMC of ionic
+surfactants in general. They note that free surfactant concentration above the
+CMC is highly dependent on the choice of overall surfactant concentration,
+especially for ionic surfactants, which necessitates careful extrapolation in
+order to accurately determine CMCs.
 
 The computational cost in increasing the system size can be mitigated using
 coarse-graining, which reduces the number of interactions that must be computed

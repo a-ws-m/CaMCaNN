@@ -36,15 +36,34 @@ kernel to the model, via a Gaussian process operating on the GNN's learned
 latent space representations, offers a quantitative measure of molecular
 similarity that can simultaneously be employed for adding uncertainty to the CMC
 predictions and visualising the chemical space of the training data.
-Superimposing the test data onto this graph of chemical space highlights which
-molecules may have erroneous predictions, based on the fact that they are
-clustered amongst training data molecules with very different chemistries.
+Superimposing the test data onto this cartogram highlights which molecules may
+have erroneous predictions, based on the fact that they are clustered amongst
+training data molecules with very different chemistries.
+
+Case-by-case examination of these molecules highlights the nature of these chemical
+differences, which can be related to properties that are important for micellisation.
+Broadly speaking, the model failed in three cases:
+\begin{itemize}
+    \item Where ionic effects of the solute were not learned, as in the case of the counterions that were unique to the NIST data.
+    \item When there was a significant difference in hydrophilic-lipophilic balance (HLB), as in the case of the surfactants with very small tail groups.
+    \item When the counterion was itself surfactant-like, as in the case of the
+          quats, which implies the system should better be described as a binary
+          mixture of surfactants.
+\end{itemize}
+These results stress the importance of applying domain knowledge in developing
+and analysing the results of deep learning models. The uncertainty
+quantification is unreliable when the systems' behaviour is starkly different
+from what the model can be expected to learn from the training data.
 
 Future efforts to improve this type of model may consider incorporating another
 term in the loss function for the GNN that explicitly biases the model towards
-learning a form of $\lrv{}$ that captures this similarity. Alternatively, a
-variational Gaussian process could be used, which approximates the Gaussian
-process using a fixed-size set of `pseudo-points'
+learning a form of $\lrv{}$ that captures chemical similarity based on
+user-defined metrics; for example, HLB of the surfactant and its counterion.
+This approach would enable chemical knowledge to be explicitly encoded within
+the model and may capture some of the aforementioned failure cases.
+Alternatively, a variational Gaussian process could be used, which approximates
+the Gaussian process using a fixed-size set of `pseudo-points'
 \cite{hensmanGaussianProcessesBig2013a}; this would enable the entire GNN/GP
-model to be trained at once using backpropagation
+model to be trained at once using backpropagation and can be applied when the
+training data size is larger
 \cite{moriartyUnlockNNUncertaintyQuantification2022}.
