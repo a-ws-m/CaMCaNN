@@ -1,9 +1,8 @@
-The ideal molecular
-representation depends on the task at hand. Ideally, it should be compact but
-complete
+The ideal molecular representation of an active chemical depends on the task at
+hand. Ideally, it should be compact but complete
 \cite{faberCrystalStructureRepresentations2015,himanenDScribeLibraryDescriptors2020};
 `as simple as possible, but not simpler.' To that end, the representation should
-contain enough information to distinguish between isomers that with distinct
+contain enough information to distinguish between isomers with distinct
 properties. However, concessions can be made if we restrict the model's domain
 and self-imposed limits on the type of isomers we expose the model to, both
 during training and in use. Representations may also include descriptions of
@@ -14,18 +13,18 @@ range of states.
 The representations employed by both the GNN and the linear models capture
 topological information and the performances of all of the models on in-domain
 data suggest that this is sufficient for the task of predicting CMC very
-accurately. However, both of the models are unable to distinguish between
-certain positional isomers, depending on the size of the atomic environments
-that they consider. In the case of ECFPs, this is dictated by the radius around
-each atom that is included in the fingerprint, whilst for the GNNs, this is
-determined by the number of consecutive graph layers.
+accurately. However, both models are unable to distinguish between certain
+positional isomers, depending on the size of the atomic environments that they
+consider. In the case of ECFPs, this is dictated by the radius around each atom
+that is included in the fingerprint, whilst for the GNNs, this is determined by
+the number of consecutive graph layers.
 
 Increasing these parameters both increases computational cost and model
-complexity, introducing more parameters and therefore requiring more data in
-order to optimise them appropriately. The sensitivity analysis demonstrated that
-this also increases the propensity for overfitting; however, the benchmarking
-results demonstrate that using a proper selection of training samples can yield
-more accurate models. In cases where there are fewer samples available, and some
+complexity, introducing more parameters and therefore requiring more data to
+optimise them appropriately. The sensitivity analysis demonstrated that this
+also increases the propensity for overfitting; however, the benchmarking results
+demonstrate that using a proper selection of training samples can yield more
+accurate models. In cases where there are fewer samples available, and some
 chemical classes are poorly represented in the training data, the simpler,
 linear model may be preferable.
 
@@ -37,33 +36,34 @@ latent space representations, offers a quantitative measure of molecular
 similarity that can simultaneously be employed for adding uncertainty to the CMC
 predictions and visualising the chemical space of the training data.
 Superimposing the test data onto this cartogram highlights which molecules may
-have erroneous predictions, based on the fact that they are clustered amongst
-training data molecules with very different chemistries.
+be associated with erroneous predictions, based on the fact that they are
+clustered amongst training data molecules with very different chemistries.
 
-Case-by-case examination of these molecules highlights the nature of these chemical
-differences, which can be related to properties that are important for micellisation.
-Broadly speaking, the model failed in three cases:
+Case-by-case examination of these molecules highlights the nature of these
+chemical differences, which can be related to properties important for
+micellisation. Broadly speaking, the model failed in three cases:
 \begin{itemize}
     \item Where ionic effects of the solute were not learned, as in the case of the counterions that were unique to the NIST data.
     \item When there was a significant difference in hydrophilic-lipophilic balance (HLB), as in the case of the surfactants with very small tail groups.
     \item When the counterion was itself surfactant-like, as in the case of the
-          quats, which implies the system should better be described as a binary
-          mixture of surfactants.
+          ammonium quaternary ions, which implies the system should better be
+          described as a binary mixture of surfactants. Notably, the models
+          developed here were not trained against predictions of CMC for mixed
+          surfactant systems.
 \end{itemize}
 These results stress the importance of applying domain knowledge in developing
 and analysing the results of deep learning models. The uncertainty
 quantification is unreliable when the systems' behaviour is starkly different
 from what the model can be expected to learn from the training data.
 
-Future efforts to improve this type of model may consider incorporating another
-term in the loss function for the GNN that explicitly biases the model towards
-learning a form of $\lrv{}$ that captures chemical similarity based on
-user-defined metrics; for example, HLB of the surfactant and its counterion.
-This approach would enable chemical knowledge to be explicitly encoded within
-the model and may capture some of the aforementioned failure cases.
-Alternatively, a variational Gaussian process could be used, which approximates
-the Gaussian process using a fixed-size set of `pseudo-points'
-\cite{hensmanGaussianProcessesBig2013a}; this would enable the entire GNN/GP
-model to be trained at once using backpropagation and can be applied when the
-training data size is larger
+Future efforts may consider incorporating another term in the loss function for
+the GNN that explicitly biases the model towards learning a form of $\lrv{}$
+that captures chemical similarity based on user-defined metrics; for example,
+HLB of the surfactant and its counterion. This approach would enable chemical
+knowledge to be explicitly encoded within the model and may correct for some of
+the aforementioned failure cases. Alternatively, a variational Gaussian process
+could be used, which approximates the Gaussian process using a fixed-size set of
+`pseudo-points' \cite{hensmanGaussianProcessesBig2013}; this would enable the
+entire GNN/GP model to be trained at once using backpropagation and can be
+applied when the training data size is larger
 \cite{moriartyUnlockNNUncertaintyQuantification2022}.

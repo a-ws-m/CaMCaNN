@@ -3,25 +3,24 @@
 Two datasets were used for training and testing:
 
 \begin{description}
-    \item[The Qin dataset] is a dataset of 202 surfactants curated in a
-          previous work, by \citet{qinPredictingCriticalMicelle2021}, by
-          accumulating results from several publications. To the authors'
-          knowledge, it is currently the largest public dataset of CMCs for
-          several classes of surfactant collected at standard conditions in an
-          aqueous environment between \SIrange{20}{25}{\celsius}. In this work,
-          the data was further subdivided into two tasks: Qin-All, the entirety of
-          the dataset, and Qin-Nonionics, which contains only the nonionic
+    \item[The Qin dataset] is a dataset of 202 surfactants curated by
+          \citet{qinPredictingCriticalMicelle2021}. To the authors' knowledge,
+          it is currently the largest public dataset of CMCs for several classes
+          of surfactant collected at standard conditions in an aqueous
+          environment between \SIrange{20}{25}{\celsius}. In this work, the data
+          was further subdivided into two tasks: Qin-All, the entirety of the
+          dataset, and Qin-Nonionics, which contains only the nonionic
           surfactants.
 
           The Qin data were split into training and test subsets; the training
-          data were used to fit the models, whilst test data were `locked away'
-          until it had been decided that the model was optimised, and the
-          performance metrics on the test data were then used for evaluation. For
-          some models, the training data were further split into optimisation and
-          validation subsets; the optimisation data were used when calculating the
-          loss function during model fitting. The validation data were used for
-          on-the-fly evaluation of model performance during training, to determine
-          how many iterations of the optimisation routine to use.
+          data were used to fit the models, whilst test data were `locked away'.
+          The performance metrics on the test data were used for evaluation of
+          the models derived here. For some models, the training data were
+          further split into optimisation and validation subsets; the
+          optimisation data were used when calculating the loss function during
+          model fitting. The validation data were used for on-the-fly evaluation
+          of model performance during training, to determine how many iterations
+          of the optimisation routine to use.
 
           To provide a consistent benchmark of model performance with
           the previous work \cite{qinPredictingCriticalMicelle2021}, the same
@@ -58,10 +57,10 @@ Two datasets were used for training and testing:
 
           The NIST data were used exclusively for external validation. Several
           of the surfactant systems are not expected to be within the
-          applicability domain of the models. This includes surfactants with
-          counterions and combinations of functional groups that are not present
-          in the training data. These data are included to test the robustness
-          of the uncertainty quantification approach.
+          applicability domain of the models derived here. This includes
+          surfactants with counterions and combinations of functional groups
+          that are not present in the training data. These data are included to
+          test the robustness of the uncertainty quantification approach.
 \end{description}
 
 The number of each type of surfactant in the train and test subsets of the data are shown in Table~\ref{tab:data-split}. Only the models trained on the Qin-All dataset were evaluated on the NIST dataset, as it contained ionic compounds.
@@ -81,13 +80,13 @@ The number of each type of surfactant in the train and test subsets of the data 
     \end{tabular}
 \end{table}
 
-As described in the Introduction, the QSPR pipeline needs molecular descriptors
-and a functional form. The design processes for these are called \emph{feature
-    engineering} and \emph{model selection}, respectively.
+The QSPR pipeline needs molecular descriptors and a functional form. The design
+processes for these are called \emph{feature engineering} and \emph{model
+selection}, respectively.
 
 \subsection{Feature engineering}
 
-In this work, two types of molecular descriptor are employed: extended
+In this work, two types of molecular descriptors are employed: extended
 connectivity fingerprints (ECFPs)
 \cite{rogersExtendedConnectivityFingerprints2010} and molecular graphs.
 
@@ -104,18 +103,17 @@ is described by
 \end{equation}
 where $\mathcal{E}_m$ represents the $m^\text{th}$ atomic environment.
 
-A change in headgroup composition is, therefore, reflected in a change in
-subgraph counts, and provided the new subgraph exists in our training data. The
-model can adjust its prediction accordingly. Branch points in a carbon chain are
-distinguished from main-chain groups, as they terminate in a \ce{CH} group
-rather than \ce{CH2}.
+A change in headgroup composition is reflected in a change in subgraph counts.
+Provided the new subgraph exists in the training data, the model can adjust its
+prediction accordingly. Branch points in a carbon chain are distinguished from
+main-chain groups, as they terminate in a \ce{CH} group rather than \ce{CH2}.
 
 ECFPs are similar to a segment-based approach; however, unlike segments or
 groups, subgraphs can overlap. Whilst a group contribution approach requires
 that a canonical `priority' of the groups be defined prior to featurising
 molecules, by using ECFPs, the manual identification of important groups and
-their priorities are skipped; feature importance determination is instead
-delegated to the model.
+their priorities are skipped; feature importance determination is delegated to
+the model.
 
 Much like a group contribution approach, these fingerprints do not necessarily
 distinguish between all positional or chain isomers, particularly with smaller
@@ -128,7 +126,7 @@ Furthermore, larger environments necessarily envelop smaller ones, which means
 that there is some duplicate information in the representation: the presence of
 a \ce{(CH2)3} environment implies the presence of three \ce{CH2} environments,
 so that there is multicollinearity. This redundancy can impede model fitting and
-interpretation. However, these issues can be ameliorated using a process of
+interpretation. These issues can be ameliorated using a process of
 \emph{feature selection}, which will be discussed below.
 
 ECFPs are commonly employed for determining molecular similarity through the use
@@ -144,13 +142,13 @@ is assigned zero. The Tanimoto similarity between molecules A and B is then
 
 In the original work by \citet{tanimotoElementaryMathematicalTheory1958}, a
 `distance coefficient' is defined based on the logarithm of the similarity of
-two points; however, this is not a true distance metric as it does not satisfy
-the triangle inequality. Instead, the Jaccard distance, $d_{AB} = 1 - S_{AB}$,
-was employed to perform clustering of the molecules of the Qin dataset. The
+two points; this is not a true distance metric as it does not satisfy the
+triangle inequality. Instead, the Jaccard distance, $d_{AB} = 1 - S_{AB}$, was
+employed here to perform clustering of the molecules of the Qin dataset. The
 pairwise distances between each feature-selected molecular fingerprint in the
-Qin dataset were computed and the OPTICS clustering algorithm was then used to
-assign a class to each of them \cite{ankerstOPTICSOrderingPoints1999}. The
-algorithm was parameterised with a minimum cluster size of 4 molecules. Outlying
+Qin dataset were computed and the OPTICS clustering algorithm was used to assign
+a class to each of them \cite{ankerstOPTICSOrderingPoints1999}. The algorithm
+was parameterised with a minimum cluster size of 4 molecules. Outlying
 molecules, which did not fit into any other class, were assigned an `outliers'
 class for the sake of the stratified splitting procedure.
 
@@ -201,13 +199,13 @@ task were employed.
 % introduce branching and other functional groups to the tail.
 
 
-A molecular graph is a structure that describes the entire topology of a
-molecule and it is a popular choice for cheminformatics as well as visualisation
-of molecular structure. Each atom is considered a \emph{node} and each bond an
-\emph{edge}. Rather than having a single feature vector to describe the molecule
-as a whole, each atom is assigned its own feature vector, $\vec{v}_i$, based on
-properties such as its element, hybridisation state, charge, etc. The same set
-of atomic features were used here as in the work by
+A molecular graph describes the entire topology of a molecule. It is a
+popular choice for cheminformatics as well as visualisation of molecular
+structure. Each atom is considered a \emph{node} and each bond an \emph{edge}.
+Rather than having a single feature vector to describe the molecule as a whole,
+each atom is assigned its own feature vector, $\vec{v}_i$, based on properties
+such as its element, hybridisation state, charge, etc. The same set of atomic
+features were used here as in the work by
 \citet{qinPredictingCriticalMicelle2021}. It is for this reason that the
 molecules in the NIST data containing elements that were not in the training
 data were excluded; the atomic representation includes a fixed-length one-hot
@@ -250,9 +248,8 @@ where $\vec{w}$ is a trained weights vector, the elements of which correspond to
 However, the issues of the large feature vector size and multicollinearity must
 be addressed. To that end, a process of \emph{feature selection} was applied,
 whereby a subset of the atomic environments were selected for use in the model.
-There are several approaches to feature
-selection\cite{liFeatureSelectionData2017}; here, we chose an approach based on
-\emph{regularisation}.
+There are several approaches to feature selection
+\cite{liFeatureSelectionData2017}; here, we chose \emph{regularisation}.
 
 In this approach, we include a term in the loss function that depends on the
 norm of $\vec{w}$. The two types of constraints considered are $\ell_1$ and
@@ -279,8 +276,10 @@ Standardising the environment counts ensures that they have zero mean and unit v
     \label{eq:standard-scaling}
     {c}^{\,\prime}_m = \frac{c_m - u_m}{s_m},
 \end{equation}
-where $u_m$ and $s_m$ are the mean and standard deviation of the number of $\mathcal{E}_m$ in each molecule in the training data. This standardisation is necessary to ensure that the regularisation term is not dominated by
-environments with high variance and that it accounts for common and uncommon environments alike.
+where $u_m$ and $s_m$ are the mean and standard deviation of the number of
+$\mathcal{E}_m$ in each molecule in the training data. This standardisation
+ensures that the regularisation term is not dominated by environments with high
+variance and that it accounts for common and uncommon environments alike.
 
 By imposing the $\ell_1$ penalty, the model is biased towards learning a
 \emph{sparse} weight vector: many of its elements will be negligible. The
@@ -294,9 +293,9 @@ only an $\ell_1$ norm in the loss function
 
 To determine the best values for $\alpha$ and $\rho$, 5-fold cross-validation of
 the training data was used. This was applied for a range of $\alpha$ and $\rho$
-combinations, and the combination that achieved the lowest average
-mean-squared-error was then used to train a model using the entirety of the
-training data. The hyperparameter search space is defined in the Supplementary
+combinations. The combination that achieved the lowest average
+mean-squared-error was used to train a model using the entirety of the training
+data. The hyperparameter search space is defined in the Supplementary
 Information.
 
 The features with non-negligible fitted weights from ElasticNet were then selected for use in the final linear model. This model, ridge regression, uses just $\ell_2$ regularisation so that all of the weights are non-negligible, but we
@@ -311,19 +310,23 @@ It was empirically observed that the combination of ElasticNet feature selection
 
 \subsubsection{Molecular graph model}
 
-The basic topology of the graph neural network (GNN) used in this work was identical to the one used by \citet{qinPredictingCriticalMicelle2021}. That is, the first step of the model consists of a stack of graph network layers, which mutate the node features in a molecular graph based on those of bonded atoms.
-These layers employ the graph convolution network (GCN) architecture introduced by \cite{kipfSemiSupervisedClassificationGraph2017a}. Layer $l$ computes a new node feature matrix, $\mathbf{V}^{(l)}$, based on the adjacency matrix, $\mathbf{A}$:
+The basic topology of the graph neural network (GNN) used in this work was
+identical to the one used by \citet{qinPredictingCriticalMicelle2021}. The first
+step of the model consists of a stack of graph network layers, which mutate the
+node features in a molecular graph based on those of bonded atoms. These layers
+employ the graph convolution network (GCN) architecture introduced by
+\citet{kipfSemiSupervisedClassificationGraph2017}. Layer $l$ computes a new node
+feature matrix, $\mathbf{V}^{(l)}$, based on the adjacency matrix, $\mathbf{A}$:
 \begin{equation}
-    \mathbf{V}^{(l)} = \mathbf{D}^{-1/2} \mathbf{A} \mathbf{D}^{-1/2} \mathbf{V}^{(l-1)} \mathbf{W}^{(l)} + \mathbf{b}^{(l)}.
+    \mathbf{V}^{(l)} = \mathbf{D}^{-\frac{1}{2}} \mathbf{A} \mathbf{D}^{-\frac{1}{2}} \mathbf{V}^{(l-1)} \mathbf{W}^{(l)} + \mathbf{b}^{(l)}.
 \end{equation}
 Here, $\mathbf{W}^{(l)}$ and $\mathbf{b}^{(l)}$ are the weights and biases,
-respectively, of layer $l$ and we have also introduced the degree matrix,
+respectively, of layer $l$. We have also introduced the degree matrix,
 \begin{equation}
     D_{ii} = \sum_j A_{ij},
 \end{equation}
-so that the term $\mathbf{D}^{-1/2} \mathbf{A}
-    \mathbf{D}^{-1/2}$ effectively normalises the adjacency matrix based on
-the degree of each atom.
+so that the term $\mathbf{D}^{-\frac{1}{2}} \mathbf{A} \mathbf{D}^{-\frac{1}{2}}$ normalises the
+    adjacency matrix based on the degree of each atom.
 
 $\mathbf{V}^{(1)}$, therefore, encodes not only information about the atom itself but its bonded neighbours. This information is used in the subsequent graph convolution so that $\mathbf{V}^{(2)}$ encodes information about the
 2\textsuperscript{nd} order neighbourhood, \emph{et cetera}. The number of graphs layers, $L$, therefore dictates the `radius' around each atom that is considered in computing the final feature vector, analogous to creating an ECFP, except that the $i^\text{th}$ atomic environment is characterised by a continuous, \emph{latent} vector, $\vec{v}^{\,(L)}_i$.
@@ -361,7 +364,11 @@ latent representation vector to the CMC property prediction. Each layer in this 
 \begin{equation}
     \vec{v}^{(l)} = \mathbf{W}^{(l)}\vec{v}^{\,(l-1)} + \vec{b}^{\,(l)},
 \end{equation}
-The full network's architecture is illustrated in Figure~\ref{fig:model-topology}. The model was implemented using the open-source library Spektral\cite{grattarolaGraphNeuralNetworks2020} and optimised using an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
+The full network's architecture is illustrated in
+Figure~\ref{fig:model-topology}. The model was implemented using the open-source
+library Spektral\cite{grattarolaGraphNeuralNetworks2020} and optimised using an
+Adam optimiser \cite{kingmaAdamMethodStochastic2017} to minimise the mean
+squared error.
 
 \begin{figure}
     \centering
@@ -402,27 +409,25 @@ The standardised latent representation vectors of the training data serve as ind
 The GP's predicted mean and standard deviation define a predicted normal distribution of a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
 
 In this work, the GPs  were defined using a Mat\'ern kernel with parameter $1/2$, and a fixed noise variance of \num{1e-5}. Furthermore, the multi-layer perceptron component of the GNN used to calculate $\lrv{}$ was employed as the GP's mean function.
-The kernel parameters were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017a}.
+The kernel parameters were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017}.
 The same optimisation/validation splitting was used as for the GNN hyperparameter search and training was stopped after \num{1000} iterations without improvement in the validation predictions' RMSE, or after a total of \num{5000} iterations. This implementation was based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
 
 \subsubsection{Visualising the latent space}
 
 In order to better understand the model's interpretation of chemical space, we
-implement a technique to exploit the GP's kernel, optimised during training, to
-plot the molecules in 2D space in a way that respects the model's perception of
-their `similarity'. This approach is inspired by
-\citet{isayevMaterialsCartographyRepresenting2015}, who compared the
-fingerprints of several inorganic compounds to develop so-called materials
-catrograms. However, by employing the machine-learned latent representations of
-molecules, the cartogram instead reflects molecular similarities learned by the
-model itself.
+exploit the GP's kernel, optimised during training, to plot the molecules in 2D
+space in a way that respects the model's perception of their `similarity'. This
+approach is inspired by \citet{isayevMaterialsCartographyRepresenting2015}, who
+compared the fingerprints of several inorganic compounds to develop so-called
+materials catrograms. By employing the machine-learned latent representations of
+molecules, our cartogram reflects molecular similarities learned by the model
+itself.
 
 Once having trained the GP, the learned kernel function was computed between
 every pair of molecules in the combined data, NIST and Qin. These kernel values
 were then normalised within the range $[0, 1]$. Each molecule was then assigned
 a node in a graph and these were connected by edges. Each edge was given a
-weight that was equal to the normalised kernel value between the two nodes it
-connected.
+weight equal to the normalised kernel value between the two nodes it connected.
 
 This was the starting condition for computing a \emph{force-directed graph
     layout}. The nodes are initialised with a set of 2D coordinates that is

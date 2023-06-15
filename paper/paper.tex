@@ -106,17 +106,16 @@
     Gaussian processes (GPs). The proposed model uses learned latent space
     representations of molecules to predict CMCs and estimate uncertainties. The
     performance of the model on a dataset containing nonionic, cationic, anionic
-    and zwitterionic molecules, is compared against a linear model that works
-    with extended-connectivity fingerprints (ECFPs). Our results demonstrate
-    that the GNN-based model performs slightly better than the linear ECFP
-    model, when there is enough well-balanced training data, and achieves
-    predictive accuracy that is comparable to published models that were
-    evaluated on a smaller range of surfactant chemistries. We illustrate the
-    applicability domain of our model using a molecular cartogram to visualise
-    the latent space, which helps identify molecules likely to have erroneous
-    predictions. The proposed approach can help in the design of new surfactants
-    and provide valuable insights into the molecular properties that influence
-    CMCs.
+    and zwitterionic molecules is compared against a linear model that works
+    with extended-connectivity fingerprints (ECFPs). The GNN-based model
+    performs slightly better than the linear ECFP model, when there is enough
+    well-balanced training data, and achieves predictive accuracy that is
+    comparable to published models that were evaluated on a smaller range of
+    surfactant chemistries. We illustrate the applicability domain of our model
+    using a molecular cartogram to visualise the latent space, which helps
+    identify molecules for which predictions are likely to be erroneous. The
+    proposed approach can provide valuable insights into the molecular
+    properties that influence CMCs.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -149,11 +148,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{acknowledgement}
 We thank the Advanced Characterisation of Materials CDT and the ABK fellowship
-for their financial support. This work was also supported by the Engineering and
-Physical Sciences Research Council (EPSRC), project number EP/VO32909/1. Alberto
-Striolo gratefully acknowledges financial support from the Asahi Glass Chair of
-Chemical Engineering at the University of Oklahoma. Finally, the authors are
-grateful to Innospec Ltd. for their support.
+for their financial support. This work was supported in part by the Engineering
+and Physical Sciences Research Council (EPSRC), project number EP/VO32909/1. AS
+gratefully acknowledges financial support from the Asahi Glass Chair of Chemical
+Engineering at the University of Oklahoma. All the authors are grateful to
+Innospec Ltd. for their support.
 \end{acknowledgement}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -164,7 +163,8 @@ grateful to Innospec Ltd. for their support.
 
     Source code for featurisation and model training, graph neural network logs
     and metrics for hyperparameter optimisation and final training, and
-    individual model predictions.
+    individual model predictions is available at
+    \url{https://github.com/a-ws-m/CaMCaNN/}.
 
 \end{suppinfo}
 
