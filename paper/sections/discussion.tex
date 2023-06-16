@@ -44,7 +44,9 @@ chemical differences, which can be related to properties important for
 micellisation. Broadly speaking, the model failed in three cases:
 \begin{itemize}
     \item Where ionic effects of the solute were not learned, as in the case of the counterions that were unique to the NIST data.
-    \item When there was a significant difference in hydrophilic-lipophilic balance (HLB), as in the case of the surfactants with very small tail groups.
+    \item When there was a significant difference in the strength of the
+          hydrophobic interactions, as in the case of the surfactants with very small
+          tail groups.
     \item When the counterion was itself surfactant-like, as in the case of the
           ammonium quaternary ions, which implies the system should better be
           described as a binary mixture of surfactants. Notably, the models
@@ -59,9 +61,9 @@ from what the model can be expected to learn from the training data.
 Future efforts may consider incorporating another term in the loss function for
 the GNN that explicitly biases the model towards learning a form of $\lrv{}$
 that captures chemical similarity based on user-defined metrics; for example,
-HLB of the surfactant and its counterion. This approach would enable chemical
-knowledge to be explicitly encoded within the model and may correct for some of
-the aforementioned failure cases. Alternatively, a variational Gaussian process
+the length of the carbon tail. This approach would enable chemical knowledge to
+be explicitly encoded within the model and may correct for some of the
+aforementioned failure cases. Alternatively, a variational Gaussian process
 could be used, which approximates the Gaussian process using a fixed-size set of
 `pseudo-points' \cite{hensmanGaussianProcessesBig2013}; this would enable the
 entire GNN/GP model to be trained at once using backpropagation and can be

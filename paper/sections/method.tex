@@ -37,27 +37,28 @@ Two datasets were used for training and testing:
           approximately the same percentage of molecules of each class, for $k
           \in (2, 5)$. For each fold, a model was trained using $k-1$ folds and
           evaluated on the remaining fold. This was repeated thrice for $k = 2$
-          and twice for $k = 3$, each time with different randomisation, so that
-          there were a similar number of models trained for each value of $k$.
+          and twice for $k = 3$, each time with different randomisation, and
+          there were no repetitions for $k = 4$ and $k = 5$, so that there were
+          a similar number of models trained for each value of $k$.
 
     \item[The National Institute of Science and Technology (NIST) dataset]
-          contains 43 unique surfactant systems and their aqueous CMCs, extracted
-          from the work of \citet{mukerjeeCriticalMicelleConcentrations1971}. The
-          original document compiles CMC measurements for each system across
-          several temperatures and with various additives. Each measurement was
-          given a quality rating depending on the authors' assessment of the
+          contains 43 unique surfactant systems and their aqueous CMCs,
+          extracted from the work of
+          \citet{mukerjeeCriticalMicelleConcentrations1971}. The original
+          document compiles CMC measurements for each system across several
+          temperatures and with various additives. Each measurement was given a
+          quality rating depending on the authors' assessment of the
           experimental method; measurements with a sufficiently good rating were
-          categorised as `suggested' measurements. The dataset used for this work
-          was developed by taking the mean of the suggested CMC measurements
-          between \SIrange{20}{25}{\degreeCelsius}, with no additives, for
-          each surfactant system with measurements that fit these criteria. The
-          surfactant systems that contained elements that were not present in the
-          dataset (\ce{Mn}, \ce{Cs} and \ce{Mg}) were then pruned. The dataset is
-          provided in the Supplementary Information.
+          categorised as `suggested' measurements. The dataset used for this
+          work was developed by taking the mean of the suggested CMC
+          measurements between \SIrange{20}{25}{\degreeCelsius}, with no
+          additives. The surfactant systems that contained elements that were
+          not present in the dataset (\ce{Mn}, \ce{Cs} and \ce{Mg}) were then
+          pruned. The dataset is provided in the Supplementary Information.
 
           The NIST data were used exclusively for external validation. Several
-          of the surfactant systems are not expected to be within the
-          applicability domain of the models derived here. This includes
+          of the surfactant systems in the dataset are not expected to be within
+          the applicability domain of the models derived here. This includes
           surfactants with counterions and combinations of functional groups
           that are not present in the training data. These data are included to
           test the robustness of the uncertainty quantification approach.
@@ -96,7 +97,7 @@ In the ECFP approach, the molecule is split into atomic environments up to a
 given radius, $r$: each environment is centred on an atom and extends $r$ steps
 along connecting bonds. The set of all environments in the training data up to
 radius $r$ is extracted. The resulting feature vector, $\vec{c}$ for a molecule
-is described by
+has elements
 \begin{equation}
     \label{eq:ecfp}
     c_m = \text{Count}(\mathcal{E}_m),
@@ -199,20 +200,19 @@ task were employed.
 % introduce branching and other functional groups to the tail.
 
 
-A molecular graph describes the entire topology of a molecule. It is a
-popular choice for cheminformatics as well as visualisation of molecular
-structure. Each atom is considered a \emph{node} and each bond an \emph{edge}.
-Rather than having a single feature vector to describe the molecule as a whole,
-each atom is assigned its own feature vector, $\vec{v}_i$, based on properties
-such as its element, hybridisation state, charge, etc. The same set of atomic
-features were used here as in the work by
-\citet{qinPredictingCriticalMicelle2021}. It is for this reason that the
-molecules in the NIST data containing elements that were not in the training
-data were excluded; the atomic representation includes a fixed-length one-hot
-encoding of the element number, and the new elements cannot be encoded without
-modifying the model after training. These feature vectors are concatenated into
-a node feature matrix, $\mathbf{V}$. The graph's structure is then defined by a
-binary adjacency matrix, $\mathbf{A}$:
+A molecular graph describes the entire topology of a molecule. It is a popular
+choice for cheminformatics as well as visualisation of molecular structure. Each
+atom is considered a \emph{node} and each bond an \emph{edge}. Rather than
+having a single feature vector to describe the molecule as a whole, each atom is
+assigned its own feature vector, $\vec{v}_i$, based on properties such as its
+element, hybridisation state, charge, etc. The same set of atomic features was
+used here as in the work by \citet{qinPredictingCriticalMicelle2021}. It is for
+this reason that the molecules in the NIST data containing elements that were
+not in the training data were excluded; the atomic representation includes a
+fixed-length one-hot encoding of the element number, and the new elements cannot
+be encoded without modifying the model after training. These feature vectors are
+concatenated into a node feature matrix, $\mathbf{V}$. The graph's structure is
+then defined by a binary adjacency matrix, $\mathbf{A}$:
 
 \begin{equation}
     \label{eq:adjacency-mat}
@@ -222,7 +222,9 @@ binary adjacency matrix, $\mathbf{A}$:
     \end{cases}
 \end{equation}
 
-Molecular graphs are natural representations to visualise; see Figure~\ref{fig:mol-graph}. This is exact description of the molecule's topology enables an atomistic machine learning approach.
+Molecular graphs are natural representations to visualise; see
+Figure~\ref{fig:mol-graph}. This exact description of the molecule's topology
+enables an atomistic machine learning approach.
 
 \begin{figure}
     \centering
@@ -285,10 +287,11 @@ By imposing the $\ell_1$ penalty, the model is biased towards learning a
 \emph{sparse} weight vector: many of its elements will be negligible. The
 corresponding features can be removed from the representation. Meanwhile, the
 $\ell_2$ penalty means that a `grouping' effect is achieved, ensuring that
-highly correlated groups all get given similar weights, rather than discarding
-some of them, and it also ensures that there is no upper bound on the number of
-groups that the model includes. Both of these are potential issues when using
-only an $\ell_1$ norm in the loss function
+highly correlated groups are assigned similar weights, rather than discarding
+some of them. It also ensures that the upper bound on the number of selected
+groups is equal to the total number of groups; the model is not constrained to
+select a smaller subset if there are no redundant groups. Both of these are
+potential issues when using only an $\ell_1$ norm in the loss function
 \cite{efronLeastAngleRegression2004,zouRegularizationVariableSelection2005}.
 
 To determine the best values for $\alpha$ and $\rho$, 5-fold cross-validation of
@@ -298,13 +301,19 @@ mean-squared-error was used to train a model using the entirety of the training
 data. The hyperparameter search space is defined in the Supplementary
 Information.
 
-The features with non-negligible fitted weights from ElasticNet were then selected for use in the final linear model. This model, ridge regression, uses just $\ell_2$ regularisation so that all of the weights are non-negligible, but we
-still address the issue of multicollinearity \cite{mcdonaldRidgeRegression2009}:
+The features with non-negligible fitted weights from ElasticNet were then
+selected for use in the final linear model. This model, ridge regression, uses
+just $\ell_2$ regularisation so that all of the weights are non-negligible, but
+still addresses the issue of multicollinearity
+\cite{mcdonaldRidgeRegression2009}:
 \begin{equation}
     \min_{\vec{w}} \left \Vert \mathbf{C} \vec{w} + \vec{b} - \vec{y} \right \Vert_2^2 + \alpha \left \Vert \vec{w}\right \Vert_2^2.
 \end{equation}
-A similar cross-validation method to the one described above was used to determine the best $\alpha$ parameter, but using leave-one-out cross-validation, whereby $k=n_\text{samples}-1$. Because only one hyperparameter needs to be determined. There are far fewer trials per
-fold, and therefore a greater number of folds can be used.
+A similar cross-validation method to the one described above was used to
+determine the best $\alpha$ parameter, but using leave-one-out cross-validation,
+whereby $k=n_\text{samples}-1$. Because only one hyperparameter needs to be
+determined, there are far fewer trials per fold and therefore a greater number
+of folds can be used.
 
 It was empirically observed that the combination of ElasticNet feature selection and a final regression with the simpler ridge regression model yielded better results, likely due to using a larger number of folds when determining the best value for $\alpha$. Both models were implemented using scikit-learn \cite{pedregosaScikitlearnMachineLearning2011}.
 
@@ -408,9 +417,15 @@ Again, $u_n$ and $s_n$ were determined from the training molecules' latent repre
 The standardised latent representation vectors of the training data serve as index points for a Gaussian process (GP); see Figure~\ref{fig:model-topology}.
 The GP's predicted mean and standard deviation define a predicted normal distribution of a molecule's CMC, $\log X_{cmc} \sim \mathcal{N}(\mu, \sigma)$.
 
-In this work, the GPs  were defined using a Mat\'ern kernel with parameter $1/2$, and a fixed noise variance of \num{1e-5}. Furthermore, the multi-layer perceptron component of the GNN used to calculate $\lrv{}$ was employed as the GP's mean function.
-The kernel parameters were optimised with an Adam optimiser \cite{kingmaAdamMethodStochastic2017}.
-The same optimisation/validation splitting was used as for the GNN hyperparameter search and training was stopped after \num{1000} iterations without improvement in the validation predictions' RMSE, or after a total of \num{5000} iterations. This implementation was based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
+In this work, the GPs  were defined using a Mat\'ern kernel with parameter
+$1/2$, and a fixed noise variance of \num{1e-5}. Furthermore, the multi-layer
+perceptron component of the GNN used to calculate $\lrv{}$ was employed as the
+GP's mean function. The kernel parameters were optimised with an Adam optimiser
+\cite{kingmaAdamMethodStochastic2017}. The same optimisation/validation
+splitting was used as for the GNN hyperparameter search and training was stopped
+after \num{1000} iterations without improvement in the validation predictions'
+RMSE, or after a total of \num{5000} iterations. The software implementation was
+based on GPFlow \cite{matthewsGPflowGaussianProcess2017}.
 
 \subsubsection{Visualising the latent space}
 
@@ -423,15 +438,15 @@ materials catrograms. By employing the machine-learned latent representations of
 molecules, our cartogram reflects molecular similarities learned by the model
 itself.
 
-Once having trained the GP, the learned kernel function was computed between
-every pair of molecules in the combined data, NIST and Qin. These kernel values
-were then normalised within the range $[0, 1]$. Each molecule was then assigned
-a node in a graph and these were connected by edges. Each edge was given a
-weight equal to the normalised kernel value between the two nodes it connected.
+Having trained the GP, the learned kernel function was computed between every
+pair of molecules in the combined data, NIST and Qin. These kernel values were
+then normalised within the range $[0, 1]$. Each molecule was assigned a node in
+a graph and these were connected by edges. Each edge was given a weight equal to
+the normalised kernel value between the two nodes it connected.
 
 This was the starting condition for computing a \emph{force-directed graph
-    layout}. The nodes are initialised with a set of 2D coordinates that is
-uniformly distributed and they are moved according to forces acting upon them;
+    layout}. The nodes are initialised with a set of 2D coordinates that are
+uniformly distributed and they are then moved according to forces acting upon them;
 primarily an attractive force that acts along the edges. In addition, there are
 pairwise repulsive forces acting amongst the nodes that serves to ensure that
 the equilibrium distance between two nodes is non-zero. In this work, the Force

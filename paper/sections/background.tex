@@ -1,10 +1,9 @@
 \citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological
-model for studying aqueous nonionic surfactant systems that enabled CMC
-prediction and modelling other properties across a range of temperatures. The
-model they developed was the product of decomposing the process of micellisation
-into discrete steps that could be described thermodynamically so as to yield the
-free energy of micellisation in terms of a set of molecular parameters:
-
+model for studying aqueous nonionic surfactant systems that enabled prediction
+of CMC and other properties across a range of temperatures. They developed a
+model for the free energy of micellisation, from which the CMC can be
+calculated. Their model was parameterised by three properties of the surfactant
+molecule:
 \begin{itemize}
     \item The tail length, defined as the number of carbon atoms.
     \item The average cross-sectional area of the headgroup, which controls the
@@ -21,23 +20,22 @@ error (RMSE) of approximately \SI{0.14}{\log \micro M} for the group
 \ce{C10E_i}, where $i \in (3, 6)$, and \SI{0.21}{\log \micro M} for the group
 \ce{C12E_j}, where $j \in (3, 8)$. However, the error is much larger for other
 systems, like \ce{C8E6}. The authors ascribed this inaccuracy to their
-prediction that these systems' micelles would not exhibit much anisotropic
-growth, i.e. that they are mostly spherical; rather, their model is better
-suited for cylindrical or disk-like (bilayer) micelles.
+prediction that the micelles in these systems would not exhibit much anisotropic
+growth, i.e. that they are mostly spherical; their model is better suited for
+cylindrical or disk-like (bilayer) micelles.
 
 The connection this model established between a small set of physically meaningful properties that can be estimated and emergent properties of surfactants is extremely useful, especially because it does not explicitly require fitting to any experimental data. However, the procedures described for estimating the Tolman length are only applicable to linear hydrocarbon chains, not branched nor heterogeneous tail groups. Estimating the average cross-sectional area of the head group may also not be trivial.
 
 Greater generalisability and better accuracy can be realised by considering the
-process of aggregation on a more precise level: identifying the behaviour of
-individual atoms, or small groups thereof. Simulation approaches can model the
-interaction of these units with each other and derive the potential energy of a
-configuration
+process of aggregation by identifying the behaviour of individual atoms, or
+small groups thereof. Simulation approaches can model the interaction of these
+units with each other and derive the potential energy of a configuration
 \cite{frenkelUnderstandingMolecularSimulation2001,joshiReviewAdvancementsCoarsegrained2021,filipeMolecularDynamicsSimulations2022}.
+For example, molecular dynamics (MD) simulations treat individual atoms, in the
+all-atomistic (AA) approach, or groups of atoms, in the coarse-grained (CG)
+approach, as particles in a box that exert force on each other. This allows the
+particles' movement to be simulated by integrating the equations of motion.
 
-Molecular dynamics (MD) simulations treat individual atoms, in the all-atomistic
-(AA) approach, or groups of atoms, in the coarse-grained (CG) approach, as
-particles in a box that exert force on each other. This allows the particles'
-movement to be simulated by integrating the equations of motion.
 \citet{jorgeMolecularDynamicsSimulation2008} used two approaches to simulate the
 self-assembly of \textit{n}-decyltrimethylammonium bromide: an AA approach, and
 a united-atom approach, which groups hydrogens with their respective connecting
@@ -54,9 +52,9 @@ dependent on the choice of overall surfactant concentration, especially for
 ionic surfactants, which necessitates careful extrapolation in order to
 accurately determine CMCs.
 
-The computational cost in increasing the system size can be mitigated using
-coarse-graining, which reduces the computational cost by grouping atoms into
-beads, as well as enabling larger time steps
+The computational cost from increasing the system size can be mitigated using
+coarse-graining, which groups atoms into beads. This also makes simulating
+longer time scales accessible
 \cite{fitzgeraldMultiscaleModelingNanomaterials2015}.
 \citet{vishnyakovPredictionCriticalMicelle2013} used dissipative particle
 dynamics (DPD) to model the CMCs of \ce{C8E8}, dodecyldimethylamineoxide (DDAO)
@@ -116,13 +114,15 @@ case for highly polar head groups: primarily for ionic surfactants.
 
 The authors recommended applying both strategies and using the lower result as
 the CMC prediction. They attained an RMSE of \SI{0.81}{\log \micro M} on a
-dataset of 24 surfactants, containing a mix of ionic, nonionic and zwitterionic.
-Excluding the two worst predictions gives a much more favourable RMSE of
-\SI{0.55}{\log \micro M}. It is notable that the technique can be applied across
-all classes of surfactant. Furthermore, the authors were able to determine which
-of the nonionic surfactants had a low propensity to form micelles by whether the
-predicted IFT between water and surfactant phases was large at equilibrium,
-which is a testament to the model's interpretability.
+dataset of 24 surfactants, containing a mix of ionic, nonionic and zwitterionic
+surfactants. Excluding the two worst predictions gives a much more favourable
+RMSE of \SI{0.55}{\log \micro M}. It is notable that the technique can be
+applied across all classes of surfactants. Furthermore, the authors were able to
+determine which of the nonionic surfactants had a low propensity to form
+micelles by analysing the predicted IFT between the water and surfactant phases.
+If the predicted IFT was large, this implied that the free energy of
+micellisation would be large and therefore that the surfactants were less likely
+to micellise. This is a testament to the model's interpretability.
 
 Other approaches have extended COSMO-RS to explicitly account for the internal
 structure of micelles, such as COSMOmic, which treats a micelle as being made of
@@ -158,7 +158,7 @@ initial MD simulation to determine the micellar structure
 micellar structure using a self-consistent approach, which iteratively yields
 new estimates for the layer-wise charge distributions. The authors predicted the
 CMCs of 10 nonionic surfactants with varied head and tail group chemistries,
-achieving an RMSE of \SI{0.86}{\log \micro M}. The authors note that these
+achieving an RMSE of \SI{0.86}{\log \micro M}; however, they noted that these
 results are preliminary and stand to be improved.
 
 Although COSMO techniques are promising,
@@ -178,7 +178,7 @@ local-composition model was used, and the fugacity could then be approximated
 using the fitted interaction energies between the segments and water. The
 segments used were \ce{C2H4} and \ce{C2H4O}. In the SAFT approach, the
 surfactant was treated as a chain of soft-sphere segments in order to first
-derive the free energy of the solution and, from that, derive the fugacity.
+derive the free energy of the solution and, from that, the fugacity.
 
 \citet{chengCorrelationCriticalMicelle2005} compared the performance of these
 models on a larger dataset alongside three other models. Two of these were
@@ -198,15 +198,15 @@ The m-AD model considers the exchange equilibrium on a three-dimensional lattice
 of infinitely separated solvent and solute molecules in order to determine
 $\gamma_S^{L,\infty}$. Notably, the m-AD model is not a segment-based model;
 instead, the authors fitted an interchange energy, $\Delta$, separately for each
-molecule. Correlations were examined between $\Delta$ and other, readily
-calculated surfactant values: the Kier-Hall zero-order index (KH0) of the tail
-groups, which indicates  and the total molecular energy of the surfactant.
+molecule. Correlations were examined between $\Delta$ and the readily calculated
+Kier-Hall zero-order index (KH0) of the tail groups, which indicates and the
+total molecular energy of the surfactant.
 
 Where data from the literature was available, the predictive performance of the
-models on the molecular series \ce{C_nE6}, \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n}
-and \ce{C12E_n} were compared, and the resulting RMSEs are summarised in Table
-\ref{tab:segment-methods}. The models all have a reasonably good accuracy, but
-the SAFT model is particularly remarkable.
+equation of state and the m-AD models on the molecular series \ce{C_nE6},
+\ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n} and \ce{C12E_n} were compared, and the
+resulting RMSEs are summarised in Table \ref{tab:segment-methods}. The models
+all have a reasonably good accuracy, but the SAFT model is particularly good.
 
 \begin{table}
     \caption{Comparison of the RMSEs of selected models on polyoxyethylene
@@ -237,22 +237,23 @@ the model to `learn' trends that contradict scientific intuition.
 
 Empirical QSPR methods require validation to determine their reliability and
 applicability domain
-\cite{veerasamyValidationQSARModelsstrategies2011,tropshaBestPracticesQSAR2010,leonardSelectionTrainingTest2006},
-which is often achieved by partitioning the available data into \emph{training}
-and \emph{test} subsets; the former is used for optimising the model's
-parameters, the latter is `hidden' from the model until training is complete,
-and the prediction metrics on the test data indicate how the model can be
-expected to perform in general. The test set should span the chemical space in
-which the model is intended to be applied
+\cite{veerasamyValidationQSARModelsstrategies2011,tropshaBestPracticesQSAR2010,leonardSelectionTrainingTest2006};
+the performance metrics during optimisation are not a reliable indicator of
+generality, or the performance on new molecules. This is often achieved by
+partitioning the available data into \emph{training} and \emph{test} subsets;
+the former is used for optimising the model's parameters, the latter is `hidden'
+from the model until training is complete, and the prediction metrics on the
+test data indicate how the model can be expected to perform in general. The test
+set should span the chemical space in which the model is intended to be applied
 \cite{leonardSelectionTrainingTest2006}. At a high level, this means that all
 classes of surfactant that are within the applicability domain of the model
 should be represented in both the test and train data subsets.
 
 Empirical QSPR models are general enough to be applicable to a diverse range of
 compounds; they can be used to design novel molecules with target properties
-\cite{gantzerInverseQSPRNovoDesign2020,bolboacaMolecularDesignQSARs2013}; and
-they are interpretable \cite{zefirovFragmentalApproachQSPR2002}, meaning that
-they can be analysed to glean chemical insights.
+\cite{gantzerInverseQSPRNovoDesign2020,bolboacaMolecularDesignQSARs2013} and are
+interpretable \cite{zefirovFragmentalApproachQSPR2002}, meaning that they can be
+analysed to obtain chemical insights.
 
 Every empirical QSPR method is characterised by two features: the choice of
 molecular descriptors, which are the numerical features that make up the model
@@ -275,10 +276,10 @@ polyfunctional molecules and isomers \cite{ganiAutomaticCreationMissing2005}.
 
 \citet{matteiModelingCriticalMicelle2013} introduced third-order groups to
 improve their model's accuracy by analysing the molecules with the highest
-prediction errors after training an initial model with just the prior work's set
-of first- and second-order groups \cite{ganiAutomaticCreationMissing2005}. This
-is an example of \emph{feature selection}, whereby the set of descriptors is
-expanded or contracted to adapt to the problem
+prediction errors after training an initial model with the first- and
+second-order groups from a prior work \cite{ganiAutomaticCreationMissing2005}.
+This is an example of \emph{feature selection}, whereby the set of descriptors
+is expanded or contracted to adapt to the problem
 \cite{liFeatureSelectionData2017,guyonIntroductionVariableFeature2003}.
 
 The authors randomly selected 30 compounds as a test dataset, achieving a RMSE
@@ -293,9 +294,9 @@ distinguished from each other using the group representation.
 
 Recently, an approach based on graph neural networks (GNNs) has produced highly
 accurate predictions whilst being applicable to nonionic, cationic, anionic and
-zwitterionic surfactants simultaneously \cite{qinPredictingCriticalMicelle2021}.
-Neural networks have many trainable parameters and a complex functional form.
-This ensures their versatility as universal approximators but makes them highly
+zwitterionic surfactants \cite{qinPredictingCriticalMicelle2021}. Neural
+networks have many trainable parameters and a complex functional form. This
+ensures their versatility as universal approximators but makes them highly
 susceptible to overfitting \cite{bejaniSystematicReviewOverfitting2021}. Neural
 networks potentially boast the largest applicability domain (for a single set of
 trained parameters) of any model discussed previously.
@@ -312,10 +313,3 @@ number of subsequent graph operations, so that every group overlaps.
 Furthermore, each `contribution' is non-linear, and the number of contributions
 is always equal to the number of atoms in a molecule. A more detailed discussion
 of GNNs will be given in the Method.
-
-We recognise that deep neural networks' ostensible `universality' can be
-misleading: extrapolating the model's results to out-of-domain molecules (ones
-that are `dissimilar' from the training data) will yield potentially erroneous
-predictions. It is also not readily apparent which molecules are in-domain
-without having an intimate knowledge of the training data; this becomes very
-difficult, as we wish to use the largest possible size of training dataset.

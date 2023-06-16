@@ -2,13 +2,13 @@
 
 The number of atomic environments remaining after each stage of the feature
 selection process is reported in Table \ref{tab:ecfp-fs}. Notably, the ratio of
-the number of features to the size of the training dataset is approximately
-\SI{74}{\%}, and so is the ratio of the initial number of features to the number
-of selected features, \SIrange{31}{33}{\%}. The number of features is large
-compared to many of the empirical models described above, but not compared to
-the number of parameters for the GNN, which is significantly larger. Because
-this model also aims to cover a large part of chemical space, a large number of
-parameters is to be expected.
+the number of features to the size of the training dataset is similar for both
+tasks ($\sim \SI{74}{\%}$) and so is the ratio of the initial number of features
+to the number of selected features (\SIrange{31}{33}{\%}). The number of
+features is large compared to many of the empirical models described above, but
+not compared to the number of parameters for the GNN, which is significantly
+larger. Because this model also aims to cover a large part of chemical space, a
+large number of parameters is to be expected.
 
 \begin{table}
     \centering
@@ -36,7 +36,7 @@ hyperparameters discovered on each set are described in Table \ref{tab:hb-hps}.
     \caption{The best hyperparameters discovered during searching. The $H$
         values refer to the dimensions of the corresponding layer, see Figure
         \ref{fig:model-topology}. Values for $H_{G3}$ and $H_{D2}$ have been
-        omitted where the layers weren't included in the model, and the values
+        omitted where the layers were not included in the model, and the values
         of $H_P$ were only independent for the gated attention pool, so that
         they are omitted here as well.}
     \label{tab:hb-hps}
@@ -105,13 +105,14 @@ model in isolation, however. The NLL values are included in the supplementary in
 
 To assess the models' quality individually, the predictions can be visualised
 against the true CMCs in a parity plot; see Figure~\ref{fig:uq-parity}.
-Alternatively, a calibration plot can be used, which compares the distribution
-of the residuals against the expected distribution given the models' predicted
-normal distributions. The expected distribution stipulates what would be
-observed if the residuals were drawn from the distributions predicted by the
-models. Deviations from this distribution indicate whether the model was over-
-or underconfident (c.f. \citet{tranMethodsComparingUncertainty2020}). The
-calibration plots are shown in Figure~\ref{fig:uq-calibration}.
+Alternatively, a calibration plot can be used, which compares the cumulative
+distribution of the residuals against the expected distribution, given a model's
+predicted standard deviations. The expected distribution stipulates what would
+be observed if the residuals were drawn from the distributions predicted by the
+corresponding model. Deviations from this distribution indicate whether the
+model was over- or underconfident (c.f.
+\citet{tranMethodsComparingUncertainty2020}). The calibration plots are shown in
+Figure~\ref{fig:uq-calibration}.
 
 \begin{figure}
     \centering
@@ -125,9 +126,12 @@ calibration plots are shown in Figure~\ref{fig:uq-calibration}.
         \caption{}
         \label{fig:uq-calibration}
     \end{subfigure}
-    \caption{(a) Parity plots of the GNN/GP model's predicted CMCs and \SI{95}{\%}
-        confidence intervals for the Qin-All and NIST datasets and (b) corresponding
-        calibration plots for the test data predictions.}
+    \caption{(a) Parity plots of the predicted CMCs from the GNN/GP model and \SI{95}{\%}
+        confidence intervals for the Qin-All and NIST datasets and (b)
+        corresponding calibration plots for the test data predictions. The
+        `ideal' distribution line indicates the cumulative distribution that
+        would be obtained if residuals were drawn from the model's predicted
+        distributions.}
 \end{figure}
 
 The S-shaped calibration curve for the Qin-All test data indicates that the
@@ -138,7 +142,8 @@ relatively small. The NIST data calibration curve's asymmetry indicates its
 tendency to underestimate the CMCs. It shows a generally good agreement with the
 ideal distribution, with the greatest discrepancy above \num{0.8}, which
 indicates that there are several surfactants whose CMC predictions are too low
-and that these predictions are overconfident.
+and that these predictions are overconfident, i.e. their predicted standard
+deviations are too small.
 
 \subsection{ECFP interpretations}
 
@@ -192,7 +197,7 @@ to accurately distinguish between their CMCs.
 
 \subsection{Applicability domain analysis}
 
-Several of the molecules included in the NIST datset were expected to be outside
+Several of the molecules included in the NIST dataset were expected to be outside
 of the applicability domain, which justifies their poor prediction accuracy. The
 majority of the outliers' CMCs are underpredicted, and the GNN/GP model is
 overconfident in their predictions. The 13 surfactants whose predictions'
@@ -226,19 +231,20 @@ is close to the \SI{5}{\%} that are expected to be outside the \SI{95}{\%} CI.
 To gain insight into the relationships between molecules, we exploit the kernel
 function from the trained GP to create a molecular cartogram, as explained in
 the Method. The resulting cartogram is shown in Figure~\ref{fig:fdg}. The NIST
-molecules whose residuals are above the \SI{95}{\%} CI are highlighted in this
-figure.
+molecules whose residuals are above the \SI{95}{\%} CI are also highlighted
+separately.
 
 From the cartogram of the entire data, it is apparent that the majority of the
 surfactants are segregated based upon the type of counterion in the solution.
 This suggests that the model has learned that the counterion is an important
 factor for determining CMC and the weights associated with this counterion have
-a profound impact on the CMC prediction. However, the visualisation of the
-outliers indicates that the model classifies all of these molecules as being
-primarily similar to the nonionic or zwitterionic compounds. This is clearly
-erroneous for the ionic compounds: the quats, the bromates, the carbonates and
-the nitrates. This suggests that the model has not learned appropriate weights
-for these counterions, hence it fails to properly segregate them.
+a profound impact on the CMC prediction. However, the visualisation of the NIST
+molecules with CMCs above the \SI{95}{\%} CI indicates that the model classifies
+all of these molecules as being primarily similar to the nonionic or
+zwitterionic compounds. This is clearly erroneous for the ionic compounds: the
+quats, the bromates, the carbonates and the nitrates. This suggests that the
+model has not learned appropriate weights for these counterions, hence it fails
+to properly segregate them.
 
 \begin{figure}
     \includegraphics[width=\textwidth]{images/force-graph.pdf}
@@ -259,12 +265,11 @@ Figure~\ref{fig:sensitivity} shows the test set evaluations for the GNN and ECFP
 models using repeated, stratified $k$-fold cross-validation. The ECFP and GNN
 models show very similar performance on the Qin-All dataset, but the ECFP model
 outperforms the GNN model for all training ratios on the Qin-Nonionics dataset.
-Notably, there is also a much broader distribution of RMSEs on the Qin-Nonionics
-data. This suggests that both of the Qin-Nonionics models are much more
-sensitive to the specific molecules that are included in the train and test
-splits. The Qin-All GNN models with very high RMSEs at larger train ratios are
-overfit, which demonstrates the potential of these more complex models to find
-parameters corresponding to local minima with respect to the mean squared error.
+This is indicative of the propensity of neural networks to overfit, especially
+on such small dataset sizes. Notably, there is also a much broader distribution
+of RMSEs on the Qin-Nonionics data. This suggests that both of the Qin-Nonionics
+models are much more sensitive to the specific molecules that are included in
+the train and test splits.
 
 Extrapolating the trend lines indicates that the benchmark performance is much
 better than what would be expected. This highlights the importance of selecting
