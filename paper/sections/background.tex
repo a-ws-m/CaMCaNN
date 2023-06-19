@@ -1,8 +1,8 @@
 \citet{puvvadaMolecularThermodynamicApproach1990} derived a phenomenological
 model for studying aqueous nonionic surfactant systems that enabled prediction
 of CMC and other properties across a range of temperatures. They developed a
-model for the free energy of micellisation, from which the CMC can be
-calculated. Their model was parameterised by three properties of the surfactant
+model for the free energy of micellization, from which the CMC can be
+calculated. Their model was parameterized by three properties of the surfactant
 molecule:
 \begin{itemize}
     \item The tail length, defined as the number of carbon atoms.
@@ -26,8 +26,8 @@ cylindrical or disk-like (bilayer) micelles.
 
 The connection this model established between a small set of physically meaningful properties that can be estimated and emergent properties of surfactants is extremely useful, especially because it does not explicitly require fitting to any experimental data. However, the procedures described for estimating the Tolman length are only applicable to linear hydrocarbon chains, not branched nor heterogeneous tail groups. Estimating the average cross-sectional area of the head group may also not be trivial.
 
-Greater generalisability and better accuracy can be realised by considering the
-process of aggregation by identifying the behaviour of individual atoms, or
+Greater generalizability and better accuracy can be realized by considering the
+process of aggregation by identifying the behavior of individual atoms, or
 small groups thereof. Simulation approaches can model the interaction of these
 units with each other and derive the potential energy of a configuration
 \cite{frenkelUnderstandingMolecularSimulation2001,joshiReviewAdvancementsCoarsegrained2021,filipeMolecularDynamicsSimulations2022}.
@@ -45,7 +45,7 @@ an aggregate containing five or more surfactants. The united-atom approach
 yielded a CMC with an error of \SI{0.23}{\log \micro M}. The author asserted
 that the simulation size, i.e. the number of particles, was too small to obtain
 a more accurate value of CMC. However,
-\citet{jusufiExplicitImplicitSolventSimulations2015} criticised the free
+\citet{jusufiExplicitImplicitSolventSimulations2015} criticized the free
 surfactant concentration approach for modelling CMC of ionic surfactants in
 general. They note that free surfactant concentration above the CMC is highly
 dependent on the choice of overall surfactant concentration, especially for
@@ -66,8 +66,8 @@ average experimental value equal to \SI{0.07}{\log \micro M}, for DDAO it was
 \SI{0.06}{\log \micro M}, and for MEGA-10 it was \SI{0.06}{\log \micro M}.
 
 Although this approach can produce extremely accurate results, it is limited to
-compounds that can be parameterised by a known $\gamma_\infty$. Furthermore, the
-authors do not discuss parameterising ionic surfactants, for which more complex
+compounds that can be parameterized by a known $\gamma_\infty$. Furthermore, the
+authors do not discuss parameterizing ionic surfactants, for which more complex
 interactions must be considered. Despite the reduced cost relative to AA-MD
 models of the same system scales, CG-MD approaches are still one of the more
 expensive approaches to CMC prediction. Nevertheless, MD simulations give very
@@ -80,7 +80,7 @@ the problem by treating a molecule as a cavity with a charged surface in a
 solvent that acts as a dielectric continuum \cite{klamtCOSMONewApproach1993}.
 The cavity's surface is described by the solvent-accessible surface of the
 molecule. The geometry of this surface combined with a segment-wise description
-of its polarising charges can be mapped using density functional theory (DFT).
+of its polarizing charges can be mapped using density functional theory (DFT).
 
 COSMO for realistic solvation (COSMO-RS) adapts the model for more complex types
 of solvent \cite{klamtCOSMORSAlternativeSimulation2010}. Solvents only act like
@@ -109,20 +109,20 @@ tension (IFT) between the oil and aqueous surfactant phases at different
 concentrations of surfactant. The concentration at which the IFT is zero yields
 the CMC prediction. The premise of this approach is that the oil phase is
 representative of a micelle's interior, which is particularly true as the
-interactions between head and tail groups become more unfavourable. This is the
+interactions between head and tail groups become more unfavorable. This is the
 case for highly polar head groups: primarily for ionic surfactants.
 
 The authors recommended applying both strategies and using the lower result as
 the CMC prediction. They attained an RMSE of \SI{0.81}{\log \micro M} on a
 dataset of 24 surfactants, containing a mix of ionic, nonionic and zwitterionic
-surfactants. Excluding the two worst predictions gives a much more favourable
+surfactants. Excluding the two worst predictions gives a much more favorable
 RMSE of \SI{0.55}{\log \micro M}. It is notable that the technique can be
 applied across all classes of surfactants. Furthermore, the authors were able to
 determine which of the nonionic surfactants had a low propensity to form
-micelles by analysing the predicted IFT between the water and surfactant phases.
+micelles by analyzing the predicted IFT between the water and surfactant phases.
 If the predicted IFT was large, this implied that the free energy of
-micellisation would be large and therefore that the surfactants were less likely
-to micellise. This is a testament to the model's interpretability.
+micellization would be large and therefore that the surfactants were less likely
+to micellize. This is a testament to the model's interpretability.
 
 Other approaches have extended COSMO-RS to explicitly account for the internal
 structure of micelles, such as COSMOmic, which treats a micelle as being made of
@@ -154,7 +154,7 @@ conformer selection that would not yield significant outliers.
 
 COSMOplex is a recent extension of COSMOmic that removes the need to perform and
 initial MD simulation to determine the micellar structure
-\cite{klamtCOSMOplexSelfconsistentSimulation2019}. Instead, it optimises the
+\cite{klamtCOSMOplexSelfconsistentSimulation2019}. Instead, it optimizes the
 micellar structure using a self-consistent approach, which iteratively yields
 new estimates for the layer-wise charge distributions. The authors predicted the
 CMCs of 10 nonionic surfactants with varied head and tail group chemistries,
@@ -168,7 +168,7 @@ are only available in the proprietary software package \textsc{COSMOTHERM}
 
 Another approach to predict CMCs is to use an equation of state. The reduction
 in complexity can be achieved using a semi-empirical method that is
-parameterised by fitting to experimental data.
+parameterized by fitting to experimental data.
 
 \citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model
 (s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear
@@ -205,7 +205,7 @@ total molecular energy of the surfactant.
 Where data from the literature was available, the predictive performance of the
 equation of state and the m-AD models on the molecular series \ce{C_nE6},
 \ce{C_nE8}, \ce{C_nE9}, \ce{C10E_n} and \ce{C12E_n} were compared, and the
-resulting RMSEs are summarised in Table \ref{tab:segment-methods}. The models
+resulting RMSEs are summarized in Table \ref{tab:segment-methods}. The models
 all have a reasonably good accuracy, but the SAFT model is particularly good.
 
 \begin{table}
@@ -238,10 +238,10 @@ the model to `learn' trends that contradict scientific intuition.
 Empirical QSPR methods require validation to determine their reliability and
 applicability domain
 \cite{veerasamyValidationQSARModelsstrategies2011,tropshaBestPracticesQSAR2010,leonardSelectionTrainingTest2006};
-the performance metrics during optimisation are not a reliable indicator of
+the performance metrics during optimization are not a reliable indicator of
 generality, or the performance on new molecules. This is often achieved by
 partitioning the available data into \emph{training} and \emph{test} subsets;
-the former is used for optimising the model's parameters, the latter is `hidden'
+the former is used for optimizing the model's parameters, the latter is `hidden'
 from the model until training is complete, and the prediction metrics on the
 test data indicate how the model can be expected to perform in general. The test
 set should span the chemical space in which the model is intended to be applied
@@ -253,13 +253,13 @@ Empirical QSPR models are general enough to be applicable to a diverse range of
 compounds; they can be used to design novel molecules with target properties
 \cite{gantzerInverseQSPRNovoDesign2020,bolboacaMolecularDesignQSARs2013} and are
 interpretable \cite{zefirovFragmentalApproachQSPR2002}, meaning that they can be
-analysed to obtain chemical insights.
+analyzed to obtain chemical insights.
 
-Every empirical QSPR method is characterised by two features: the choice of
+Every empirical QSPR method is characterized by two features: the choice of
 molecular descriptors, which are the numerical features that make up the model
 inputs, and the functional form of the approximator that maps the descriptors to
 the property prediction. This functional form includes the parameters that are
-optimised based upon the training data.
+optimized based upon the training data.
 
 \citet{matteiModelingCriticalMicelle2013} extended the Marrero and Gani
 group-contribution method \cite{ganiAutomaticCreationMissing2005} to predict the
@@ -275,7 +275,7 @@ described using these groups exclusively. Higher order groups distinguish
 polyfunctional molecules and isomers \cite{ganiAutomaticCreationMissing2005}.
 
 \citet{matteiModelingCriticalMicelle2013} introduced third-order groups to
-improve their model's accuracy by analysing the molecules with the highest
+improve their model's accuracy by analyzing the molecules with the highest
 prediction errors after training an initial model with the first- and
 second-order groups from a prior work \cite{ganiAutomaticCreationMissing2005}.
 This is an example of \emph{feature selection}, whereby the set of descriptors
@@ -302,7 +302,7 @@ networks potentially boast the largest applicability domain (for a single set of
 trained parameters) of any model discussed previously.
 
 GNN approaches, like the one of \citet{qinPredictingCriticalMicelle2021},
-operate on molecular graphs, which are characterised by atomic nodes whose edges
+operate on molecular graphs, which are characterized by atomic nodes whose edges
 represent bonds. Each operation on this graph considers just the local
 environment of an atom, i.e. the atoms that can be reached by traversing a
 single bond, but by stacking these operations in sequence, the size of the
