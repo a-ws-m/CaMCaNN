@@ -251,7 +251,8 @@ However, the issues of the large feature vector size and multicollinearity must
 be addressed. To that end, a process of \emph{feature selection} was applied,
 whereby a subset of the atomic environments were selected for use in the model.
 There are several approaches to feature selection
-\cite{liFeatureSelectionData2017}; here, we chose \emph{regularisation}.
+\cite{liFeatureSelectionData2017}; here, we chose \emph{regularisation} due to
+the ease of implementation.
 
 In this approach, we include a term in the loss function that depends on the
 norm of $\vec{w}$. The two types of constraints considered are $\ell_1$ and
