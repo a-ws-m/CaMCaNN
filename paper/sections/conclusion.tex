@@ -2,17 +2,17 @@ Empirical models were developed and applied to predict CMCs from two datasets of
 aqueous surfactants. One dataset was partitioned into training and test data
 (Qin-All), and a subset of the nonionic surfactants within this data was also
 used as a separate prediction task (Qin-Nonionics). The NIST dataset was
-collected from a different source and contained some molecules with somewhat
+collected from a different source and contained molecules with somewhat
 different chemistries than the above.
 
 A linear model based on ECFPs demonstrated remarkably good performance,
 improving on a previous work \cite{qinPredictingCriticalMicelle2021} that
 applied a more complex GNN model, despite using a smaller number of parameters
-and having a much faster optimisation time. A new model was presented that
+and having a much faster optimization time. A new model was presented that
 improved the architecture of previous work's GNN using a hyperparameter search
-algorithm and was capable of obtaining better performances than the ECFP model
-on the Qin-Nonionics task and demonstrated a better ability to generalise to the
-NIST dataset.
+algorithm, which was capable of obtaining better performances than the ECFP
+model on the Qin-Nonionics task and demonstrated a better ability to generalize
+to the NIST dataset.
 
 Sensitivity analysis showed that the GNN models have a tendency to overfit when
 training data samples do not adequately cover the chemical space of interest.
@@ -20,21 +20,27 @@ When using small datasets, with only a few examples of certain surfactant
 classes, our analysis suggests that it may be preferable to use a simpler
 functional form, like the linear ECFP model.
 
-Finally, a surrogate model was developed by feeding the latent space
-representation of a molecule, learned by the GNN model, to a Gaussian process.
-This yielded uncertainty estimates alongside CMC predictions. Although this
-model failed when applied to the Qin-Nonionics task, it yielded the best
-predictive performance of all of the models for the Qin-All task, as well as
-providing good uncertainty estimates on the in-domain NIST test data. This
-approach would allow practitioners to gauge their confidence in the model's
-predictions for systems within the applicability domain.
+A surrogate model was developed by feeding the latent space representation of a
+molecule, learned by the GNN model, to a Gaussian process. This yielded
+uncertainty estimates alongside CMC predictions. Although this model failed when
+applied to the Qin-Nonionics task, it yielded the best predictive performance of
+all of the models trained here for the Qin-All task, as well as providing good
+uncertainty estimates on the in-domain NIST test data. This approach would allow
+practitioners to gauge their confidence in the model's predictions for systems
+within the applicability domain.
 
 Finally, the kernel function that is learned while training the Gaussian process
-was employed to visualise the chemical space using a molecular cartogram. By
-analysing this cartogram, it was shown that chemical intuition could be employed
+was employed to visualize the chemical space using a molecular cartogram. By
+analyzing this cartogram, it was shown that chemical intuition could be employed
 to determine which molecules were likely poorly represented in the latent space,
 based on the fact that they were surrounded by molecules with different
 chemistries. This proves to be a useful technique for exploring the limits of a
 model's applicability domain, as well as understanding why the model yields its
 predictions for a given molecule based on proximity to training set molecules
 within the cartogram.
+
+This work demonstrates the potential of Gaussian processes to add uncertainty
+quantification to machine learning models with minimal overhead. There is still
+scope to overcome the limitations of these models with respect to small
+datasets, such as Qin-Nonionics, and out-of-domain molecules, which could be
+achieved by explicitly biasing the latent space.
