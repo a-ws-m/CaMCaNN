@@ -67,20 +67,20 @@ constitutes.
 
 \begin{table}
     \centering
-    \caption{Benchmark task evaluation results for the models trained in this work versus those of the previous work. The best RMSE for each task is emboldened.}
+    \caption{Benchmark task evaluation results for the models trained in this work versus those of the previous work. The best RMSE for each task is underlined.}
     \label{tab:evaluation}
     \begin{tabular}{@{}lccc@{}} \toprule
-                                                              & \multicolumn{3}{c}{Test RMSE (\si{\log \micro M})}                                 \\\cmidrule(l){2-4}
-        Model                                                 & Qin-Nonionics                                      & Qin-All       & NIST          \\\midrule
-        Previous work \cite{qinPredictingCriticalMicelle2021} & 0.23                                               & 0.30          & --            \\
-        ECFP                                                  & 0.19                                               & 0.26          & 1.57          \\
-        GNN                                                   & \textbf{0.15}                                      & 0.29          & 1.35          \\
-        GNN/GP                                                & 1.38                                               & \textbf{0.21} & \textbf{1.32} \\\bottomrule
+                                                              & \multicolumn{3}{c}{Test RMSE (\si{\log \micro M})}                                       \\\cmidrule(l){2-4}
+        Model                                                 & Qin-Nonionics                                      & Qin-All          & Complementary    \\\midrule
+        Previous work \cite{qinPredictingCriticalMicelle2021} & 0.23                                               & 0.30             & --               \\
+        ECFP                                                  & 0.19                                               & 0.26             & 1.57             \\
+        GNN                                                   & \underline{0.15}                                   & 0.29             & 1.35             \\
+        GNN/GP                                                & 1.38                                               & \underline{0.21} & \underline{1.32} \\\bottomrule
     \end{tabular}
 \end{table}
 
-As expected, the performance of all models on the NIST data is significantly
-worse than on the test data. This supports the hypothesis that the NIST data
+As expected, the performance of all models on the Complementary data is significantly
+worse than on the test data. This supports the hypothesis that the Complementary data
 molecules are outside of the applicability domain of the models developed here,
 but it does not exclude the possibility that the models are instead overfitted.
 Therefore, a more detailed analysis of the applicability domain will be provided
@@ -132,7 +132,7 @@ Figure~\ref{fig:uq-calibration}.
         \label{fig:uq-calibration}
     \end{subfigure}
     \caption{(a) Parity plots of the predicted CMCs from the GNN/GP model and \SI{95}{\%}
-        confidence intervals for the Qin-All and NIST datasets and (b)
+        confidence intervals for the Qin-All and Complementary datasets and (b)
         corresponding calibration plots for the test data predictions. The
         `ideal' distribution line indicates the cumulative distribution that
         would be obtained if residuals were drawn from the model's predicted
@@ -143,7 +143,7 @@ The S-shaped calibration curve for the Qin-All test data indicates that the
 model was underconfident in its predictions. In fact, there is a spike in the
 number of observed residuals that are close to the centre of the distribution.
 The corresponding parity plot shows that the predicted uncertainties were
-relatively small. The NIST data calibration curve's asymmetry indicates its
+relatively small. The Complementary data calibration curve's asymmetry indicates its
 tendency to underestimate the CMCs. It shows a generally good agreement with the
 ideal distribution, with the greatest discrepancy above \num{0.8}, which
 indicates that there are several surfactants whose CMC predictions are too low
@@ -202,7 +202,7 @@ to accurately distinguish between their CMCs.
 
 \subsection{Applicability domain analysis}
 
-Several of the molecules included in the NIST dataset were expected to be outside
+Several of the molecules included in the Complementary dataset were expected to be outside
 of the applicability domain, which justifies their poor prediction accuracy. The
 majority of the outliers' CMCs are underpredicted, and the GNN/GP model is
 overconfident in their predictions. The 13 surfactants whose predictions'
@@ -213,7 +213,7 @@ have quaternary ammonium salts (quats) as counterions.
 
 \begin{figure}
     \includegraphics[width=\textwidth]{images/nist-underpred.pdf}
-    \caption{The 13 surfactants and counterions in the NIST dataset with residuals
+    \caption{The 13 surfactants and counterions in the Complementary dataset with residuals
         that were greater than the \SI{95}{\%} confidence interval.}
     \label{fig:nist-underpred}
 \end{figure}
@@ -230,12 +230,12 @@ Furthermore, the two polyoxyethylene alcohols in Figure~\ref{fig:nist-underpred}
 have remarkably small tail groups relative to the examples in the training data,
 which justifies their erroneous CMC predictions. This leaves two surfactants
 among the outliers that might reasonably be expected to lie within the
-applicability domain, constituting \SI{4.7}{\%} of the total NIST dataset, which
+applicability domain, constituting \SI{4.7}{\%} of the total Complementary dataset, which
 is close to the \SI{5}{\%} that are expected to be outside the \SI{95}{\%} CI.
 
 To gain insight into the relationships between molecules, we exploit the kernel
 function from the trained GP to create a molecular cartogram, as explained in
-the Method. The resulting cartogram is shown in Figure~\ref{fig:fdg}. The NIST
+the Method. The resulting cartogram is shown in Figure~\ref{fig:fdg}. The Complementary
 molecules whose residuals are above the \SI{95}{\%} CI are also highlighted
 separately.
 
@@ -243,7 +243,7 @@ From the cartogram of the entire data, it is apparent that the majority of the
 surfactants are segregated based upon the type of counterion in the solution.
 This suggests that the model has learned that the counterion is an important
 factor for determining CMC and the weights associated with this counterion have
-a profound impact on the CMC prediction. However, the visualization of the NIST
+a profound impact on the CMC prediction. However, the visualization of the Complementary
 molecules with CMCs above the \SI{95}{\%} CI indicates that the model classifies
 all of these molecules as being primarily similar to the nonionic or
 zwitterionic compounds. This is clearly erroneous for the ionic compounds: the
@@ -253,10 +253,10 @@ to properly segregate them.
 
 \begin{figure}
     \includegraphics[width=\textwidth]{images/force-graph.pdf}
-    \caption{Cartogram of the molecules in the combined NIST and Qin datasets
+    \caption{Cartogram of the molecules in the combined Complementary and Qin datasets
         using a force-directed graph layout. Left: The entirety of the combined
-        NIST and Qin datasets, where each molecule is assigned a point. Right:
-        The NIST molecules that are overconfidently underpredicted, so that the
+        Complementary and Qin datasets, where each molecule is assigned a point. Right:
+        The Complementary molecules that are overconfidently underpredicted, so that the
         residual is above the \SI{95}{\%} confidence interval, are superimposed
         on a kernel density estimate (KDE) plot of the Qin data. This KDE plot
         is an estimate of the distribution of the Qin molecules on the left,

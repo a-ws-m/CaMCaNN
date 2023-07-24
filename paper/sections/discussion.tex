@@ -20,13 +20,13 @@ that is included in the fingerprint, whilst for the GNNs, this is determined by
 the number of consecutive graph layers.
 
 Increasing these parameters both increases computational cost and model
-complexity, introducing more parameters and therefore requiring more data to
+complexity, introducing more weights and therefore requiring more data to
 optimize them appropriately. The sensitivity analysis demonstrated that this
-also increases the propensity for overfitting; however, the benchmarking results
-demonstrate that using a proper selection of training samples can yield more
-accurate models. In cases where there are fewer samples available, and some
-chemical classes are poorly represented in the training data, the simpler,
-linear model may be preferable.
+increase in complexity also increases the propensity for overfitting; however,
+the benchmarking results demonstrate that using a proper selection of training
+samples can yield more accurate models. In cases where there are fewer samples
+available, and some chemical classes are poorly represented in the training
+data, the simpler, linear model may be preferable.
 
 One of the great advantages of using such a topological approach is that the
 contributions of each molecular fragment can be explicitly determined, as shown
@@ -43,7 +43,7 @@ Case-by-case examination of these molecules highlights the nature of these
 chemical differences, which can be related to properties important for
 micellization. Broadly speaking, the model failed in three cases:
 \begin{itemize}
-    \item Where ionic effects of the solute were not learned, as in the case of the counterions that were unique to the NIST data.
+    \item Where ionic effects of the solute were not learned, as in the case of the counterions that were unique to the Complementary data.
     \item When there was a significant difference in the strength of the
           hydrophobic interactions, as in the case of the surfactants with very small
           tail groups.
