@@ -15,7 +15,7 @@ HERE = Path(__file__).parent
 class ModelDataFrame(NamedTuple):
     df_path: str
     model_name: str
-    task: Literal["Qin-Nonionics", "Qin-All", "NIST"]
+    task: Literal["Qin-Nonionics", "Qin-All", "Complementary"]
     pred_col: str = "pred"
     obs_col: str = "exp"
     has_uq: bool = False
@@ -332,7 +332,7 @@ if __name__ == "__main__":
         ModelDataFrame(
             df_path="uq_nist_pred.csv",
             model_name="GNN/GP",
-            task="NIST",
+            task="Complementary",
             obs_col="log CMC",
             has_uq=True,
         ),
@@ -343,5 +343,5 @@ if __name__ == "__main__":
             has_uq=True,
         ),
     ]
-    # joint_parity([PER_FILE_TUPLES[x] for x in (-3, -2)], "paper/images/uq-parity.pdf")
+    joint_parity([PER_FILE_TUPLES[x] for x in (-3, -2)], "paper/images/uq-parity.pdf")
     plot_calibration([PER_FILE_TUPLES[x] for x in (-3, -2)], "paper/images/uq-calibration.pdf")

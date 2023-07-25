@@ -62,7 +62,7 @@ def get_counterion(smiles: str) -> str:
 
 def add_cols(df: pd.DataFrame):
     df["Counterion"] = df["SMILES"].apply(get_counterion)
-    df["Source"] = ["Qin" if pd.isna(convertable) else "NIST" for convertable in df["Convertable"]]
+    df["Source"] = ["Qin" if pd.isna(convertable) else "Complementary" for convertable in df["Convertable"]]
 
 add_cols(kernel_df)
 kernel_df = kernel_df.merge(nist_pred_df, on="Molecule name", how="left")
@@ -167,5 +167,5 @@ for ax in axs:
     ax.set(xlabel="", ylabel="", xticklabels=[], yticklabels=[])
 # plt.tight_layout()
 axs[0].set_title("All molecules")
-axs[1].set_title("NIST underpredictions superimposed\non Qin distribution")
+axs[1].set_title("Complementary data underpredictions\nsuperimposed on Qin distribution")
 plt.savefig(HERE.parent / "paper" / "images" / "force-graph.pdf", bbox_inches="tight")
