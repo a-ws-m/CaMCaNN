@@ -28,7 +28,7 @@ CMC prediction; here, a brief review of some promising approaches will be given.
 
 \input{sections/background.tex}
 
-Here, we build upon this previously published GNN model
+Here, we build upon the previously published GNN model for CMC prediction
 \cite{qinPredictingCriticalMicelle2021} in two ways: we apply a hyperparameter
 search algorithm to further optimize the model's architecture and improve its
 accuracy, and we implement an \emph{uncertainty quantification} technique that
@@ -37,9 +37,13 @@ compared against an adaptation of the group contribution approach that
 determines the entire set of groups to consider using a feature selection
 routine. In addition, a separate dataset is introduced so as to perform external
 validation and to probe the limits of the models' applicability domain, as well
-as to analyze the uncertainty quantification. Using the outcome of our
-approaches, we interpret both models, and demonstrate a technique that allows
-one to visualize chemical space through the `eyes' of the trained GNN. We show
-that this technique facilitates a better understanding of the applicability
-domain, which is essential to assess the accuracy of CMC predictions via neural
-networks.
+as to analyze the uncertainty quantification.
+
+Using the outcome of our approaches, we interpret both models, and demonstrate a
+technique that allows one to visualize chemical space through the `eyes' of the
+trained GNN. By graphically mapping the molecular similarity, we demonstrate a
+new approach for creating visual, counterfactual explanations
+\cite{wellawattePerspectiveExplanationsMolecular2023}. We show that this
+technique facilitates a better understanding of the applicability domain, which
+is essential to assess the accuracy of CMC predictions via neural networks and
+to build trust in the model.

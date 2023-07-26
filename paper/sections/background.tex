@@ -32,14 +32,17 @@ hydrocarbon chains, not branched nor heterogeneous tail groups. Estimating the
 average cross-sectional area of the head group may also not be trivial.
 
 Greater generalizability and better accuracy can be realized by considering the
-process of aggregation by identifying the behavior of individual atoms, or
-small groups thereof. Simulation approaches can model the interaction of these
-units with each other and derive the potential energy of a configuration
-\cite{frenkelUnderstandingMolecularSimulation2001,joshiReviewAdvancementsCoarsegrained2021,filipeMolecularDynamicsSimulations2022}.
-For example, molecular dynamics (MD) simulations treat individual atoms, in the
-all-atomistic (AA) approach, or groups of atoms, in the coarse-grained (CG)
-approach, as particles in a box that interact with each other. This allows the
-particles' movement to be simulated by integrating the equations of motion.
+process of aggregation by identifying the behavior of individual atoms, or small
+groups thereof. Simulation approaches can model the interaction of these units
+with each other and derive the potential energy of a configuration
+\cite{frenkelUnderstandingMolecularSimulation2001,
+    bochicchioDynamicsSupramolecularPolymer2017,
+    joshiReviewAdvancementsCoarsegrained2021,
+    filipeMolecularDynamicsSimulations2022}. For example, molecular dynamics (MD)
+simulations treat individual atoms, in the all-atomistic (AA) approach, or
+groups of atoms, in the coarse-grained (CG) approach, as particles in a box that
+interact with each other. This allows the particles' movement to be simulated by
+integrating the equations of motion.
 
 For example, \citet{jorgeMolecularDynamicsSimulation2008} used an AA approach to
 simulate the self-assembly of \textit{n}-decyltrimethylammonium bromide. They
@@ -54,7 +57,8 @@ ionic surfactants, which necessitates careful extrapolation to accurately
 determine CMCs.
 
 Coarse-graining, which groups atoms into beads, makes simulating longer time
-scales accessible \cite{fitzgeraldMultiscaleModelingNanomaterials2015}. For
+scales accessible \cite{fitzgeraldMultiscaleModelingNanomaterials2015,
+khedrQuantificationOstwaldRipening2019, andersonMicelleFormationAlkyl2018}. For
 example, \citet{khedrDPDParametersEstimation2018} used dissipative particle
 dynamics (DPD) to model the CMCs of two polyoxyethylene octyl ether surfactants
 (\ce{C8E_n}). Rather than using the free surfactant concentration by itself, the
@@ -259,5 +263,10 @@ similar to a group contribution approach, although the groups are determined by
 walking $r$ steps along bonds from every atom in the molecule, where $r$ is
 equal to the number of subsequent graph operations, so that every group
 overlaps. Furthermore, each `contribution' is non-linear, and the number of
-contributions is always equal to the number of atoms in a molecule. A more
-detailed discussion of GNNs will be given in the Method.
+contributions is always equal to the number of atoms in a molecule. Because of
+their versatility, GNNs have been applied across a plethora of computational
+chemistry tasks, from molecular property prediction \cite{
+leeTransferLearningMaterials2020, louisGraphConvolutionalNeural2020,
+rittigGraphNeuralNetworks2022, singhGraphNeuralNetworks2022} to enhanced
+sampling methods \cite{dietrichMachineLearningNucleation2023,
+erricaDeepGraphNetwork2021}.
