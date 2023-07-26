@@ -661,6 +661,23 @@
   abstract = {Linear and nonlinear predictive models are derived for a data set of 162 nonionic surfactants. The descriptors in the derived models relate to the molecular shape and size and to the presence of heteroatoms participating in donor-acceptor and dipole-dipole interactions. Steric hindrance in the hydrophobic area also plays an important role in micellization. The derived linear and nonlinear QSPR models could be useful to predict the CMCs of broad classes of nonionic surfactants.}
 }
 
+@article{khedrDPDParametersEstimation2018,
+  ids = {khedrDPDParametersEstimation2018a},
+  title = {{{DPD Parameters Estimation}} for {{Simultaneously Simulating Water}}\textendash{{Oil Interfaces}} and {{Aqueous Nonionic Surfactants}}},
+  author = {Khedr, Abeer and Striolo, Alberto},
+  year = {2018},
+  month = dec,
+  journal = {Journal of Chemical Theory and Computation},
+  volume = {14},
+  number = {12},
+  pages = {6460--6471},
+  publisher = {{American Chemical Society}},
+  issn = {1549-9618},
+  doi = {10.1021/acs.jctc.8b00476},
+  urldate = {2023-05-15},
+  abstract = {The outcome of a coarse-grained simulation within the dissipative particle dynamics framework strongly depends on the choice of the repulsive parameter between different species. Different methodologies have been used in the literature to determine these parameters toward reproducing selected experimental system properties. In this work, a systematic investigation on possible procedures for estimating the simulation parameters is conducted. We compare methods based on the Hildebrand and the Hansen solubility parameter theories, mapped into the Flory\textendash Huggins model. We find that using the Hansen solubility parameters it is possible to achieve a high degree of coarse graining, with parameters that yield realistic values for the interfacial tension. The procedure was first applied to the water/benzene system and then validated for water/n-octane, water/1,1-dichloroethane, water/methyl cyclohexane, and water/isobutyl acetate. In all these cases, the experimental interfacial tension could be reproduced by adjusting a single correction factor. In the case of the water\textendash benzene system, the dissipative particle dynamics parameters derived using our approach were able to simultaneously describe both the interfacial tension and micellar properties of aqueous nonionic surfactants representative of the octyl poly(ethylene oxide) C8H17O(C2H4O)mH family. We show how the parameters can be used, within the dissipative particle dynamics framework, to simulate the water/oil interface in the presence of surfactants at varying concentrations. The results show, as expected, that as the surfactant concentration increases, the interfacial tension decreases, and micelles form in bulk water.}
+}
+
 @misc{kingmaAdamMethodStochastic2017,
   ids = {kingmaAdamMethodStochastic2017a},
   title = {Adam: {{A Method}} for {{Stochastic Optimization}}},
@@ -968,6 +985,22 @@
   year = {1971},
   pages = {51--65},
   institution = {{National Standard reference data system}}
+}
+
+@article{nivon-ramirezCriticalMicelleConcentration2022,
+  title = {Critical Micelle Concentration of {{SDS}} through {{DPD}} Simulations Using {{COSMO-RS}}\textendash Based Interaction Parameters, the Thermal Effects},
+  author = {{Niv{\'o}n-Ram{\'i}rez}, Didier and {Reyes-Garc{\'i}a}, Luis I. and {Oviedo-Roa}, Ra{\'u}l and {G{\'o}mez-Balderas}, Rodolfo and {Zuriaga-Monroy}, Carolina and {Mart{\'i}nez-Magad{\'a}n}, Jos{\'e}-Manuel},
+  year = {2022},
+  month = jul,
+  journal = {Colloids and Surfaces A: Physicochemical and Engineering Aspects},
+  volume = {645},
+  pages = {128867},
+  issn = {0927-7757},
+  doi = {10.1016/j.colsurfa.2022.128867},
+  urldate = {2023-07-26},
+  abstract = {In order to obtain the critical micellar concentration (CMC) for sodium dodecyl sulfate (SDS) in water at 288.15, 293.15, 298.15, 303.15 and 308.15~K, two approaches were employed: the first, consisting of experimental Isothermal Calorimetric Titration (ITC) and the second by using Dissipative Particle Dynamics (DPD) simulations. To determine the experimental CMC the calorimetric signal was treated with the software D/STAIN, obtaining values between 8.24 and 9.22~mM, which are in good agreement with other experimental determinations. Also the SDS micellization enthalpies found agree with previous experimental reports. The pairwise aij DPD interaction parameters, needed to run the simulations, were obtained from quantum chemistry calculations under the application of the COSMO-RS solvation scheme jointly with the Flory-Huggins theory. A series of systems with variable concentration of SDS in water were simulated for each temperature. Then, the analysis of the percentage of aggregation of SDS molecules at each temperature, enable to visualized the theoretical aggregation isotherms. By delimiting an experimental CMC window, the DPD aggregation isotherms were used to identify the concentration where either the monomeric or micellar states domain. Intersection of linear fits, in the monomeric and in the micellar regime produced theoretical CMCs values from 8.1 to 8.9\,mM. These results compare favorably with the experimental determinations at each temperature.},
+  langid = {english},
+  keywords = {Critical micelle concentration,Dissipative particle dynamics,Isothermal titration calorimetry,Sodium dodecyl sulfate}
 }
 
 @article{pedregosaScikitlearnMachineLearning2011,
@@ -1289,6 +1322,20 @@
   abstract = {The concentration of surfactant in solution for which micelles start to form, also known as critical micelle concentration is a key property in formulation design. The critical micelle concentration can be determined experimentally with a tensiometer by measuring the surface tension of a concentration series. In analogy with experiments, in-silico predictions can be achieved through interfacial tension calculations. We present a newly developed method, which employs first principles-based interfacial tension calculations rooted in COSMO-RS theory, for the prediction of the critical micelle concentration of a set of nonionic, cationic, anionic, and zwitterionic surfactants in water. Our approach consists of a combination of two prediction strategies for modelling two different phenomena involving the removal of the surfactant hydrophobic tail from contact with water. The two strategies are based on regular micelle formation and thermodynamic phase separation of the surfactant from water and both are required to take into account a wide range of polarity in the hydrophilic headgroup. Our method yields accurate predictions for the critical micellar concentration, within one log unit from experiments, for a wide range of surfactant types and introduces possibilities for first-principles based prediction of formulation properties for more complex compositions.},
   langid = {english},
   keywords = {COSMO-RS,Critical micelle concentration,Density functional theory,Interfacial tension,Ionic,Nonionic,Phase separation,Surfactant,Zwitterionic}
+}
+
+@article{vaiwalaGenericForceField2021,
+  title = {A Generic Force Field for Simulating Native Protein Structures Using Dissipative Particle Dynamics},
+  author = {Vaiwala, Rakesh and Ganapathy~Ayappa, K.},
+  year = {2021},
+  journal = {Soft Matter},
+  volume = {17},
+  number = {42},
+  pages = {9772--9785},
+  publisher = {{Royal Society of Chemistry}},
+  doi = {10.1039/D1SM01194D},
+  urldate = {2023-07-26},
+  langid = {english}
 }
 
 @article{veerasamyValidationQSARModelsstrategies2011,

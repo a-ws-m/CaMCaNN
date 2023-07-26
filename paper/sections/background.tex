@@ -15,11 +15,11 @@ molecule:
 \end{itemize}
 
 The authors developed a method to estimate parameters for linear, nonionic,
-polyoxyethylene alcohol surfactants. The model attained a root-mean-squared
-error (RMSE) of approximately \SI{0.14}{\log \micro M} for the group
-\ce{C10E_i}, where $i \in (3, 6)$, and \SI{0.21}{\log \micro M} for the group
-\ce{C12E_j}, where $j \in (3, 8)$. However, the error is much larger for other
-systems, like \ce{C8E6}. The authors ascribed this inaccuracy to their
+polyoxyethylene alkyl ether surfactants. The model attained a
+root-mean-squared error (RMSE) of approximately \SI{0.14}{\log \micro M} for the
+group \ce{C10E_i}, where $i \in (3, 6)$, and \SI{0.21}{\log \micro M} for the
+group \ce{C12E_j}, where $j \in (3, 8)$. However, the error is much larger for
+other systems, like \ce{C8E6}. The authors ascribed this inaccuracy to their
 prediction that the micelles in these systems would not exhibit much anisotropic
 growth; their model is better suited for cylindrical or disk-like (bilayer)
 micelles.
@@ -51,30 +51,41 @@ surfactant concentration approach for modelling CMC of ionic surfactants in
 general. They note that free surfactant concentration above the CMC is highly
 dependent on the choice of overall surfactant concentration, especially for
 ionic surfactants, which necessitates careful extrapolation to accurately
-determine CMCs. As an alternative,
-\citet{santosDeterminationCriticalMicelle2016} suggest
-
-% TODO
+determine CMCs.
 
 Coarse-graining, which groups atoms into beads, makes simulating longer time
 scales accessible \cite{fitzgeraldMultiscaleModelingNanomaterials2015}. For
-example, \citet{vishnyakovPredictionCriticalMicelle2013} used dissipative
-particle dynamics (DPD) to model the CMCs of \ce{C8E8},
-dodecyldimethylamineoxide (DDAO) and
-\textit{N}-decanoyl-\textit{N}-methyl-\textsc{D}-glucamide (MEGA-10). They
-proposed a methodology for obtaining parameters to describe the bead
-interactions based on known infinite dilution activity coefficients,
-$\gamma_\infty$. Their calculated CMC for \ce{C8E8} had an error relative to the
-average experimental value equal to \SI{0.07}{\log \micro M}, for DDAO it was
-\SI{0.06}{\log \micro M}, and for MEGA-10 it was \SI{0.06}{\log \micro M}.
+example, \citet{khedrDPDParametersEstimation2018} used dissipative particle
+dynamics (DPD) to model the CMCs of two polyoxyethylene octyl ether surfactants
+(\ce{C8E_n}). Rather than using the free surfactant concentration by itself, the
+authors calculated the volume fraction of free surfactant in the accessible
+component of the aqueous phase. This approach accounts for the effective
+reduction in accessible volume due to the occupancy of micellar aggregates
+\cite{santosDeterminationCriticalMicelle2016}. With this approach, they
+predicted CMCs for \ce{C8E1} and \ce{C8E9}, both with errors of approximately
+\SI{0.03}{\micro M}. Despite the high accuracy of the approach, there is a
+relative lack of validated DPD interaction parameters for different beads across
+a range of temperatures \cite{nivon-ramirezCriticalMicelleConcentration2022}.
 
-Although this approach can produce extremely accurate results, it is limited to
-compounds that can be parameterized by a known $\gamma_\infty$. Furthermore, the
-authors do not discuss parameterizing ionic surfactants. Despite their high
-computational cost, both AA and CG simulation approaches can offer very deep
-insight into the processes occurring at a molecular level; their results yield a
-precise description of the arrangement of molecules in a system, their shape and
-aggregation number.
+% Coarse-graining, which groups atoms into beads, makes simulating longer time
+% scales accessible \cite{fitzgeraldMultiscaleModelingNanomaterials2015}. For
+% example, \citet{vishnyakovPredictionCriticalMicelle2013} used dissipative
+% particle dynamics (DPD) to model the CMCs of \ce{C8E8},
+% dodecyldimethylamineoxide (DDAO) and
+% \textit{N}-decanoyl-\textit{N}-methyl-\textsc{D}-glucamide (MEGA-10). They
+% proposed a methodology for obtaining parameters to describe the bead
+% interactions based on known infinite dilution activity coefficients,
+% $\gamma_\infty$. Their calculated CMC for \ce{C8E8} had an error relative to the
+% average experimental value equal to \SI{0.07}{\log \micro M}, for DDAO it was
+% \SI{0.06}{\log \micro M}, and for MEGA-10 it was \SI{0.06}{\log \micro M}.
+
+% Although this approach can produce extremely accurate results, it is limited to
+% compounds that can be parameterized by a known $\gamma_\infty$. Furthermore, the
+% authors do not discuss parameterizing ionic surfactants. Despite their high
+% computational cost, both AA and CG simulation approaches can offer very deep
+% insight into the processes occurring at a molecular level; their results yield a
+% precise description of the arrangement of molecules in a system, their shape and
+% aggregation number.
 
 Another approach is the conductor-like screening model (COSMO), which decomposes
 the problem by treating a molecule as a cavity with a charged surface in a
@@ -124,8 +135,8 @@ concentric layers that each have their own surface charge profiles
 \citet{jakobtorweihenPredictingCriticalMicelle2017} calculated CMCs using
 COSMOmic by first performing MD simulations to attain the layer-wise atomic
 distributions. The authors then predicted the CMCs of several polyoxyethylene
-alcohols by determining the partition coefficients of inserting the respective
-surfactant monomer into a micelle.
+alkyl ethers by determining the partition coefficients of inserting the
+respective surfactant monomer into a micelle.
 
 COSMOplex is a recent extension of COSMOmic that removes the need to perform and
 initial MD simulation to determine the micellar structure
@@ -143,7 +154,7 @@ are only available in the proprietary software package \textsc{COSMOTHERM}
 Another approach to predict CMCs is to use an equation of state. For example,
 \citet{liStudiesUNIQUACSAFT1998} applied a segment-based UNIQUAC model
 (s-UNIQUAC) and a SAFT equation of state to predict CMCs of linear
-polyoxyethylene alcohols by first deriving expressions for the activity
+polyoxyethylene alkyl ethers by first deriving expressions for the activity
 coefficient of a surfactant in water.
 
 \citet{chengCorrelationCriticalMicelle2005} compared the performance of several
@@ -157,8 +168,8 @@ are summarized in Table \ref{tab:segment-methods}. The models all have a
 reasonably good accuracy, but the SAFT model is particularly good.
 
 \begin{table}
-    \caption{Comparison of the RMSEs of selected models on polyoxyethylene
-        alcohols' CMCs. The best RMSE is underlined. Data from
+    \caption{Comparison of the RMSEs of selected models on polyoxyethylene alkyl
+        ethers' CMCs. The best RMSE is underlined. Data from
         \citet{chengCorrelationCriticalMicelle2005}.}
     \label{tab:segment-methods}
     \begin{tabular}{lr}
