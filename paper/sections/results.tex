@@ -79,8 +79,8 @@ constitutes.
     \end{tabular}
 \end{table}
 
-As expected, the performance of all models on the Complementary data is significantly
-worse than on the test data. This supports the hypothesis that the Complementary data
+As expected, the performance of all models on the Complementary dataset is significantly
+worse than on the test data. This supports the hypothesis that the Complementary dataset
 molecules are outside of the applicability domain of the models developed here,
 but it does not exclude the possibility that the models are instead overfitted.
 Therefore, a more detailed analysis of the applicability domain will be provided
@@ -143,7 +143,7 @@ The S-shaped calibration curve for the Qin-All test data indicates that the
 model was underconfident in its predictions. In fact, there is a spike in the
 number of observed residuals that are close to the centre of the distribution.
 The corresponding parity plot shows that the predicted uncertainties were
-relatively small. The Complementary data calibration curve's asymmetry indicates its
+relatively small. The Complementary dataset calibration curve's asymmetry indicates its
 tendency to underestimate the CMCs. It shows a generally good agreement with the
 ideal distribution, with the greatest discrepancy above \num{0.8}, which
 indicates that there are several surfactants whose CMC predictions are too low
@@ -236,9 +236,9 @@ reasonably be expected to lie within the applicability domain, constituting
 
 To gain insight into the relationships between molecules, we exploit the kernel
 function from the trained GP to create a molecular cartogram, as explained in
-the Method. The resulting cartogram is shown in Figure~\ref{fig:fdg}. The Complementary
-molecules whose residuals are above the \SI{95}{\%} CI are also highlighted
-separately.
+Section \ref{sec:method}. The resulting cartogram is shown in
+Figure~\ref{fig:fdg}. The Complementary molecules whose residuals are above the
+\SI{95}{\%} CI are also highlighted separately.
 
 From the cartogram of the entire data, it is apparent that the majority of the
 surfactants are segregated based upon the type of counterion in the solution.

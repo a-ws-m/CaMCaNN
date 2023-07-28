@@ -56,7 +56,7 @@ Two datasets were used for training and testing:
           not present in the dataset (\ce{Mn}, \ce{Cs} and \ce{Mg}) were then
           pruned. The dataset is provided in the Supplementary Information.
 
-          The Complementary data were used exclusively for external validation. Several
+          The Complementary dataset were used exclusively for external validation. Several
           of the surfactant systems in the dataset are not expected to be within
           the applicability domain of the models derived here. This includes
           surfactants with counterions and combinations of functional groups
@@ -207,7 +207,7 @@ single feature vector to describe the molecule as a whole, each atom is assigned
 its own feature vector, $\vec{v}_i$, based on properties such as its element,
 hybridization state, charge, etc. The same set of atomic features was used here
 as in the work by \citet{qinPredictingCriticalMicelle2021}. It is for this
-reason that the molecules in the Complementary data containing elements that
+reason that the molecules in the Complementary dataset containing elements that
 were not in the training data were excluded; the atomic representation includes
 a fixed-length one-hot encoding of the element number, and the new elements
 cannot be encoded without modifying the model after training. These feature
@@ -426,7 +426,7 @@ employed.
 \subsubsection{Optimizing GNN hyperparameters}
 
 The Hyperband approach \cite{liHyperbandNovelBanditBased2018}, implemented in
-Keras Tuner \cite{cholletKeras2015}, was used to select a good combination of
+Keras Tuner \cite{cholletKerasPythonDeep2018}, was used to select a good combination of
 hyperparameters for the model. Hyperband provides a way to efficiently evaluate
 the performance of a large search space of hyperparameter configurations. The
 algorithm assesses several combinations of hyperparameters, initially allocating
