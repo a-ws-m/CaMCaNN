@@ -57,10 +57,26 @@ For example, to train a linear model using ECFP fingerprints on the whole Qin da
 python -m camcann.lab ECFPLinear All ecfp-test-all
 ```
 
-The module is designed to determine the best combination of hyperparameters for training the GNNs using Hyperband. Performing this search is the default behaviour when the model is `GNNModel`. Once at least a single trial has been completed, the `--only-best` flag will train a model with the number of epochs specified with `-e`. After this model has been trained it can supply the latent space inputs for the uncertainty quantification model: `--just-uq` will train the Gaussian process.
+The module is designed to determine the best combination of hyperparameters for training the GNNs using Hyperband. Performing this search is the default behaviour when the model is `GNNModel`. This produces a `best_hps.json` file, once at least a single trial has been completed. Once this file exists, the `--only-best` flag will train a single model with the number of epochs specified with `-e`. After this model has been trained it can supply the latent space inputs for the uncertainty quantification model: `--just-uq` will train the Gaussian process.
 
-For performing sensitivity analysis, the `--cluster` flag must first be used in order to split the data into classes for stratified K-fold cross-validation. Thereafter, the `--splits` and `--repeats` options determine the sensitivity analysis behaviour. Each split/repeat will result in a new folder in the `models` directory.
+The `best_hps.json` file can be copied to a directory in order to re-use the parameters found by Hyperband. See also the [sensitivity-gnn-all.sh](sensitivity-gnn-all.sh) and [sensitivity-gnn-nonionic.sh](sensitivity-gnn-nonionic.sh) files for examples of this.
+
+Before performing sensitivity analysis, clustering must be done in order to split the data into classes for stratified K-fold cross-validation. The data in [camcann/data](camcann/data) has already been decorated with these clusters, but they can be reproduced using the `--cluster` flag and then executing the [update_clusters.py](update_clusters.py) script. Thereafter, the `--splits` and `--repeats` options determine the sensitivity analysis behaviour. Each split/repeat will result in a new folder in the `models` directory.
+
+## Datasets
+
+All of the data that was used to train and test the models is available in the [datasets](camcann/data/datasets) subdirectory. The `qin` files in this directory are copied from the [repository](https://github.com/zavalab/ML/tree/master/CMC_GCN) for the prior GNN paper used for benchmarking, but they have had `cluster` columns added. The `pred` and `err` entries therefore refer to the predictions and residuals of the previous work. The [nist-new-vals.csv](camcann/data/datasets/nist-new-vals.csv) file contains the Complementary dataset.
+
+If you wish to use the Qin datasets, please cite their [paper](https://doi.org/10.1021/acs.jpcb.1c05264). If you wish to use the Complementary data, please cite: Mukerjee, P.; Mysels, K. J. Critical Micelle Concentrations of Aqueous Surfactant Systems; National Standard reference data system, 1971; pp 51–65.
 
 ## Research results
 
 All of the models that were trained during the research are available in the [models](models) subdirectory. The [README](models/README.md) provides a description of each model and the metrics that are available.
+
+The code to produce the visualisations from the paper is also available in the [visualisation](visualisation) subdirectory. These scripts can be invoked as modules to include the consistent styling rules (e.g. `python -m visualisation.plot`).
+
+To plot a molecular cartogram, the third-party software [Gephi](https://gephi.org/) must also be used. Use the `--pairwise` option of `camcann.lab` to produce the `full_kernel.csv` file, then use the [convert_kernel.py](visualisation/convert_kernel.py) script to convert this to an adjacency matrix that can be read by Gephi. Load the file into Gephi, making sure to select "undirected" as the graph type, then select and run the Force Atlas 2 layout algorithm. When you are satisfied with the results, save the graph as a JSON format and then convert it using the [convert_fdg.py](visualisation/convert_fdg.py) script. Finally, use [plot_fdg.py](visualisation/plot_fdg.py) to see the cartogram results.
+
+### NIST versus Complementary
+
+During the writing of the paper, the external validation dataset was renamed from the "NIST" to the "Complementary" dataset. This has been reflected in the user-facing side of the code, but there are still references to "nist" in variable names that were not changed so as not to retroactively introduce bugs into the code.
