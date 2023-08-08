@@ -18,7 +18,7 @@ setup(
     url="https://github.com/a-ws-m/camcann",
     author="Alexander Moriarty",
     author_email="amoriarty14@gmail.com",
-    license="MIT",
+    license="AGPLv3",
     keywords=[
         "keras",
         "tensorflow",
@@ -35,6 +35,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Chemistry",
+        "Topic :: Scientific/Engineering :: Visualization"
     ],
     packages=find_namespace_packages(include=["camcann*"]),
     include_package_data=True,
