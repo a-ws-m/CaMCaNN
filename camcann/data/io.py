@@ -83,9 +83,7 @@ class Datasets(Enum):
     """Available datasets."""
 
     QIN = DATASET_FOLDER / "qin-data.csv"
-    NIST_ANIONICS = DATASET_FOLDER / "nist-anionics.csv"
     NIST_NEW = DATASET_FOLDER / "nist-new-vals.csv"
-    QIN_AND_NIST_ANIONICS = DATASET_FOLDER / "merged-data.csv"
 
 
 def get_nist_data(
