@@ -9,3 +9,7 @@ All of the GNN models contain `logs` subdirectories with data that can be read b
 ```bash
 tensorboard --logdir logs/
 ```
+
+## Metrics and predictions
+
+Each subdirectory contains the final performance metrics and the predictions for the model at the end of training. The names are generally self-explanatory, but note that the `uq_*.csv` files in the `gnn` subdirectories refer to the results from the models with uncertainty quantification.
