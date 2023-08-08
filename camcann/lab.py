@@ -554,14 +554,14 @@ if __name__ == "__main__":
         help="For GNN -- don't perform search, only train the best model.",
     )
     parser.add_argument(
-        "--test-nist",
+        "--test-complementary",
         action="store_true",
-        help="Test saved model on NIST anionics data.",
+        help="Test saved model on Complementary data.",
     )
     parser.add_argument(
         "--kpca",
         type=int,
-        help="Compute N kernel principal components on Qin and NIST data after training UQ.",
+        help="Compute N kernel principal components on Qin and Complementary data after training UQ.",
     )
     parser.add_argument(
         "--pairwise",
@@ -629,7 +629,7 @@ if __name__ == "__main__":
                 ecfp_exp.find_clusters()
             else:
                 ecfp_exp.train_test()
-                if args.test_nist:
+                if args.test_complementary:
                     ecfp_exp.test_nist()
     else:
         if args.cluster:
@@ -637,11 +637,6 @@ if __name__ == "__main__":
 
         pretrained = args.just_uq
         for results_path, fold in zip(results_paths, folds):
-            metrics_path = results_path / "metrics.csv"
-            if metrics_path.exists():
-                print(f"{metrics_path} exists, continuing!")
-                continue
-            print(f"{metrics_path} does not exist, training model.")
             exp = GraphExperiment(
                 build_gnn,
                 dataset,
@@ -651,7 +646,7 @@ if __name__ == "__main__":
                 num_repeats=args.repeats,
                 fold_idx=fold,
             )
-            if args.test_nist:
+            if args.test_complementary:
                 print(exp.test_nist())
             else:
                 if not pretrained:
