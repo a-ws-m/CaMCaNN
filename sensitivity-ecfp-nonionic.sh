@@ -10,11 +10,10 @@ for i in "${!splits[@]}"; do
     num_splits=${splits[i]}
     num_repeats=${repeats[i]}
 
-    # Create the directory
-    dir_name="models/ecfp-nonionic-$num_splits-splits"
+    model_name="ecfp-nonionic-$num_splits-splits"
 
     echo "Running python module"
 
     # Run the python module with the arguments
-    python -m camcann.lab --test-nist --splits "$num_splits" --repeats "$num_repeats" ECFPLinear Nonionics "$dir_name"
+    python -m camcann.lab --test-complementary --splits "$num_splits" --repeats "$num_repeats" ECFPLinear Nonionics "$model_name"
 done
