@@ -1,0 +1,12 @@
+name: camcann
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - rdkit
+  - tensorflow
+  - scikit-learn
+  - pandas
+  - scipy
+  - seaborn
+prefix: /home/ucecwsm/Scratch/apps/miniconda/py39_4.10.3/gnu-10.2.0/envs/camcann

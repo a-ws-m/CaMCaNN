@@ -38,6 +38,17 @@ setup(
     ],
     packages=find_namespace_packages(include=["camcann*"]),
     include_package_data=True,
-    install_requires=[],
+    install_requires=[
+        "rdkit",
+        "tensorflow",
+        "tensorflow-probability",
+        "scikit-learn",
+        "pandas",
+        "scipy",
+        "seaborn",
+        "spektral",
+        "keras_tuner",
+        "gpflow",
+    ],
     python_requires=">=3.6",
 )
