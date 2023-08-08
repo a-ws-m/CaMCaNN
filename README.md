@@ -7,6 +7,7 @@ Source code and trained models for the paper *Analyzing the Accuracy of Critical
 ## Installation
 
 Clone this repository and then use `conda` to install the required dependencies.  Next, install the appropriate version of `tensorflow-probability` for your version of `tensorflow`, consulting the [GPFlow installation instructions](https://gpflow.github.io/GPflow/develop/installation.html). (This will [depend on which version of CUDA you have installed](https://www.tensorflow.org/install/source#gpu), if you plan to use GPU acceleration.). Use `pip` to install `gpflow`, `spektral` and `keras_tuner`, and then install the source code of the repository.
+
 ```bash
 export TFP_VERSION=0.18.*
 git clone https://github.com/a-ws-m/CaMCaNN.git
@@ -20,6 +21,7 @@ pip install -e .
 ## Running experiments
 
 The experiments from the paper can be executed by running the `camcann.lab` module with the appropriate arguments:
+
 ```
 $ python -m camcann.lab -h
 usage: lab.py [-h] [-e EPOCHS] [--cluster] [--and-uq] [--just-uq] [--no-gp-scaler] [--lin-mean-fn] [--only-best] [--test-complementary] [--kpca KPCA] [--pairwise] [--splits SPLITS] [--repeats REPEATS] {GNNModel,ECFPLinear} {Nonionics,All} name
@@ -50,9 +52,11 @@ Sensitivity analysis:
   --splits SPLITS       The number of splits to use. Defines the train/test ratio.
   --repeats REPEATS     The number of repeats.
 ```
+
 The model, its checkpoints and its logs will be saved in `models/<name>`.
 
 For example, to train a linear model using ECFP fingerprints on the whole Qin dataset, you can use:
+
 ```bash
 python -m camcann.lab ECFPLinear All ecfp-test-all
 ```
