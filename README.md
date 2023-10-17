@@ -1,6 +1,6 @@
 # CaMCaNN
 
-[![DOI:10.26434/chemrxiv-2023-r53mf](http://img.shields.io/badge/DOI-10.26434%2Fchemrxiv--2023--r53mf-F1E500.svg)](https://doi.org/10.26434/chemrxiv-2023-r53mf)
+[![DOI:10.1021/acs.jctc.3c00868](http://img.shields.io/badge/DOI-10.1021%2Facs.jctc.3c00868-0039a6.svg)](https://doi.org/10.1021/acs.jctc.3c00868)
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
 Source code and trained models for the paper *Analyzing the Accuracy of Critical Micelle Concentration Predictions using Deep Learning*.
