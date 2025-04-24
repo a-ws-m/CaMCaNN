@@ -1,4 +1,5 @@
 """Uncertainty quantification with Gaussian Processes."""
+
 import json
 from io import StringIO
 from pathlib import Path
@@ -7,6 +8,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import gpflow as gpf
 import numpy as np
 import tensorflow as tf
+from keras.models import Model
 from scipy.stats import norm
 from sklearn.metrics import mean_squared_error
 
@@ -14,7 +16,6 @@ from sklearn.metrics import mean_squared_error
 # from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RationalQuadratic
 from sklearn.preprocessing import StandardScaler
 from spektral.data import Loader
-from tensorflow.keras.models import Model
 from tqdm import trange
 
 from .data.io import GraphData, QinGraphData
@@ -116,7 +117,6 @@ class GraphGPProcess:
         gpf.set_trainable(self.mean_func, False)
 
         self.optim_gpr = self._make_gp_model(optim_latent_points, optim_targets)
-        gpf.utilities.print_summary(self.optim_gpr)
 
         if param_file is not None:
             self.final_gpr = self.load_model(
@@ -143,6 +143,7 @@ class GraphGPProcess:
         latent_points: np.ndarray,
         targets: np.ndarray,
         kernel: Optional[gpf.kernels.AnisotropicStationary] = None,
+        noise_variance: float = 1e-5,
     ) -> gpf.models.GPR:
         """Make a Gaussian Process Regression Model."""
         if not kernel:
@@ -157,7 +158,7 @@ class GraphGPProcess:
             (latent_points, targets),
             kernel=kernel_func,
             mean_function=self.mean_func,
-            noise_variance=1e-5,
+            noise_variance=noise_variance,
         )
         gpf.set_trainable(gpr.likelihood, False)
         return gpr
@@ -259,29 +260,39 @@ class GraphGPProcess:
 
     def save_model(self, file: Union[str, Path]):
         """Save the model parameters to disk."""
-        param_dict = gpf.utilities.parameter_dict(self.final_gpr)
-
-        variance = param_dict[".kernel.variance"].numpy().item()
-        lengthscales = ndarray_to_str(param_dict[".kernel.lengthscales"].numpy())
+        # Only save the essential parameters we need to reconstruct the model
+        params_to_save = {
+            "variance": self.final_gpr.kernel.variance.numpy().item(),
+            "lengthscales": ndarray_to_str(self.final_gpr.kernel.lengthscales.numpy()),
+        }
 
         with Path(file).open("w") as f:
-            json.dump({"variance": variance, "lengthscales": lengthscales}, f)
+            json.dump(params_to_save, f)
 
     def load_model(
         self, file: Union[str, Path], latent_points: np.ndarray, targets: np.ndarray
-    ):
+    ) -> gpf.models.GPR:
         """Load model parameters from disk."""
         with Path(file).open("r") as f:
-            params = json.load(f)
+            saved_params = json.load(f)
 
-        variance = params["variance"]
-        lengthscales = ndarray_from_str(params["lengthscales"])
+        latent_dim = latent_points.shape[1]
+        ls_start = np.array([1] * latent_dim)
 
-        return self._make_gp_model(
-            latent_points,
-            targets,
-            gpf.kernels.Matern12(lengthscales=lengthscales, variance=variance),
+        kernel_func = gpf.kernels.Matern12(lengthscales=ls_start)
+        if "variance" in saved_params:
+            kernel_func.variance.assign(saved_params["variance"])
+
+        if "lengthscales" in saved_params:
+            lengthscales = ndarray_from_str(saved_params["lengthscales"])
+            kernel_func.lengthscales.assign(lengthscales)
+
+        # Use existing method to create the GP model with our configured kernel
+        gpr = self._make_gp_model(
+            latent_points, targets, kernel=kernel_func, noise_variance=1e-5
         )
+
+        return gpr
 
     def pairwise_matrix(self, test_data: Loader) -> np.ndarray:
         """Compute the pairwise kernel values for all of the data in the loader."""

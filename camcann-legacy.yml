@@ -1,18 +1,18 @@
-name: camcann
+name: camcann-old
 channels:
   - defaults
   - conda-forge
 dependencies:
   - gpflow
-  - keras-tuner
+  - keras-tuner=1.3.*
   - tensorflow-probability
   - tensorflow
-  - keras
+  - keras=2.*
   - scikit-learn
   - pandas
   - scipy
   - seaborn
-  - python>=3.9
+  - python
   - pip:
     - rdkit
     - spektral

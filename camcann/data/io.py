@@ -1,15 +1,16 @@
 """Data loading and preprocessing utilities."""
+
+import itertools
 from abc import ABC
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
-import itertools
 
 import numpy as np
 import pandas as pd
 from rdkit.Chem import MolFromSmiles
-from sklearn.model_selection import KFold, train_test_split, RepeatedStratifiedKFold
+from sklearn.model_selection import KFold, RepeatedStratifiedKFold, train_test_split
 from spektral.data import Dataset, DisjointLoader, Graph
 from spektral.transforms import LayerPreprocess
 
@@ -150,11 +151,11 @@ class DataReader:
 
 
 class DataLoader(ABC):
-    """Handle reading Qin datasets from file."""
+    """Handle reading datasets from file."""
 
     def __init__(
         self,
-        dataset: Union[QinDatasets, Datasets],
+        dataset: Union[QinDatasets, Datasets, Path, str],
         num_splits: Optional[int] = None,
         num_repeats: Optional[int] = None,
         fold_idx: Optional[int] = None,
@@ -162,29 +163,68 @@ class DataLoader(ABC):
         """Load data and find train/test indexes.
 
         Args:
-            dataset: Which Qin dataset to load.
+            dataset: Which dataset to load. Can be an enum or a path to a CSV file.
             num_splits: The number of folds to split into.
             num_repeats: The number of repeats to perform.
             fold_idx: The fold to train.
-
         """
-        self.df = pd.read_csv(dataset.value, header=0, index_col=0)
-        smiles_col = (
-            self.df["smiles"] if "smiles" in self.df.columns else self.df["SMILES"]
-        )
-        self.df["Molecules"] = [MolFromSmiles(smiles) for smiles in smiles_col]
+        # Handle different types of dataset inputs
+        if isinstance(dataset, (QinDatasets, Datasets)):
+            # Handle enum values
+            file_path = dataset.value
+        elif isinstance(dataset, (str, Path)):
+            # Handle direct file paths
+            file_path = dataset
+        else:
+            raise TypeError(f"Unsupported dataset type: {type(dataset)}")
 
+        # Load the data
+        self.df = pd.read_csv(file_path, header=0, index_col=0)
+
+        # Determine the SMILES column name
+        smiles_col_name = next(
+            (col for col in ["smiles", "SMILES"] if col in self.df.columns), None
+        )
+        if smiles_col_name is None:
+            raise ValueError(f"Dataset must contain a 'smiles' or 'SMILES' column")
+
+        # Determine the target column name
+        target_col_name = next(
+            (col for col in ["exp", "log CMC"] if col in self.df.columns), None
+        )
+        if target_col_name is None:
+            raise ValueError(f"Dataset must contain an 'exp' or 'log CMC' column")
+
+        # If column name is not 'exp', create an 'exp' column
+        if target_col_name != "exp":
+            self.df["exp"] = self.df[target_col_name]
+
+        # If column name is not 'smiles', create a 'smiles' column
+        if smiles_col_name != "smiles":
+            self.df["smiles"] = self.df[smiles_col_name]
+
+        # Convert SMILES to molecules
+        self.df["Molecules"] = [
+            MolFromSmiles(smiles) for smiles in self.df[smiles_col_name]
+        ]
+
+        # Handle train/test splits
         if num_splits is not None:
-            # self.train_idxs, self.test_idxs = train_test_split(
-            #     self.df.index,
-            #     train_size=train_ratio,
-            #     stratify=self.df["cluster"],
-            #     random_state=RANDOM_SEED,
-            # )
-            rsk = RepeatedStratifiedKFold(
-                n_splits=num_splits, n_repeats=num_repeats, random_state=RANDOM_SEED
-            )
-            all_train_idx, all_test_idx = list(zip(*rsk.split(self.df.index, self.df["cluster"])))
+            # Use RepeatedStratifiedKFold if 'cluster' column exists
+            if "cluster" in self.df.columns:
+                rsk = RepeatedStratifiedKFold(
+                    n_splits=num_splits, n_repeats=num_repeats, random_state=RANDOM_SEED
+                )
+                all_train_idx, all_test_idx = list(
+                    zip(*rsk.split(self.df.index, self.df["cluster"]))
+                )
+            else:
+                # Fall back to regular KFold if no cluster column
+                kf = KFold(
+                    n_splits=num_splits, n_repeats=num_repeats, random_state=RANDOM_SEED
+                )
+                all_train_idx, all_test_idx = list(zip(*kf.split(self.df.index)))
+
             self.train_idxs, self.test_idxs = (
                 all_train_idx[fold_idx],
                 all_test_idx[fold_idx],
@@ -193,18 +233,26 @@ class DataLoader(ABC):
                 self.train_idxs, train_size=0.9, random_state=RANDOM_SEED
             )
         else:
-            try:
+            # Check if the dataframe has a traintest column
+            if "traintest" in self.df.columns:
                 self.test_idxs = np.where(self.df["traintest"] == "test")[0]
                 self.train_idxs = np.where(self.df["traintest"] == "train")[0]
                 self.optim_idxs, self.val_idxs = train_test_split(
                     self.train_idxs, train_size=0.9, random_state=RANDOM_SEED
                 )
-            except (KeyError, ValueError):
-                # No train/test split
-                self.test_idxs = self.df.index
-                self.train_idxs = np.array([])
-                self.optim_idxs = self.train_idxs
-                self.val_idxs = self.train_idxs
+            else:
+                # Create a train/test split
+                self.train_idxs, self.test_idxs = train_test_split(
+                    self.df.index, train_size=0.8, random_state=RANDOM_SEED
+                )
+                self.optim_idxs, self.val_idxs = train_test_split(
+                    self.train_idxs, train_size=0.9, random_state=RANDOM_SEED
+                )
+                # Add traintest column to the dataframe for future reference
+                self.df["traintest"] = [
+                    "train" if i in self.train_idxs else "test"
+                    for i in range(len(self.df))
+                ]
 
 
 class ECFPData(DataLoader):

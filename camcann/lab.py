@@ -1,37 +1,94 @@
 """Test the performance of models on the Qin data."""
-from argparse import ArgumentParser
+
+# Add at the beginning of your main script
 import json
+import os
+from argparse import ArgumentParser
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import keras_tuner
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from keras.callbacks import EarlyStopping, TensorBoard
+from keras.models import Model, load_model
 from sklearn.decomposition import KernelPCA
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from spektral.layers import GCNConv
 from spektral.transforms import LayerPreprocess
-from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
-from tensorflow.keras.models import Model, load_model
 
 from .data.featurise.ecfp import cluster_df
 from .data.io import (
-    Datasets,
     RANDOM_SEED,
-    QinDatasets,
+    Datasets,
     ECFPData,
+    QinDatasets,
     QinGraphData,
-    get_nist_data,
     get_nist_and_qin,
+    get_nist_data,
 )
 from .gnn import build_gnn
 from .linear import LinearECFPModel, LinearResults
 from .uq import GraphGPProcess
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # 0=all, 1=info, 2=warning, 3=error
+tf.get_logger().setLevel("ERROR")
+
 RANDOM_SEED = 2022
 MODELS_DIR = Path(".") / "models"
+
+
+def validate_dataset_csv(file_path: str) -> Path:
+    """Validate that a CSV file has the required columns for model training.
+
+    Args:
+        file_path: Path to the CSV file
+
+    Returns:
+        Path object for the validated file
+
+    Raises:
+        ValueError: If the file doesn't exist or doesn't have required columns
+    """
+    path = Path(file_path)
+    if not path.exists():
+        raise ValueError(f"Dataset file not found: {file_path}")
+
+    # Check if file has required columns
+    try:
+        df = pd.read_csv(path)
+
+        # Check for SMILES column (either 'smiles' or 'SMILES')
+        if "smiles" not in df.columns and "SMILES" not in df.columns:
+            raise ValueError(
+                f"Dataset must contain a 'smiles' or 'SMILES' column: {file_path}"
+            )
+
+        # Check for experimental values (either 'exp' or 'log CMC')
+        if "exp" not in df.columns and "log CMC" not in df.columns:
+            raise ValueError(
+                f"Dataset must contain an 'exp' or 'log CMC' column: {file_path}"
+            )
+
+        # We might want cluster assignments for better splits
+        if "cluster" not in df.columns:
+            print(
+                f"Warning: No 'cluster' column found in {file_path}. Using random splits instead of stratified splits."
+            )
+
+        # Check if train/test split is provided
+        if "traintest" not in df.columns:
+            print(
+                f"Warning: No 'traintest' column found in {file_path}. Will create a random train/test split."
+            )
+
+        return path
+
+    except Exception as e:
+        raise ValueError(f"Error reading dataset file: {e}")
+
 
 class BaseExperiment:
     """Train a model on the Qin data, potentially with separate UQ, and report results.
@@ -276,6 +333,8 @@ class GraphExperiment(BaseExperiment):
         load_gp_params = self.gp_param_file.exists() and not retrain
         param_path = self.gp_param_file if load_gp_params else None
 
+        if load_gp_params:
+            print("Loading GP parameters from file...")
         self.uq_model = GraphGPProcess(
             latent_model,
             self.graph_data,
@@ -520,8 +579,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "dataset",
-        choices=list(dataset_map.keys()),
-        help="The dataset to use.",
+        help="The dataset to use. Either a built-in dataset name (Nonionics, All) or a path to a CSV file.",
+    )
+    parser.add_argument(
+        "--custom-data",
+        action="store_true",
+        help="Interpret the dataset argument as a path to a custom CSV file.",
     )
     parser.add_argument("name", type=str, help="The name of the model.")
     parser.add_argument(
@@ -568,6 +631,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Compute just the learned pariwise kernel on all of the data.",
     )
+    parser.add_argument(
+        "--eval-saved-uq",
+        action="store_true",
+        help="Load and evaluate a previously saved UQ model instead of training a new one.",
+    )
 
     sensitivity_group = parser.add_argument_group(
         "Sensitivity analysis",
@@ -584,6 +652,19 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    if args.custom_data:
+        # Use a custom dataset file
+        dataset_path = validate_dataset_csv(args.dataset)
+        # We'll need to update the DataLoader classes to accept a Path directly
+        dataset = dataset_path
+    else:
+        # Use a built-in dataset
+        if args.dataset not in dataset_map:
+            raise ValueError(
+                f"Unknown built-in dataset: {args.dataset}. Available options are: {', '.join(dataset_map.keys())}"
+            )
+        dataset = dataset_map[args.dataset]
 
     if args.and_uq and args.just_uq:
         raise ValueError("Cannot set both `--and-uq` and `--just-uq` flags.")
@@ -658,6 +739,7 @@ if __name__ == "__main__":
                     exp.train_uq(
                         with_scaler=not args.no_gp_scaler,
                         linear_mean_fn=args.lin_mean_fn,
+                        retrain=not args.eval_saved_uq,
                     )
                     if args.kpca:
                         exp.kpca(args.kpca)

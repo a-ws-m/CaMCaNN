@@ -1,6 +1,9 @@
-from typing import List, Type, Optional
+from typing import List, Optional, Type
 
 import keras_tuner
+from keras.layers import Dense, Input
+from keras.metrics import MeanAbsoluteError, RootMeanSquaredError
+from keras.models import Model
 from spektral.layers import (
     GCNConv,
     GlobalAttentionPool,
@@ -9,9 +12,6 @@ from spektral.layers import (
     GlobalSumPool,
 )
 from spektral.layers.pooling.global_pool import GlobalPool
-from tensorflow.keras.layers import Dense, Input
-from tensorflow.keras.metrics import MeanAbsoluteError, RootMeanSquaredError
-from tensorflow.keras.models import Model
 
 
 class QinGNN(Model):
@@ -48,7 +48,7 @@ class QinGNN(Model):
         dense_layers = [Dense(dim, activation="relu") for dim in mlp_hidden_dim]
         dense_layers.append(Dense(1))
 
-        mlp_input = Input((input_size))
+        mlp_input = Input((input_size,))
         mlp_prop = dense_layers[0](mlp_input)
 
         if len(dense_layers) == 1:

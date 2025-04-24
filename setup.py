@@ -1,5 +1,7 @@
 """Setup script for package."""
+
 import pathlib
+
 from setuptools import find_namespace_packages, setup
 
 # The directory containing this file
@@ -35,7 +37,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Chemistry",
-        "Topic :: Scientific/Engineering :: Visualization"
+        "Topic :: Scientific/Engineering :: Visualization",
     ],
     packages=find_namespace_packages(include=["camcann*"]),
     include_package_data=True,
@@ -48,7 +50,8 @@ setup(
         "scipy",
         "seaborn",
         "spektral",
-        "keras_tuner",
+        "keras-tuner",
+        "keras",
         "gpflow",
     ],
     python_requires=">=3.6",

@@ -1,4 +1,5 @@
 """Utilities for featurising graph nodes and edges."""
+
 from operator import methodcaller
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -7,7 +8,6 @@ from rdkit.Chem.rdchem import Atom, Mol
 from scipy.sparse import csc_matrix
 from sklearn.preprocessing import OneHotEncoder
 from spektral.data import Graph
-
 
 MolecularNodeMatrix = np.ndarray
 AllNodesMatrix = np.ndarray
@@ -52,13 +52,13 @@ def array_to_mol_list(
     array: AllNodesMatrix, molecules: List[Mol]
 ) -> List[MolecularNodeMatrix]:
     """Split a concatenated matrix to a list of matrices.
-    
+
     The input matrix should have shape (total_num_atoms, num_features).
     `molecules` should be a list of vectors representing the atomic
     numbers of every atom in a molecule. The order of the atoms
     in `array` must therefore match the order of the `molecules`
     and their constituent atoms.
-    
+
     """
     loc: int = 0
     mat_list: List[MolecularNodeMatrix] = []
@@ -68,6 +68,7 @@ def array_to_mol_list(
         loc += num_atoms
 
     return mat_list
+
 
 def get_mol_adj_mat(molecule: Mol) -> np.ndarray:
     """Get the adjacency matrix for a molecule."""
@@ -81,19 +82,19 @@ def get_mol_adj_mat(molecule: Mol) -> np.ndarray:
         adj_matrix[j][i] = 1
     return adj_matrix
 
+
 class MolNodeFeaturizer:
     """Featurize atoms in molecular graphs."""
 
-    def __init__(
-        self, sparse_encoding: bool = False, encoder_params: Optional[dict] = None
-    ) -> None:
-        self.one_hot = OneHotEncoder(sparse=sparse_encoding)
+    def __init__(self, encoder_params: Optional[dict] = None) -> None:
+        self.one_hot = OneHotEncoder()
         self.one_hot_trained: bool = encoder_params is not None
         if self.one_hot_trained:
             self.one_hot.set_params(**encoder_params)
 
     def featurize_all_molecules(
-        self, molecules: List[Mol],
+        self,
+        molecules: List[Mol],
     ) -> List[MolecularNodeMatrix]:
         """Convert a list of rdkit molecules to a list of molecular graph node matrices."""
         # A list of the molecular matrices for just categorical atomic features
@@ -138,17 +139,24 @@ class MolNodeFeaturizer:
         return np.array(atom_cat_feats), np.array(atom_num_feats)
 
     def one_hot_encode(
-        self, node_cats: List[MolecularNodeMatrix], train: bool = False,
+        self,
+        node_cats: List[MolecularNodeMatrix],
+        train: bool = False,
     ) -> AllNodesMatrix:
         """Get one-hot encodings for node categories."""
         all_atom_matrix = np.vstack(node_cats)
         if train:
             self.one_hot_trained = True
-            return self.one_hot.fit_transform(all_atom_matrix)
+            result = self.one_hot.fit_transform(all_atom_matrix)
         elif not self.one_hot_trained:
             raise NotTrainedError()
         else:
-            return self.one_hot.transform(all_atom_matrix)
+            result = self.one_hot.transform(all_atom_matrix)
+
+        # Convert sparse matrix to dense if needed
+        if hasattr(result, "toarray"):
+            return result.toarray()
+        return result
 
     @property
     def one_hot_params(self) -> dict:
@@ -157,8 +165,13 @@ class MolNodeFeaturizer:
             raise NotTrainedError()
         return self.one_hot.get_params()
 
-def mols_to_graph(mols: List[Mol], featuriser: MolNodeFeaturizer, targets: List[float]) -> List[Graph]:
+
+def mols_to_graph(
+    mols: List[Mol], featuriser: MolNodeFeaturizer, targets: List[float]
+) -> List[Graph]:
     """Convert a molecule to a graph using a featuriser."""
     adj_mats = [get_mol_adj_mat(mol) for mol in mols]
     features = featuriser.featurize_all_molecules(mols)
-    return [Graph(x=x, a=a, y=target) for x, a, target in zip(features, adj_mats, targets)]
+    return [
+        Graph(x=x, a=a, y=target) for x, a, target in zip(features, adj_mats, targets)
+    ]
