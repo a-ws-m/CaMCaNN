@@ -7,13 +7,13 @@ Source code and trained models for the paper *Analyzing the Accuracy of Critical
 
 ## Installation
 
-Clone this repository and then use `conda` to install the required dependencies.  Next, install the appropriate version of `tensorflow-probability` for your version of `tensorflow`, consulting the [GPFlow installation instructions](https://gpflow.github.io/GPflow/develop/installation.html). (This will [depend on which version of CUDA you have installed](https://www.tensorflow.org/install/source#gpu), if you plan to use GPU acceleration.). Use `pip` to install `gpflow`, `spektral` and `keras_tuner`, and then install the source code of the repository.
+Clone this repository and then use `conda` to install the required dependencies.  Next, install the appropriate version of `tensorflow-probability` for your version of `tensorflow`, consulting the [GPFlow installation instructions](https://gpflow.github.io/GPflow/develop/installation.html). (This will [depend on which version of CUDA you have installed](https://www.tensorflow.org/install/source#gpu), if you plan to use GPU acceleration.)
 
 ```bash
 export TFP_VERSION=0.18.*
 git clone https://github.com/a-ws-m/CaMCaNN.git
 cd CaMCaNN
-conda env create -n camcann --file camcann.yml
+conda env create -n camcann --file camcann.yml  # This will install the latest compatible package versions, but to load the models contained in the repo you need to use camcann-legacy.yml
 conda activate camcann
 pip install spektral gpflow keras_tuner tensorflow-probability==$TFP_VERSION
 pip install -e .
