@@ -245,15 +245,32 @@ class GraphExperiment(BaseExperiment):
             callbacks=callbacks,
         )
 
-    def train_best(self, epochs: int):
-        """Train the best hyperparameters on all the data."""
-        try:
-            best_hp = self.tuner.get_best_hyperparameters()[0]
-            self.best_hps_dict = best_hp.values
-        except IndexError:
-            self.best_hps_dict = json.loads(self.best_hp_file.read_text())
+    def train_best(self, epochs: int, custom_hp_file: Optional[str] = None):
+        """Train the best hyperparameters on all the data.
+
+        Args:
+            epochs: Number of epochs to train for
+            custom_hp_file: Optional path to a JSON file containing hyperparameters
+        """
+        if custom_hp_file is not None:
+            # Load hyperparameters from custom file
+            custom_hp_path = Path(custom_hp_file)
+            if not custom_hp_path.exists():
+                raise FileNotFoundError(
+                    f"Custom hyperparameter file not found: {custom_hp_file}"
+                )
+
+            self.best_hps_dict = json.loads(custom_hp_path.read_text())
             best_hp = keras_tuner.HyperParameters()
             best_hp.values = self.best_hps_dict
+        else:
+            try:
+                best_hp = self.tuner.get_best_hyperparameters()[0]
+                self.best_hps_dict = best_hp.values
+            except IndexError:
+                self.best_hps_dict = json.loads(self.best_hp_file.read_text())
+                best_hp = keras_tuner.HyperParameters()
+                best_hp.values = self.best_hps_dict
 
         print("Best hyperparameters:")
         print(self.best_hps_dict)
@@ -617,6 +634,11 @@ if __name__ == "__main__":
         help="For GNN -- don't perform search, only train the best model.",
     )
     parser.add_argument(
+        "--custom-hp-file",
+        type=str,
+        help="Path to a JSON file containing custom hyperparameters to use instead of tuning or using stored best hyperparameters.",
+    )
+    parser.add_argument(
         "--test-complementary",
         action="store_true",
         help="Test saved model on Complementary data.",
@@ -678,7 +700,6 @@ if __name__ == "__main__":
         # One is not None
         raise ValueError("Must specify both or neither of splits and repeats.")
 
-    dataset = dataset_map[args.dataset]
     model = model_map[args.model]
 
     do_uq = args.and_uq or args.just_uq
@@ -733,7 +754,7 @@ if __name__ == "__main__":
                 if not pretrained:
                     if not args.only_best:
                         exp.search()
-                    exp.train_best(args.epochs)
+                    exp.train_best(args.epochs, custom_hp_file=args.custom_hp_file)
                     exp.test()
                 if do_uq:
                     exp.train_uq(
