@@ -95,15 +95,18 @@ class MolNodeFeaturizer:
     def featurize_all_molecules(
         self,
         molecules: List[Mol],
+        temperatures: Optional[List[float]] = None,
     ) -> List[MolecularNodeMatrix]:
         """Convert a list of rdkit molecules to a list of molecular graph node matrices."""
         # A list of the molecular matrices for just categorical atomic features
         mol_cat_matrices: List[MolecularNodeMatrix] = []
         # A list of the molecular matrices for just the numerical atomic features
         mol_num_matrices: List[MolecularNodeMatrix] = []
-        for mol in molecules:
+        for i, mol in enumerate(molecules):
             atoms: List[Atom] = list(mol.GetAtoms())
-            atom_cat_feats, atom_num_feats = self.featurize_atoms(atoms)
+            # Get temperature for this molecule if available
+            temp = temperatures[i] if temperatures is not None else None
+            atom_cat_feats, atom_num_feats = self.featurize_atoms(atoms, temp)
             mol_cat_matrices.append(atom_cat_feats)
             mol_num_matrices.append(atom_num_feats)
 
@@ -119,11 +122,11 @@ class MolNodeFeaturizer:
         return array_to_mol_list(all_mol_atom_matrix, molecules)
 
     def featurize_atoms(
-        self, atoms: List[Atom]
+        self, atoms: List[Atom], temperature: Optional[float] = None
     ) -> Tuple[MolecularNodeMatrix, MolecularNodeMatrix]:
         """Featurize a list of atoms."""
         atom_cat_feats: List[List[int]] = []
-        atom_num_feats: List[List[int]] = []
+        atom_num_feats: List[List[float]] = []
         for atom in atoms:
             cat_feats = [
                 RDCHEM_ATOM_METHS[cat_method](atom)
@@ -134,6 +137,11 @@ class MolNodeFeaturizer:
                 for key, method in RDCHEM_ATOM_METHS.items()
                 if key not in DEFAULT_ONE_HOT_SPEC
             ]
+
+            # Add temperature to numerical features if provided
+            if temperature is not None:
+                num_feats.append(temperature)
+
             atom_cat_feats.append(cat_feats)
             atom_num_feats.append(num_feats)
         return np.array(atom_cat_feats), np.array(atom_num_feats)
@@ -167,11 +175,14 @@ class MolNodeFeaturizer:
 
 
 def mols_to_graph(
-    mols: List[Mol], featuriser: MolNodeFeaturizer, targets: List[float]
+    mols: List[Mol],
+    featuriser: MolNodeFeaturizer,
+    targets: List[float],
+    temperatures: Optional[List[float]] = None,
 ) -> List[Graph]:
     """Convert a molecule to a graph using a featuriser."""
     adj_mats = [get_mol_adj_mat(mol) for mol in mols]
-    features = featuriser.featurize_all_molecules(mols)
+    features = featuriser.featurize_all_molecules(mols, temperatures)
     return [
         Graph(x=x, a=a, y=target) for x, a, target in zip(features, adj_mats, targets)
     ]

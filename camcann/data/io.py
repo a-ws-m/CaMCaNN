@@ -345,16 +345,28 @@ class QinGraphData(DataLoader):
 
         Args:
             dataset: Which dataset to load.
-            mol_featuriser: The molecular featuriser to use. This is important for consistency with featurising, e.g. one hot encoding.
-
+            mol_featuriser: The molecular featuriser to use.
+            preprocess: Optional preprocessing to apply to graphs.
+            num_splits: Number of CV splits.
+            num_repeats: Number of CV repetitions.
+            fold_idx: Index of the fold to use.
         """
         super().__init__(
             dataset, num_splits=num_splits, num_repeats=num_repeats, fold_idx=fold_idx
         )
 
         self.mol_featuriser = mol_featuriser
+
+        # Check if temperature column exists
+        temperatures = None
+        if "temperature" in self.df.columns:
+            temperatures = list(self.df["temperature"])
+
         graphs = mols_to_graph(
-            list(self.df["Molecules"]), self.mol_featuriser, list(self.df["exp"])
+            list(self.df["Molecules"]),
+            self.mol_featuriser,
+            list(self.df["exp"]),
+            temperatures,
         )
         self.graphs = (
             list(map(preprocess, graphs)) if preprocess is not None else graphs
