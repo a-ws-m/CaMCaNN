@@ -1,6 +1,7 @@
 """Uncertainty quantification with Gaussian Processes."""
 
 import json
+import pickle  # Add this import
 from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
@@ -8,6 +9,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import gpflow as gpf
 import numpy as np
 import tensorflow as tf
+from gpflow.utilities import multiple_assign, parameter_dict
 from keras.models import Model
 from scipy.stats import norm
 from sklearn.metrics import mean_squared_error
@@ -148,9 +150,9 @@ class GraphGPProcess:
         """Make a Gaussian Process Regression Model."""
         if not kernel:
             latent_dim = latent_points.shape[1]
-            ls_start = np.array([1] * latent_dim)
+            ls_start = np.array([1.0] * latent_dim)
 
-            kernel_func = gpf.kernels.Matern12(lengthscales=ls_start)
+            kernel_func = gpf.kernels.Matern12(lengthscales=1.0)
         else:
             kernel_func = kernel
 
@@ -160,10 +162,10 @@ class GraphGPProcess:
             mean_function=self.mean_func,
             noise_variance=noise_variance,
         )
-        gpf.set_trainable(gpr.likelihood, False)
+        # gpf.set_trainable(gpr.likelihood, False)
         return gpr
 
-    def train(self, num_epochs: int = 50000, patience: int = 1000) -> gpf.models.GPR:
+    def train(self, num_epochs: int = 10000, patience: int = 1000) -> gpf.models.GPR:
         """Train a GP with early stopping."""
         EVAL_FREQUENCY: int = 100
         opt = tf.keras.optimizers.Adam()
@@ -259,38 +261,28 @@ class GraphGPProcess:
         return self._evaluate_gpr(self.final_gpr, test_data, just_nll)
 
     def save_model(self, file: Union[str, Path]):
-        """Save the model parameters to disk."""
-        # Only save the essential parameters we need to reconstruct the model
-        params_to_save = {
-            "variance": self.final_gpr.kernel.variance.numpy().item(),
-            "lengthscales": ndarray_to_str(self.final_gpr.kernel.lengthscales.numpy()),
-        }
-
-        with Path(file).open("w") as f:
-            json.dump(params_to_save, f)
+        """Save the model parameters to disk using pickle."""
+        with Path(file).open("wb") as f:  # Use "wb" for binary write mode
+            pickle.dump(parameter_dict(self.final_gpr), f)
 
     def load_model(
         self, file: Union[str, Path], latent_points: np.ndarray, targets: np.ndarray
     ) -> gpf.models.GPR:
-        """Load model parameters from disk."""
-        with Path(file).open("r") as f:
-            saved_params = json.load(f)
+        """Load model parameters from disk using pickle."""
+        with Path(file).open("rb") as f:  # Use "rb" for binary read mode
+            saved_params = pickle.load(f)
 
         latent_dim = latent_points.shape[1]
-        ls_start = np.array([1] * latent_dim)
+        ls_start = np.array([1.0] * latent_dim)
 
-        kernel_func = gpf.kernels.Matern12(lengthscales=ls_start)
-        if "variance" in saved_params:
-            kernel_func.variance.assign(saved_params["variance"])
-
-        if "lengthscales" in saved_params:
-            lengthscales = ndarray_from_str(saved_params["lengthscales"])
-            kernel_func.lengthscales.assign(lengthscales)
+        kernel_func = gpf.kernels.Matern12(lengthscales=1.0)
 
         # Use existing method to create the GP model with our configured kernel
         gpr = self._make_gp_model(
             latent_points, targets, kernel=kernel_func, noise_variance=1e-5
         )
+        # Assign the loaded parameters to the model
+        multiple_assign(gpr, saved_params)
 
         return gpr
 

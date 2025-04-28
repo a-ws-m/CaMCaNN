@@ -183,7 +183,7 @@ class GraphExperiment(BaseExperiment):
 
         self.kernel_file = self.results_path / "full_kernel.csv"
 
-        self.gp_param_file = self.model_path / "gp_params.json"
+        self.gp_param_file = self.model_path / "gp_params.pkl"
 
         self.checkpoint_file = self.model_path / "checkpoint"
 
