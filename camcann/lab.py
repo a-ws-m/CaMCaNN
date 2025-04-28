@@ -12,7 +12,7 @@ import keras_tuner
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from keras.callbacks import EarlyStopping, TensorBoard
+from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras.models import Model, load_model
 from sklearn.decomposition import KernelPCA
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -160,6 +160,7 @@ class GraphExperiment(BaseExperiment):
         num_splits: Optional[int] = None,
         num_repeats: Optional[int] = None,
         fold_idx: Optional[int] = None,
+        custom_hp_file: Optional[str] = None,
     ) -> None:
         """Initialize the model and the datasets."""
         super().__init__(
@@ -172,13 +173,19 @@ class GraphExperiment(BaseExperiment):
         self.tb_search_dir = self.tb_dir / "search-logs"
         self.tb_train_dir = self.tb_dir / "train-best"
 
-        self.best_hp_file = self.results_path / "best_hps.json"
+        self.best_hp_file = (
+            Path(custom_hp_file)
+            if custom_hp_file
+            else self.results_path / "best_hps.json"
+        )
 
         self.kpca_file = self.results_path / "kernel_components.csv"
 
         self.kernel_file = self.results_path / "full_kernel.csv"
 
         self.gp_param_file = self.model_path / "gp_params.json"
+
+        self.checkpoint_file = self.model_path / "checkpoint"
 
         self.hypermodel = hypermodel
         self.tuner = keras_tuner.Hyperband(
@@ -208,14 +215,10 @@ class GraphExperiment(BaseExperiment):
             hps.values = self.best_hps_dict
             self.model = self.tuner.hypermodel.build(hps)
 
-            loaded_model = load_model(self.model_path)
+            self.model.load_weights(self.model_path)
 
             train_data = self.graph_data.train_loader_no_shuffle
             self.model.predict(train_data.load(), steps=train_data.steps_per_epoch)
-            loaded_model.predict(train_data.load(), steps=train_data.steps_per_epoch)
-
-            for latent_layer, buffer in zip(self.model.layers, loaded_model.layers):
-                latent_layer.set_weights(buffer.get_weights())
 
         if self.debug:
             print("First 10 graphs:")
@@ -245,38 +248,39 @@ class GraphExperiment(BaseExperiment):
             callbacks=callbacks,
         )
 
-    def train_best(self, epochs: int, custom_hp_file: Optional[str] = None):
+    def load_hyperparameters(self) -> keras_tuner.HyperParameters:
+        """Get the hyperparameters of the model."""
+        try:
+            best_hp = self.tuner.get_best_hyperparameters()[0]
+            self.best_hps_dict = best_hp.values
+        except IndexError:
+            self.best_hps_dict = json.loads(self.best_hp_file.read_text())
+            best_hp = keras_tuner.HyperParameters()
+            best_hp.values = self.best_hps_dict
+
+        return best_hp
+
+    def load_model(self):
+        """Load the model from the checkpoint file."""
+        if self.checkpoint_file.exists():
+            print("Loading model from checkpoint...")
+            best_hp = self.load_hyperparameters()
+            self.model = self.tuner.hypermodel.build(best_hp)
+            self.model.load_weights(self.checkpoint_file)
+        else:
+            raise FileNotFoundError("Checkpoint file not found. Model not loaded.")
+
+    def train_best(self, epochs: int):
         """Train the best hyperparameters on all the data.
 
         Args:
             epochs: Number of epochs to train for
             custom_hp_file: Optional path to a JSON file containing hyperparameters
         """
-        if custom_hp_file is not None:
-            # Load hyperparameters from custom file
-            custom_hp_path = Path(custom_hp_file)
-            if not custom_hp_path.exists():
-                raise FileNotFoundError(
-                    f"Custom hyperparameter file not found: {custom_hp_file}"
-                )
-
-            self.best_hps_dict = json.loads(custom_hp_path.read_text())
-            best_hp = keras_tuner.HyperParameters()
-            best_hp.values = self.best_hps_dict
-        else:
-            try:
-                best_hp = self.tuner.get_best_hyperparameters()[0]
-                self.best_hps_dict = best_hp.values
-            except IndexError:
-                self.best_hps_dict = json.loads(self.best_hp_file.read_text())
-                best_hp = keras_tuner.HyperParameters()
-                best_hp.values = self.best_hps_dict
+        best_hp = self.load_hyperparameters()
 
         print("Best hyperparameters:")
         print(self.best_hps_dict)
-
-        with self.best_hp_file.open("w") as f:
-            json.dump(self.best_hps_dict, f)
 
         self.model = self.tuner.hypermodel.build(best_hp)
 
@@ -285,7 +289,23 @@ class GraphExperiment(BaseExperiment):
             patience=150,
             restore_best_weights=True,
         )
-        callbacks = [TensorBoard(log_dir=self.tb_train_dir / "with-val"), es_callback]
+        checkpoint_callback = ModelCheckpoint(
+            filepath=self.checkpoint_file,
+            save_weights_only=True,
+            monitor="val_root_mean_squared_error",
+            save_best_only=True,
+            mode="min",
+            verbose=1,
+        )
+        callbacks = [
+            TensorBoard(log_dir=self.tb_train_dir / "with-val"),
+            es_callback,
+            checkpoint_callback,
+        ]
+
+        if self.checkpoint_file.exists():
+            print("Loading weights from checkpoint...")
+            self.model.load_weights(self.checkpoint_file)
 
         print("Fitting best model with validation...")
         self.model.fit(
@@ -296,30 +316,42 @@ class GraphExperiment(BaseExperiment):
             epochs=epochs,
             callbacks=callbacks,
         )
-        self.model.save(self.model_path)
 
         print("Fine tuning best model on all data...")
-        callbacks = [TensorBoard(log_dir=self.tb_train_dir / "fine-tune")]
+        checkpoint_callback_finetune = ModelCheckpoint(
+            filepath=self.checkpoint_file,
+            monitor="loss",
+            save_weights_only=True,
+            save_best_only=True,
+            mode="min",
+            verbose=1,
+        )
+        callbacks = [
+            TensorBoard(log_dir=self.tb_train_dir / "fine-tune"),
+            checkpoint_callback_finetune,
+        ]
         self.model.fit(
             self.graph_data.train_loader.load(),
             steps_per_epoch=self.graph_data.train_loader.steps_per_epoch,
             epochs=np.floor_divide(epochs, 10),
             callbacks=callbacks,
         )
-        self.model.save(self.model_path)
+        self.model.load_weights(self.checkpoint_file)
+        self.model.save_weights(self.model_path)
         print("Done!")
 
     def test_nist(self) -> Dict[str, float]:
         """Test against the NIST data."""
-        loaded_model = load_model(self.model_path)
+        self.load_model()
+
         nist_data, nist_df = get_nist_data(
             self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
         )
 
-        nist_metrics = loaded_model.evaluate(
+        nist_metrics = self.model.evaluate(
             nist_data.load(), steps=nist_data.steps_per_epoch, return_dict=True
         )
-        nist_predictions = loaded_model.predict(
+        nist_predictions = self.model.predict(
             nist_data.load(), steps=nist_data.steps_per_epoch
         )
 
@@ -345,7 +377,7 @@ class GraphExperiment(BaseExperiment):
         hps.values = self.best_hps_dict
         latent_model = self.hypermodel(hps, latent_model=True)
 
-        loaded_model = load_model(self.model_path)
+        self.load_model()
 
         load_gp_params = self.gp_param_file.exists() and not retrain
         param_path = self.gp_param_file if load_gp_params else None
@@ -355,7 +387,7 @@ class GraphExperiment(BaseExperiment):
         self.uq_model = GraphGPProcess(
             latent_model,
             self.graph_data,
-            loaded_model,
+            self.model,
             with_scaler,
             linear_mean_fn,
             param_path,
@@ -428,10 +460,13 @@ class GraphExperiment(BaseExperiment):
         data = {
             "smiles": self.graph_data.df.smiles,
             "exp": self.graph_data.df.exp,
-            "qin": self.graph_data.df.pred,
             "pred": predictions,
             "traintest": traintest,
         }
+        if "pred" in self.graph_data.df.columns:
+            data["qin"] = self.graph_data.df.pred
+        if "temperature" in self.graph_data.df.columns:
+            data["temperature"] = self.graph_data.df.temperature
 
         if stddevs is not None:
             data["stddev"] = stddevs
@@ -644,6 +679,11 @@ if __name__ == "__main__":
         help="Test saved model on Complementary data.",
     )
     parser.add_argument(
+        "--just-test",
+        action="store_true",
+        help="Just test the model on the test set. No training or searching.",
+    )
+    parser.add_argument(
         "--kpca",
         type=int,
         help="Compute N kernel principal components on Qin and Complementary data after training UQ.",
@@ -737,7 +777,7 @@ if __name__ == "__main__":
         if args.cluster:
             raise ValueError("Can only cluster for an ECFPLinear model.")
 
-        pretrained = args.just_uq
+        pretrained = args.just_uq or args.just_test
         for results_path, fold in zip(results_paths, folds):
             exp = GraphExperiment(
                 build_gnn,
@@ -747,6 +787,7 @@ if __name__ == "__main__":
                 num_splits=args.splits,
                 num_repeats=args.repeats,
                 fold_idx=fold,
+                custom_hp_file=args.custom_hp_file,
             )
             if args.test_complementary:
                 print(exp.test_nist())
@@ -754,7 +795,10 @@ if __name__ == "__main__":
                 if not pretrained:
                     if not args.only_best:
                         exp.search()
-                    exp.train_best(args.epochs, custom_hp_file=args.custom_hp_file)
+                    exp.train_best(args.epochs)
+                    exp.test()
+                if args.just_test:
+                    exp.load_model()
                     exp.test()
                 if do_uq:
                     exp.train_uq(
