@@ -21,7 +21,7 @@ class QinGNN(Model):
         self,
         channels: List[int] = [256] * 2,
         mlp_hidden_dim: List[int] = [256, 256],
-        pool_func: Type[GlobalPool] = GlobalAvgPool,
+        pool_func: Type[GlobalPool] = GlobalSumPool,
         pooling_channels: Optional[int] = None,
         latent_model: bool = False,
     ):
@@ -82,21 +82,6 @@ def build_gnn(hp: keras_tuner.HyperParameters, latent_model: bool = False) -> Mo
     num_channels = hp.Int("graph_layers", min_value=2, max_value=3)
     num_mlp_layers = hp.Int("mlp_hidden_layers", min_value=1, max_value=2)
 
-    pool_funcs = {
-        "global_avg_pool": GlobalAvgPool,
-        "global_sum_pool": GlobalSumPool,
-        "global_attn_pool": GlobalAttentionPool,
-        "global_attn_sum_pool": GlobalAttnSumPool,
-    }
-    pool_func_key = hp.Choice("pooling_func", list(pool_funcs.keys()))
-    pool_func = pool_funcs[pool_func_key]
-
-    pool_channels = (
-        hp.Int("pool_channels", **HIDDEN_DIM_CHOICES)
-        if pool_func_key == "global_attn_pool"
-        else None
-    )
-
     graph_channels = [
         hp.Int(f"graph_channels_{i}", **HIDDEN_DIM_CHOICES) for i in range(num_channels)
     ]
@@ -108,8 +93,6 @@ def build_gnn(hp: keras_tuner.HyperParameters, latent_model: bool = False) -> Mo
     model = QinGNN(
         graph_channels,
         mlp_hidden_dim,
-        pool_func,
-        pool_channels,
         latent_model=latent_model,
     )
     model.compile(
