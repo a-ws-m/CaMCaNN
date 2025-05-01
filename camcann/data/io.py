@@ -10,7 +10,12 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from rdkit.Chem import MolFromSmiles
-from sklearn.model_selection import KFold, RepeatedStratifiedKFold, train_test_split
+from sklearn.model_selection import (
+    KFold,
+    RepeatedKFold,
+    RepeatedStratifiedKFold,
+    train_test_split,
+)
 from spektral.data import Dataset, DisjointLoader, Graph
 from spektral.transforms import LayerPreprocess
 
@@ -220,7 +225,7 @@ class DataLoader(ABC):
                 )
             else:
                 # Fall back to regular KFold if no cluster column
-                kf = KFold(
+                kf = RepeatedKFold(
                     n_splits=num_splits, n_repeats=num_repeats, random_state=RANDOM_SEED
                 )
                 all_train_idx, all_test_idx = list(zip(*kf.split(self.df.index)))
