@@ -56,7 +56,7 @@ class MLPScalerMeanFunc(gpf.mean_functions.MeanFunction):
             orig_X = self.scaler.inverse_transform(X)
         else:
             orig_X = X
-        return tf.cast(self.mlp(X), tf.float64)
+        return tf.cast(self.mlp(orig_X), tf.float64)
 
 
 class GraphGPProcess:
@@ -65,7 +65,6 @@ class GraphGPProcess:
         graph_model: Model,
         graph_data: QinGraphData,
         loaded_model: Model,
-        with_scaler: bool = True,
         lin_mean_func: bool = False,
         param_file: Optional[Union[Path, str]] = None,
     ) -> None:
@@ -99,21 +98,14 @@ class GraphGPProcess:
         mlp_weights = loaded_model.layers[-1].get_weights()
         mean_func_weights, mean_func_bias = mlp_weights[-2:]
 
-        if with_scaler:
-            self.input_scaler = StandardScaler()
-            optim_latent_points = self.input_scaler.fit_transform(
-                optim_latent_points
-            ).astype(np.float64)
-            if lin_mean_func:
-                self.mean_func = ScaledLinearMeanFunc(
-                    self.input_scaler, mean_func_weights, mean_func_bias
-                )
-        else:
-            self.input_scaler = None
-            if lin_mean_func:
-                self.mean_func = gpf.mean_functions.Linear(
-                    mean_func_weights, mean_func_bias
-                )
+        self.input_scaler = StandardScaler()
+        optim_latent_points = self.input_scaler.fit_transform(
+            optim_latent_points
+        ).astype(np.float64)
+        if lin_mean_func:
+            self.mean_func = ScaledLinearMeanFunc(
+                self.input_scaler, mean_func_weights, mean_func_bias
+            )
 
         self.mean_func = MLPScalerMeanFunc(self.input_scaler, loaded_model.layers[-1])
         gpf.set_trainable(self.mean_func, False)

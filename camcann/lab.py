@@ -367,7 +367,6 @@ class GraphExperiment(BaseExperiment):
 
     def train_uq(
         self,
-        with_scaler: bool = True,
         linear_mean_fn: bool = False,
         retrain: bool = False,
     ):
@@ -388,7 +387,6 @@ class GraphExperiment(BaseExperiment):
             latent_model,
             self.graph_data,
             self.model,
-            with_scaler,
             linear_mean_fn,
             param_path,
         )
