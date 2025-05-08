@@ -247,6 +247,8 @@ class GraphExperiment(BaseExperiment):
             validation_steps=self.graph_data.val_loader.steps_per_epoch,
             callbacks=callbacks,
         )
+        self.load_hyperparameters()
+        self.best_hp_file.write_text(json.dumps(self.best_hps_dict))
 
     def load_hyperparameters(self) -> keras_tuner.HyperParameters:
         """Get the hyperparameters of the model."""
@@ -652,11 +654,6 @@ if __name__ == "__main__":
         "--just-uq", action="store_true", help="Just train the uncertainty quantifier."
     )
     parser.add_argument(
-        "--no-gp-scaler",
-        action="store_true",
-        help="Don't use a scaler on the latent points for the Gaussian process.",
-    )
-    parser.add_argument(
         "--lin-mean-fn",
         action="store_true",
         help="Use a linear function for the mean of the Gaussian process. If not set, will use the trained MLP from the NN as the mean function.",
@@ -800,7 +797,6 @@ if __name__ == "__main__":
                     exp.test()
                 if do_uq:
                     exp.train_uq(
-                        with_scaler=not args.no_gp_scaler,
                         linear_mean_fn=args.lin_mean_fn,
                         retrain=not args.eval_saved_uq,
                     )
