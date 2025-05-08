@@ -157,7 +157,7 @@ class GraphGPProcess:
         # gpf.set_trainable(gpr.likelihood, False)
         return gpr
 
-    def train(self, num_epochs: int = 10000, patience: int = 1000) -> gpf.models.GPR:
+    def train(self, num_epochs: int = 50000, patience: int = 1000) -> gpf.models.GPR:
         """Train a GP with early stopping."""
         EVAL_FREQUENCY: int = 100
         opt = tf.keras.optimizers.Adam()
