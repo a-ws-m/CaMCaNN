@@ -371,6 +371,7 @@ class GraphExperiment(BaseExperiment):
         self,
         linear_mean_fn: bool = False,
         retrain: bool = False,
+        test_nist: bool = True,
     ):
         """Train and test the uncertainty quantified model."""
         hps = keras_tuner.HyperParameters()
@@ -405,22 +406,23 @@ class GraphExperiment(BaseExperiment):
         means, stddevs = self.uq_model.predict(self.graph_data.all_loader)
         self._make_pred_df(means, stddevs).to_csv(self.uq_predict_path)
 
-        try:
-            nist_data, nist_df = get_nist_data(
-                self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
-            )
-            nist_means, nist_stddevs = self.uq_model.predict(nist_data)
-            nist_df["pred"] = nist_means.flatten()
-            nist_df["stddev"] = nist_stddevs.flatten()
-            nist_df.to_csv(self.uq_nist_pred_path)
+        if test_nist:
+            try:
+                nist_data, nist_df = get_nist_data(
+                    self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+                )
+                nist_means, nist_stddevs = self.uq_model.predict(nist_data)
+                nist_df["pred"] = nist_means.flatten()
+                nist_df["stddev"] = nist_stddevs.flatten()
+                nist_df.to_csv(self.uq_nist_pred_path)
 
-            nist_data, nist_df = get_nist_data(
-                self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
-            )
-            nist_metrics = self.uq_model.evaluate(nist_data)
-            pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
-        except ValueError:
-            print("Couldn't encode NIST molecules.")
+                nist_data, nist_df = get_nist_data(
+                    self.graph_data.mol_featuriser, preprocess=LayerPreprocess(GCNConv)
+                )
+                nist_metrics = self.uq_model.evaluate(nist_data)
+                pd.Series(nist_metrics).to_csv(self.uq_nist_metrics_path)
+            except ValueError:
+                print("Couldn't encode NIST molecules.")
 
     def kpca(self, ndim: int = 2):
         """Perform KPCA on NIST and Qin data."""
@@ -799,6 +801,7 @@ if __name__ == "__main__":
                     exp.train_uq(
                         linear_mean_fn=args.lin_mean_fn,
                         retrain=not args.eval_saved_uq,
+                        test_nist=args.test_complementary,
                     )
                     if args.kpca:
                         exp.kpca(args.kpca)

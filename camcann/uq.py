@@ -70,7 +70,6 @@ class GraphGPProcess:
     ) -> None:
         """Create the latent space model and fit it."""
         self.graph_data = graph_data
-        self.with_scaler = with_scaler
         self.model = graph_model
         self.model.predict(
             graph_data.optim_loader_no_shuffle.load(),
